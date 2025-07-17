@@ -1,0 +1,51 @@
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { THEME, type ITheme } from "@/lib/const";
+import { useStorage } from "@/lib/utils";
+import { useId } from "react";
+import LucideSun from "~icons/lucide/sun";
+import LucideMoon from "~icons/lucide/moon";
+
+function Appearance() {
+  const appearanceId = useId();
+  const themeLightId = useId();
+  const themeDarkId = useId();
+
+  const [theme, setTheme] = useStorage<ITheme>(THEME, "light");
+
+  return (
+    <section id={appearanceId} className="flex flex-col gap-6">
+      <h2 className="text-2xl font-medium">Appearance</h2>
+      <div className="flex flex-col gap-4">
+        <p className="text-lg font-light">Theme</p>
+        <RadioGroup value={theme} onValueChange={setTheme}>
+          <div className="flex flex-row gap-4 border p-4 rounded-md cursor-pointer *:cursor-pointer bg-light-background text-light-foreground border-light-border *:border-light-border">
+            <RadioGroupItem value="light" id={themeLightId} />
+            <Label htmlFor={themeLightId} className="w-full">
+              <LucideSun className="size-4" />
+              Light
+            </Label>
+          </div>
+          <div className="flex flex-row gap-4 border p-4 rounded-md cursor-pointer *:cursor-pointer bg-dark-background text-dark-foreground border-dark-border *:border-dark-border">
+            <RadioGroupItem value="dark" id={themeDarkId} />
+            <Label htmlFor={themeDarkId}>
+              <LucideMoon className="size-4" />
+              Dark
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+    </section>
+  );
+}
+
+export default function Setting() {
+  return (
+    <main>
+      {/* PC nav for setting */}
+      <div className="flex flex-col gap-4 p-8">
+        <Appearance />
+      </div>
+    </main>
+  );
+}
