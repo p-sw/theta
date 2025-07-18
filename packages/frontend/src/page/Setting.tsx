@@ -24,16 +24,24 @@ function Appearance() {
     >
       <SettingsSubSection title="Theme">
         <RadioGroup value={theme} onValueChange={setTheme}>
-          <div className="flex flex-row gap-4 border p-4 rounded-md cursor-pointer *:cursor-pointer bg-light-background text-light-foreground border-light-border *:border-light-border">
-            <RadioGroupItem value="light" id={themeLightId} />
-            <Label htmlFor={themeLightId} className="w-full">
+          <div className="flex flex-row gap-4 border rounded-md cursor-pointer *:cursor-pointer bg-light-background text-light-foreground border-light-border *:border-light-border">
+            <RadioGroupItem
+              value="light"
+              id={themeLightId}
+              className="my-4 ml-4"
+            />
+            <Label htmlFor={themeLightId} className="py-4 pr-4 w-full">
               <LucideSun className="size-4" />
               Light
             </Label>
           </div>
-          <div className="flex flex-row gap-4 border p-4 rounded-md cursor-pointer *:cursor-pointer bg-dark-background text-dark-foreground border-dark-border *:border-dark-border">
-            <RadioGroupItem value="dark" id={themeDarkId} />
-            <Label htmlFor={themeDarkId}>
+          <div className="flex flex-row gap-4 border rounded-md cursor-pointer *:cursor-pointer bg-dark-background text-dark-foreground border-dark-border *:border-dark-border">
+            <RadioGroupItem
+              value="dark"
+              id={themeDarkId}
+              className="my-4 ml-4"
+            />
+            <Label htmlFor={themeDarkId} className="py-4 pr-4 w-full">
               <LucideMoon className="size-4" />
               Dark
             </Label>
