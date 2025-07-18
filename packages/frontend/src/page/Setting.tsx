@@ -5,19 +5,24 @@ import { useStorage } from "@/lib/utils";
 import { useId } from "react";
 import LucideSun from "~icons/lucide/sun";
 import LucideMoon from "~icons/lucide/moon";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "@/components/block/settings";
 
 function Appearance() {
-  const appearanceId = useId();
   const themeLightId = useId();
   const themeDarkId = useId();
 
   const [theme, setTheme] = useStorage<ITheme>(THEME, "light");
 
   return (
-    <section id={appearanceId} className="flex flex-col gap-6">
-      <h2 className="text-2xl font-medium">Appearance</h2>
-      <div className="flex flex-col gap-4">
-        <p className="text-lg font-light">Theme</p>
+    <SettingsSection
+      id={"settings-appearance"}
+      title="Appearance"
+      description="Choose your preferred visual style for the application."
+    >
+      <SettingsSubSection title="Theme">
         <RadioGroup value={theme} onValueChange={setTheme}>
           <div className="flex flex-row gap-4 border p-4 rounded-md cursor-pointer *:cursor-pointer bg-light-background text-light-foreground border-light-border *:border-light-border">
             <RadioGroupItem value="light" id={themeLightId} />
@@ -34,8 +39,8 @@ function Appearance() {
             </Label>
           </div>
         </RadioGroup>
-      </div>
-    </section>
+      </SettingsSubSection>
+    </SettingsSection>
   );
 }
 
