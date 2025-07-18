@@ -1,6 +1,6 @@
 import { STORAGE_CHANGE_EVENT } from "@/lib/const";
 import { clsx, type ClassValue } from "clsx";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -38,13 +38,29 @@ export function useStorage<T>(
   }>,
   options?: IStorageOptions
 ): [T, (value: T | ((prev: T) => T)) => void] {
-  const storage = options?.temp ? sessionStorage : localStorage;
-  const getParse = parse?.get ?? ((v: string) => v as T);
-  const setParse = parse?.set ?? ((v: T) => v as string);
+  const storage = useMemo(
+    () => (options?.temp ? sessionStorage : localStorage),
+    [options?.temp]
+  );
+  const getParse = useMemo(
+    () => parse?.get ?? ((v: string) => v as T),
+    [parse?.get]
+  );
+  const setParse = useMemo(
+    () => parse?.set ?? ((v: T) => v as string),
+    [parse?.set]
+  );
 
   const updateFromStorage = useCallback(() => {
     setValue(getParse(storage.getItem(key)!));
-  }, [key]);
+  }, [key, getParse, storage]);
+
+  const initKey = useCallback(() => {
+    const item = storage.getItem(key);
+    return item ? getParse(item) : fallbackValue;
+  }, [key, getParse, fallbackValue, storage]);
+
+  const [value, setValue] = useState<T>(initKey);
 
   const updateToStorage = useCallback(
     (updator: T | ((prev: T) => T)) => {
@@ -56,15 +72,8 @@ export function useStorage<T>(
       storage.setItem(key, setParse(modified));
       window.dispatchEvent(new Event(STORAGE_CHANGE_EVENT(key)));
     },
-    [key]
+    [key, setParse, storage, value]
   );
-
-  const initKey = useCallback(() => {
-    const item = storage.getItem(key);
-    return item ? getParse(item) : fallbackValue;
-  }, [key]);
-
-  const [value, setValue] = useState<T>(initKey);
 
   /* key change event, re-initialize */
   useEffect(() => {
@@ -74,6 +83,7 @@ export function useStorage<T>(
     return () => {
       window.removeEventListener(STORAGE_CHANGE_EVENT(key), updateFromStorage);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   return [value, updateToStorage];
