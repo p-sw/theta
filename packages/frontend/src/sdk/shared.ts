@@ -1,4 +1,3 @@
-import type { IModelInfo } from "@/sdk/types";
 import type { Dispatch, SetStateAction } from "react";
 
 export class ExpectedError extends Error {
