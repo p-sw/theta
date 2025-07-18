@@ -14,7 +14,7 @@ const ProxyRequestSchema = t.Object({
     t.Literal("HEAD"),
   ]),
   headers: t.Record(t.String(), t.String()),
-  data: t.Record(t.String(), t.Unknown()),
+  data: t.Optional(t.Record(t.String(), t.Unknown())),
 });
 
 const app = new Elysia()

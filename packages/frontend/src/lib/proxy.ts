@@ -25,12 +25,15 @@ export async function proxyfetch(
   url: string | URL,
   options: RequestInit
 ): Promise<Response> {
-  const requestUrl = new URL(url, import.meta.env.VITE_BACKEND_URL);
+  const requestUrl = new URL(import.meta.env.VITE_BACKEND_URL);
   requestUrl.pathname = "/proxy";
   const response = await fetch(requestUrl, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      url: requestUrl.toString(),
+      url: url.toString(),
       method: options.method,
       headers: options.headers,
       data: options.body,
