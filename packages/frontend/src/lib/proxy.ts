@@ -21,19 +21,6 @@ export class ServerSideHttpError extends Error {
   }
 }
 
-export class ApiProxyError extends Error {
-  public readonly status: number;
-  public readonly statusText: string;
-  public readonly data?: any;
-
-  constructor(status: number, statusText: string, data?: any) {
-    super(`API Proxy Error: ${status} ${statusText}`);
-    this.status = status;
-    this.statusText = statusText;
-    this.data = data;
-  }
-}
-
 export async function proxyfetch(
   url: string,
   options: RequestInit
