@@ -5,7 +5,7 @@ export class ExpectedError extends Error {
 
   constructor(statusCode: number, type: string, message: string) {
     super(`(${type}) ${message}`);
-    this.name = "UnexpectedError";
+    this.name = "ExpectedError";
     this.statusCode = statusCode;
   }
 }
