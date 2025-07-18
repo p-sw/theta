@@ -1,3 +1,4 @@
+import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
   IErrorBody,
   IListModelsBody,
@@ -8,12 +9,21 @@ import type {
 import {
   API,
   ExpectedError,
-  UnexpectedMessageTypeError,
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
 import type { IModelInfo } from "@/sdk/shared";
 import type { Dispatch, SetStateAction } from "react";
+
+export class AnthropicUnexpectedMessageTypeError extends Error {
+  readonly type: string;
+
+  constructor(type: string) {
+    super(`[Anthropic] Unexpected message type: ${type}`);
+    this.name = "AnthropicUnexpectedMessageTypeError";
+    this.type = type;
+  }
+}
 
 function isErrorBody(body: unknown): body is IErrorBody {
   if (typeof body !== "object" || body === null) {
@@ -64,31 +74,27 @@ export class AnthropicProvider extends API {
       try {
         errorBody = JSON.parse(text);
       } catch {
-        // common http error
-        throw new ExpectedError(
-          response.status,
-          "common_http_error",
-          response.statusText
-        );
+        // server-side http error
+        throw new ServerSideHttpError(response.status, response.statusText);
       }
 
       if (isErrorBody(errorBody)) {
         // anthropic error
         throw new ExpectedError(
           response.status,
-          `anthropic_error`,
+          errorBody.error.type,
           `[Anthropic] ${errorBody.error.type}: ${errorBody.error.message}`
         );
       }
 
       // unknown error
-      throw new ExpectedError(response.status, "unknown_error", text);
+      throw new ServerSideHttpError(response.status, response.statusText);
     }
   }
 
   async getModels(): Promise<IModelInfo[]> {
     // get models from API
-    const response = await fetch(
+    const response = await proxyfetch(
       this.API_BASE_URL + "/models",
       this.buildAPIRequest("GET")
     );
@@ -110,7 +116,7 @@ export class AnthropicProvider extends API {
     model: string,
     result: Dispatch<SetStateAction<IMessageResult[]>>
   ): Promise<void> {
-    const response = await fetch(this.API_BASE_URL + "/messages", {
+    const response = await proxyfetch(this.API_BASE_URL + "/messages", {
       ...this.buildAPIRequest("POST"),
       body: JSON.stringify({
         model,
@@ -210,7 +216,7 @@ export class AnthropicProvider extends API {
                 case "message_delta":
                   break;
                 default:
-                  throw new UnexpectedMessageTypeError(event.type);
+                  throw new AnthropicUnexpectedMessageTypeError(event.type);
               }
             } catch (e) {
               console.error("JSON 파싱 에러:", e);

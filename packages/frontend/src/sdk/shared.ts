@@ -10,16 +10,6 @@ export class ExpectedError extends Error {
   }
 }
 
-export class UnexpectedMessageTypeError extends Error {
-  readonly type: string;
-
-  constructor(type: string) {
-    super(`Unexpected message type: ${type}`);
-    this.name = "UnexpectedMessageTypeError";
-    this.type = type;
-  }
-}
-
 export abstract class API {
   protected abstract readonly API_BASE_URL: string;
   protected apiKey!: string;
