@@ -1,3 +1,26 @@
+export class ClientSideHttpError extends Error {
+  public readonly status: number;
+  public readonly statusText: string;
+
+  constructor(status: number, statusText: string) {
+    super(`Client-side HTTP Error: ${status} ${statusText}`);
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
+
+export class ServerSideHttpError extends Error {
+  public readonly status: number;
+  public readonly statusText: string;
+  public readonly data?: any;
+
+  constructor(status: number, statusText: string) {
+    super(`Server-side HTTP Error: ${status} ${statusText}`);
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
+
 export class ApiProxyError extends Error {
   public readonly status: number;
   public readonly statusText: string;
@@ -18,13 +41,13 @@ export async function proxyfetch(
   const response = await fetch(url, options);
   if (!response.ok) {
     // definitely client-side http error (not backend error)
-    throw new ApiProxyError(response.status, response.statusText);
+    throw new ClientSideHttpError(response.status, response.statusText);
   }
 
   const data = await response.json();
   if (!data.ok && data.error) {
     // backend unexpected error
-    throw new ApiProxyError(data.status, data.error);
+    throw new ServerSideHttpError(data.status, data.error);
   }
 
   const r = new Response(
