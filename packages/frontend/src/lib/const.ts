@@ -8,3 +8,10 @@ export const PATHS = {
   CHAT: "/",
   SETTINGS: "/settings",
 };
+
+export const API_KEY = "api_key";
+export interface IApiKey {
+  anthropic: string;
+}
+
+export const MODELS = "models";
