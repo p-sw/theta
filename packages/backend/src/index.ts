@@ -4,6 +4,15 @@ import { cors } from "@elysiajs/cors";
 // Schema definition for proxy requests
 const ProxyRequestSchema = t.Object({
   url: t.String(),
+  method: t.Union([
+    t.Literal("GET"),
+    t.Literal("POST"),
+    t.Literal("PUT"),
+    t.Literal("DELETE"),
+    t.Literal("PATCH"),
+    t.Literal("OPTIONS"),
+    t.Literal("HEAD"),
+  ]),
   headers: t.Record(t.String(), t.String()),
   data: t.Record(t.String(), t.Unknown()),
 });
@@ -14,16 +23,16 @@ const app = new Elysia()
     "/proxy",
     async ({ body }) => {
       try {
-        const { url, headers, data } = body;
+        const { url, method, headers, data } = body;
 
         // Send proxy request
         const response = await fetch(url, {
-          method: "POST",
+          method,
           headers: {
             "Content-Type": "application/json",
             ...headers,
           },
-          body: JSON.stringify(data),
+          body: method === "GET" ? undefined : JSON.stringify(data),
         });
 
         // Process response data
@@ -37,7 +46,7 @@ const app = new Elysia()
         }
 
         return {
-          success: true,
+          ok: response.ok,
           status: response.status,
           statusText: response.statusText,
           headers: Object.fromEntries(response.headers.entries()),
@@ -47,7 +56,7 @@ const app = new Elysia()
         console.error("Error occurred during proxy request:", error);
 
         return {
-          success: false,
+          ok: false,
           error:
             error instanceof Error
               ? error.message

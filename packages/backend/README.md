@@ -13,6 +13,7 @@ Proxies requests to other APIs.
 ```json
 {
   "url": "https://api.example.com/endpoint",
+  "method": "POST",
   "headers": {
     "Authorization": "Bearer token",
     "Custom-Header": "value"
@@ -30,7 +31,7 @@ Proxies requests to other APIs.
 
 ```json
 {
-  "success": true,
+  "ok": true,
   "status": 200,
   "statusText": "OK",
   "headers": {
@@ -46,7 +47,7 @@ Proxies requests to other APIs.
 
 ```json
 {
-  "success": false,
+  "ok": false,
   "error": "Error message",
   "status": 500
 }
@@ -59,6 +60,7 @@ curl -X POST http://localhost:3000/proxy \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://jsonplaceholder.typicode.com/posts",
+    "method": "POST",
     "headers": {},
     "data": {
       "title": "foo",
