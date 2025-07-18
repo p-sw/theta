@@ -25,7 +25,17 @@ export async function proxyfetch(
   url: string,
   options: RequestInit
 ): Promise<Response> {
-  const response = await fetch(url, options);
+  const requestUrl = new URL(url, import.meta.env.VITE_BACKEND_URL);
+  requestUrl.pathname = "/proxy";
+  const response = await fetch(requestUrl, {
+    method: "POST",
+    body: JSON.stringify({
+      url,
+      method: options.method,
+      headers: options.headers,
+      data: options.body,
+    }),
+  });
   if (!response.ok) {
     // definitely client-side http error (not backend error)
     throw new ClientSideHttpError(response.status, response.statusText);
