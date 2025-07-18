@@ -18,3 +18,5 @@ export class AISDK {
     return [...anthropicModels];
   }
 }
+
+export const AiSdk = new AISDK();
