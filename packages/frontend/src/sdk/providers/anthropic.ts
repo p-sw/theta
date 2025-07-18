@@ -101,6 +101,7 @@ export class AnthropicProvider extends API {
       provider: "anthropic",
       id: model.id,
       displayName: model.display_name,
+      disabled: false,
     }));
   }
 
