@@ -12,7 +12,7 @@ import {
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
-import type { IModelInfo } from "@/sdk/types";
+import type { IModelInfo } from "@/sdk/shared";
 import type { Dispatch, SetStateAction } from "react";
 
 function isErrorBody(body: unknown): body is IErrorBody {
