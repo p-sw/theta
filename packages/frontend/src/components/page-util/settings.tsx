@@ -27,13 +27,22 @@ export function SettingsSection({
 export function SettingsSubSection({
   children,
   title,
+  subsectionActions,
 }: {
   children: ReactNode;
   title: string;
+  subsectionActions?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-lg font-medium">{title}</h3>
+      {subsectionActions ? (
+        <div className="flex flex-row justify-between">
+          <h3 className="text-lg font-medium">{title}</h3>
+          {subsectionActions}
+        </div>
+      ) : (
+        <h3 className="text-lg font-medium">{title}</h3>
+      )}
       {children}
     </div>
   );
