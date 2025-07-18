@@ -11,7 +11,7 @@ export const PATHS = {
 
 export const API_KEY = "api_key";
 export interface IApiKey {
-  anthropic: string;
+  anthropic: string | null;
 }
 
 export const MODELS = "models";
