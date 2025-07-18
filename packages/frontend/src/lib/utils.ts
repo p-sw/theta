@@ -19,7 +19,16 @@ export function useStorage<T>(
     get: (value: T) => string;
   },
   options?: IStorageOptions
-): [T, (value: T) => void];
+): [T, (value: T | ((prev: T) => T)) => void];
+export function useStorage<T extends object>(
+  key: string,
+  fallbackValue: T,
+  parse?: Partial<{
+    get: (value: string) => T;
+    set: (value: T) => string;
+  }>,
+  options?: IStorageOptions
+): [T, (value: T | ((prev: T) => T)) => void];
 export function useStorage<T extends string>(
   key: string,
   fallbackValue: T,
@@ -28,7 +37,7 @@ export function useStorage<T extends string>(
     set: (value: T) => string;
   }>,
   options?: IStorageOptions
-): [T, (value: T) => void];
+): [T, (value: T | ((prev: T) => T)) => void];
 export function useStorage<T>(
   key: string,
   fallbackValue: T,
@@ -43,12 +52,19 @@ export function useStorage<T>(
     [options?.temp]
   );
   const getParse = useMemo(
-    () => parse?.get ?? ((v: string) => v as T),
-    [parse?.get]
+    () =>
+      parse?.get ?? typeof fallbackValue === "object"
+        ? (v: string) => JSON.parse(v) as T
+        : (v: string) => v as T,
+    [parse?.get, fallbackValue]
   );
   const setParse = useMemo(
-    () => parse?.set ?? ((v: T) => v as string),
-    [parse?.set]
+    () =>
+      parse?.set ??
+      (typeof fallbackValue === "object"
+        ? (v: T) => JSON.stringify(v)
+        : (v: T) => v as string),
+    [parse?.set, fallbackValue]
   );
 
   const updateFromStorage = useCallback(() => {
