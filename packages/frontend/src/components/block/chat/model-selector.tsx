@@ -24,11 +24,13 @@ import { providerRegistry } from "@/sdk";
 import type { IProvider } from "@/sdk/shared";
 
 export function ModelSelector({
-  modelId,
+  provider: selectedProvider,
+  modelId: selectedModelId,
   setModelId,
 }: {
-  modelId: string;
-  setModelId: (modelId: string) => void;
+  provider: IProvider | undefined;
+  modelId: string | undefined;
+  setModelId: (modelId: [IProvider, string] | []) => void;
 }) {
   const [models] = useModels();
   const [keys] = useApiKey();
@@ -44,8 +46,11 @@ export function ModelSelector({
           aria-expanded={open}
           className="w-fit space-x-1"
         >
-          {modelId
-            ? models.find((m) => m.id === modelId)?.displayName
+          {selectedModelId && selectedProvider
+            ? models.find(
+                (m) =>
+                  m.id === selectedModelId && m.provider === selectedProvider
+              )?.displayName
             : "Select model..."}
           <ChevronsUpDownIcon className="h-2 w-2 opacity-50" />
         </Button>
@@ -75,7 +80,10 @@ export function ModelSelector({
                         value={model.id}
                         onSelect={(currentValue) => {
                           setModelId(
-                            currentValue === modelId ? "" : currentValue
+                            currentValue === selectedModelId &&
+                              provider === selectedProvider
+                              ? [provider, currentValue]
+                              : []
                           );
                           setOpen(false);
                         }}
@@ -83,7 +91,10 @@ export function ModelSelector({
                         <CheckIcon
                           className={cn(
                             "mr-2 h-4 w-4",
-                            modelId === model.id ? "opacity-100" : "opacity-0"
+                            selectedModelId === model.id &&
+                              provider === selectedProvider
+                              ? "opacity-100"
+                              : "opacity-0"
                           )}
                         />
                         {model.displayName}

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 
 export default function Chat() {
-  const [modelId, setModelId] = useSelectedModel();
+  const [[provider, modelId], setModelId] = useSelectedModel();
 
   const form = useForm({
     defaultValues: {
@@ -46,7 +46,11 @@ export default function Chat() {
               >
                 <LucideSend className="size-4" />
               </Button>
-              <ModelSelector modelId={modelId} setModelId={setModelId} />
+              <ModelSelector
+                provider={provider}
+                modelId={modelId}
+                setModelId={setModelId}
+              />
             </div>
           </TextareaContainer>
         </form>
