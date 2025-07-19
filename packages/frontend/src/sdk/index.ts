@@ -64,7 +64,14 @@ export class AISDK {
 
     switch (provider) {
       case "anthropic":
-        return this.anthropic?.message(session, model, updateSession);
+        return this.anthropic?.message(
+          session.slice(
+            0,
+            -1
+          ) /* removes just inserted empty response buffer */,
+          model,
+          updateSession
+        );
       default:
         throw new Error(`Provider ${provider} not supported`);
     }
