@@ -120,7 +120,7 @@ export class AnthropicProvider extends API {
       ...this.buildAPIRequest("POST"),
       body: JSON.stringify({
         model,
-        max_tokens: 4096,
+        max_tokens: 1024,
         messages,
         stream: true,
         system: [
