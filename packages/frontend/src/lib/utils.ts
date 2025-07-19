@@ -1,5 +1,6 @@
 import { STORAGE_CHANGE_EVENT } from "@/lib/const";
 import { clsx, type ClassValue } from "clsx";
+import hyperid from "hyperid";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
@@ -103,4 +104,20 @@ export function useStorage<T>(
   }, [key]);
 
   return [value, updateToStorage];
+}
+
+const hid = hyperid();
+
+export function useHyperId() {
+  const [id, setId] = useState<string>(hid());
+
+  useEffect(() => {
+    setId(hid());
+  }, []);
+
+  return id;
+}
+
+export function useHyperInstance() {
+  return useMemo(() => hyperid(), []);
 }
