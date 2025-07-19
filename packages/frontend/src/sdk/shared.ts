@@ -26,6 +26,13 @@ export abstract class API {
   abstract getModels(): Promise<IModelInfo[]>;
 }
 
+export type IMessageRequest = IMessageRequestText;
+
+export interface IMessageRequestText {
+  type: "text";
+  text: string;
+}
+
 export type IMessageResult =
   | IMessageResultText
   | IMessageResultStart
