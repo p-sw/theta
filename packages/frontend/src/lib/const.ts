@@ -16,3 +16,5 @@ export type IApiKey = Record<IProvider, string | null>;
 
 export const MODELS = "models";
 export const SELECTED_MODEL = "selected_model";
+
+export const SESSIONS = "sessions";

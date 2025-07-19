@@ -1,6 +1,13 @@
-import { API_KEY, type IApiKey } from "@/lib/const";
+import { API_KEY, SESSIONS, type IApiKey } from "@/lib/const";
+import { dispatchStorageEvent } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
-import type { IProvider, IProviderInfo } from "@/sdk/shared";
+import type {
+  IMessageRequest,
+  IMessageResult,
+  IProvider,
+  IProviderInfo,
+  Session,
+} from "@/sdk/shared";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -24,6 +31,45 @@ export class AISDK {
     const anthropicModels = (await this.anthropic?.getModels()) ?? [];
 
     return [...anthropicModels];
+  }
+
+  async message(
+    sessionId: string,
+    provider: IProvider,
+    model: string,
+    requestMessage: IMessageRequest[]
+  ) {
+    const sessions = JSON.parse(
+      localStorage.getItem(SESSIONS) ?? "{}"
+    ) as Record<string, Session>;
+    if (!sessions[sessionId]) {
+      sessions[sessionId] = [];
+    }
+
+    const session = sessions[sessionId];
+    session.push({
+      type: "request",
+      message: requestMessage,
+    });
+
+    const resultMessage: IMessageResult[] = [];
+    session.push({
+      type: "response",
+      message: resultMessage,
+    });
+
+    function updateSession(updator: (message: IMessageResult[]) => void) {
+      updator(resultMessage);
+      localStorage.setItem(SESSIONS, JSON.stringify(sessions));
+      dispatchStorageEvent(SESSIONS);
+    }
+
+    switch (provider) {
+      case "anthropic":
+        return this.anthropic?.message(session, model, updateSession);
+      default:
+        throw new Error(`Provider ${provider} not supported`);
+    }
   }
 }
 
