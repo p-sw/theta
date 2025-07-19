@@ -66,10 +66,12 @@ export interface IModelInfo {
 export type Session = (
   | {
       type: "request";
+      messageId: string;
       message: IMessageRequest[];
     }
   | {
       type: "response";
+      messageId: string;
       message: IMessageResult[];
     }
 )[];

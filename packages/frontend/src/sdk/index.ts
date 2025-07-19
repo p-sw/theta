@@ -1,5 +1,5 @@
 import { API_KEY, SESSION, type IApiKey } from "@/lib/const";
-import { dispatchStorageEvent } from "@/lib/utils";
+import { dispatchStorageEvent, useHyperInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
   IMessageRequest,
@@ -39,18 +39,22 @@ export class AISDK {
     model: string,
     requestMessage: IMessageRequest[]
   ) {
+    const hyperid = useHyperInstance();
+
     const session = JSON.parse(
       localStorage.getItem(SESSION(sessionId)) ?? "[]"
     ) as Session;
 
     session.push({
       type: "request",
+      messageId: hyperid(),
       message: requestMessage,
     });
 
     const resultMessage: IMessageResult[] = [];
     session.push({
       type: "response",
+      messageId: hyperid(),
       message: resultMessage,
     });
 
