@@ -24,7 +24,7 @@ export abstract class API<T> {
   protected abstract ensureSuccess(response: Response): Promise<void>;
   protected abstract translateRequestMessage(message: IMessageRequest[]): T[];
   abstract message(
-    prompt: IMessageRequest[],
+    session: Session,
     model: string,
     result: (updator: (message: IMessageResult[]) => IMessageResult[]) => void // prev -> new
   ): Promise<void>;
@@ -62,3 +62,14 @@ export interface IModelInfo {
   displayName: string;
   disabled: boolean;
 }
+
+export type Session = (
+  | {
+      type: "request";
+      message: IMessageRequest[];
+    }
+  | {
+      type: "response";
+      message: IMessageResult[];
+    }
+)[];
