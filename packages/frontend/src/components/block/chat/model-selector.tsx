@@ -19,7 +19,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useModels } from "@/lib/storage-hooks";
+import { useApiKey, useModels } from "@/lib/storage-hooks";
+import { providerRegistry } from "@/sdk";
+import type { IProvider } from "@/sdk/shared";
 
 export function ModelSelector({
   modelId,
@@ -29,6 +31,7 @@ export function ModelSelector({
   setModelId: (modelId: string) => void;
 }) {
   const [models] = useModels();
+  const [keys] = useApiKey();
 
   const [open, setOpen] = React.useState(false);
 
@@ -52,26 +55,42 @@ export function ModelSelector({
           <CommandInput placeholder="Search model..." />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
-            <CommandGroup>
-              {models.map((model) => (
-                <CommandItem
-                  key={model.id}
-                  value={model.id}
-                  onSelect={(currentValue) => {
-                    setModelId(currentValue === modelId ? "" : currentValue);
-                    setOpen(false);
-                  }}
+            {(
+              Object.entries(keys) as unknown /* fuck */ as [
+                IProvider,
+                string | null
+              ][]
+            )
+              .filter(([_, key]) => key !== null)
+              .map(([provider]) => (
+                <CommandGroup
+                  key={provider}
+                  heading={providerRegistry[provider].displayName}
                 >
-                  <CheckIcon
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      modelId === model.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {model.displayName}
-                </CommandItem>
+                  {models
+                    .filter((model) => model.provider === provider)
+                    .map((model) => (
+                      <CommandItem
+                        key={model.id}
+                        value={model.id}
+                        onSelect={(currentValue) => {
+                          setModelId(
+                            currentValue === modelId ? "" : currentValue
+                          );
+                          setOpen(false);
+                        }}
+                      >
+                        <CheckIcon
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            modelId === model.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {model.displayName}
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
               ))}
-            </CommandGroup>
           </CommandList>
         </Command>
       </PopoverContent>
