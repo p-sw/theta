@@ -9,7 +9,7 @@ import {
   type ITheme,
 } from "@/lib/const";
 import { useStorage } from "@/lib/utils";
-import type { IModelInfo } from "@/sdk/shared";
+import type { IModelInfo, IProvider } from "@/sdk/shared";
 
 export function usePath() {
   return useStorage<string>(PATH, PATHS.CHAT, undefined, {
@@ -35,5 +35,5 @@ export function useApiKey() {
 }
 
 export function useSelectedModel() {
-  return useStorage<string>(SELECTED_MODEL, "");
+  return useStorage<[IProvider, string] | []>(SELECTED_MODEL, []);
 }
