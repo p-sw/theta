@@ -1,5 +1,11 @@
 import type { Dispatch, SetStateAction } from "react";
 
+export type IProvider = "anthropic";
+export interface IProviderInfo {
+  id: IProvider;
+  displayName: string;
+}
+
 export class ExpectedError extends Error {
   readonly statusCode: number;
 
@@ -52,7 +58,7 @@ export interface IMessageResultEnd {
 }
 
 export interface IModelInfo {
-  provider: "anthropic";
+  provider: IProvider;
   id: string;
   displayName: string;
   disabled: boolean;

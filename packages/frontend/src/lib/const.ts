@@ -1,3 +1,5 @@
+import type { IProvider } from "@/sdk/shared";
+
 export const STORAGE_CHANGE_EVENT = (key: string) => `storage-change-${key}`;
 
 export const THEME = "theme";
@@ -10,9 +12,7 @@ export const PATHS = {
 };
 
 export const API_KEY = "api_key";
-export interface IApiKey {
-  anthropic: string | null;
-}
+export type IApiKey = Record<IProvider, string | null>;
 
 export const MODELS = "models";
 export const SELECTED_MODEL = "selected_model";

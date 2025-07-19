@@ -1,5 +1,13 @@
 import { API_KEY, type IApiKey } from "@/lib/const";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
+import type { IProvider, IProviderInfo } from "@/sdk/shared";
+
+export const providerRegistry: Record<IProvider, IProviderInfo> = {
+  anthropic: {
+    id: "anthropic",
+    displayName: "Anthropic",
+  },
+};
 
 export class AISDK {
   private anthropic: AnthropicProvider | null = null;
