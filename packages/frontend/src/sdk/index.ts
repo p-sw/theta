@@ -1,4 +1,4 @@
-import { API_KEY, SESSIONS, type IApiKey } from "@/lib/const";
+import { API_KEY, SESSION, type IApiKey } from "@/lib/const";
 import { dispatchStorageEvent } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
@@ -39,14 +39,10 @@ export class AISDK {
     model: string,
     requestMessage: IMessageRequest[]
   ) {
-    const sessions = JSON.parse(
-      localStorage.getItem(SESSIONS) ?? "{}"
-    ) as Record<string, Session>;
-    if (!sessions[sessionId]) {
-      sessions[sessionId] = [];
-    }
+    const session = JSON.parse(
+      localStorage.getItem(SESSION(sessionId)) ?? "[]"
+    ) as Session;
 
-    const session = sessions[sessionId];
     session.push({
       type: "request",
       message: requestMessage,
@@ -60,8 +56,8 @@ export class AISDK {
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
-      localStorage.setItem(SESSIONS, JSON.stringify(sessions));
-      dispatchStorageEvent(SESSIONS);
+      localStorage.setItem(SESSION(sessionId), JSON.stringify(session));
+      dispatchStorageEvent(SESSION(sessionId));
     }
 
     switch (provider) {
