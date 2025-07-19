@@ -16,7 +16,7 @@ export class ExpectedError extends Error {
   }
 }
 
-export abstract class API {
+export abstract class API<T> {
   protected abstract readonly API_BASE_URL: string;
   protected apiKey!: string;
 
@@ -24,8 +24,9 @@ export abstract class API {
     method: RequestInit["method"]
   ): RequestInit;
   protected abstract ensureSuccess(response: Response): Promise<void>;
+  protected abstract translateRequestMessage(message: IMessageRequest[]): T[];
   abstract message(
-    prompt: unknown, // different providers have different types
+    prompt: IMessageRequest[],
     model: string,
     result: Dispatch<SetStateAction<IMessageResult[]>>
   ): Promise<void>;
