@@ -25,39 +25,48 @@ export async function proxyfetch(
   url: string | URL,
   options: RequestInit
 ): Promise<Response> {
-  const requestUrl = new URL(import.meta.env.VITE_BACKEND_URL);
-  requestUrl.pathname = "/proxy";
-  const response = await fetch(requestUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      url: url.toString(),
-      method: options.method,
-      headers: options.headers,
-      data: options.body,
-    }),
-  });
-  if (!response.ok) {
-    // definitely client-side http error (not backend error)
-    throw new ClientSideHttpError(response.status, response.statusText);
-  }
+  try {
+    const requestUrl = new URL(import.meta.env.VITE_BACKEND_URL);
+    requestUrl.pathname = "/proxy";
+    const response = await fetch(requestUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: url.toString(),
+        method: options.method,
+        headers: options.headers,
+        data: options.body,
+      }),
+    });
 
-  const data = await response.json();
-  if (!data.ok && data.error) {
-    // backend unexpected error
-    throw new ServerSideHttpError(data.status, data.error);
-  }
-
-  const r = new Response(
-    typeof data.data === "string" ? data.data : JSON.stringify(data.data),
-    {
-      status: data.status,
-      statusText: data.statusText,
-      headers: data.headers,
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (
+        contentType &&
+        contentType.includes("application/json") &&
+        response.headers.get("X-Theta-Proxy-Error") === "true"
+      ) {
+        // proxy-side error
+        try {
+          const errorData = await response.json();
+          throw new ServerSideHttpError(response.status, errorData.proxyerror);
+        } catch (e) {
+          // If JSON parsing fails, fall through to client-side error
+          // but i guess never happens
+          console.error("Error parsing proxy error response:", e);
+          throw e;
+        }
+      }
+      // It's other error, including provider-side error
+      // just returning is enough
     }
-  );
 
-  return r;
+    return response;
+  } catch (e) {
+    // client-side http error
+    console.error("Error proxying request:", e);
+    throw e;
+  }
 }
