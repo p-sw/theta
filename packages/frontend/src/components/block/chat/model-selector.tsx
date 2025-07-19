@@ -82,8 +82,8 @@ export function ModelSelector({
                           setModelId(
                             currentValue === selectedModelId &&
                               provider === selectedProvider
-                              ? [provider, currentValue]
-                              : []
+                              ? []
+                              : [provider, currentValue]
                           );
                           setOpen(false);
                         }}
