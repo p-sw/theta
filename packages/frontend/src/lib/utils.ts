@@ -12,6 +12,10 @@ interface IStorageOptions {
   temp?: boolean;
 }
 
+export function dispatchStorageEvent(key: string) {
+  window.dispatchEvent(new Event(STORAGE_CHANGE_EVENT(key)));
+}
+
 export function useStorage<T>(
   key: string,
   fallbackValue: T,
@@ -87,7 +91,7 @@ export function useStorage<T>(
           : updator;
       setValue(modified);
       storage.setItem(key, setParse(modified));
-      window.dispatchEvent(new Event(STORAGE_CHANGE_EVENT(key)));
+      dispatchStorageEvent(key);
     },
     [key, setParse, storage, value]
   );
