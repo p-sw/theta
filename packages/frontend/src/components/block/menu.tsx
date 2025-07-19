@@ -36,7 +36,7 @@ export default function Menu() {
           <LucideMenu />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="start">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
