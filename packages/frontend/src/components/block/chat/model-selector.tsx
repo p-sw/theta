@@ -19,14 +19,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MODELS, SELECTED_MODEL } from "@/lib/const";
+import { MODELS } from "@/lib/const";
 import type { IModelInfo } from "@/sdk/shared";
 
-export function ModelSelector() {
+export function ModelSelector({
+  modelId,
+  setModelId,
+}: {
+  modelId: string;
+  setModelId: (modelId: string) => void;
+}) {
   const [models] = useStorage<IModelInfo[]>(MODELS, []);
 
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = useStorage<string>(SELECTED_MODEL, ""); // IModelInfo.id
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -37,8 +42,8 @@ export function ModelSelector() {
           aria-expanded={open}
           className="w-fit space-x-1"
         >
-          {value
-            ? models.find((m) => m.id === value)?.displayName
+          {modelId
+            ? models.find((m) => m.id === modelId)?.displayName
             : "Select model..."}
           <ChevronsUpDownIcon className="h-2 w-2 opacity-50" />
         </Button>
@@ -54,14 +59,14 @@ export function ModelSelector() {
                   key={model.id}
                   value={model.id}
                   onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue);
+                    setModelId(currentValue === modelId ? "" : currentValue);
                     setOpen(false);
                   }}
                 >
                   <CheckIcon
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === model.id ? "opacity-100" : "opacity-0"
+                      modelId === model.id ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {model.displayName}

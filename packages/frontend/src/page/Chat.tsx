@@ -2,10 +2,14 @@ import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
+import { SELECTED_MODEL } from "@/lib/const";
+import { useStorage } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 
 export default function Chat() {
+  const [modelId, setModelId] = useStorage<string>(SELECTED_MODEL, "");
+
   const form = useForm({
     defaultValues: {
       message: "",
@@ -14,7 +18,7 @@ export default function Chat() {
 
   return (
     <main className="h-svh flex flex-col">
-      <section className="h-full overflow-y-auto"></section>
+      <section className="h-full overflow-y-auto p-8 flex flex-col gap-8"></section>
       <Form {...form}>
         <form
           onSubmit={(e) => {
@@ -39,7 +43,7 @@ export default function Chat() {
               <Button type="submit" className="" size="icon">
                 <LucideSend className="size-4" />
               </Button>
-              <ModelSelector />
+              <ModelSelector modelId={modelId} setModelId={setModelId} />
             </div>
           </TextareaContainer>
         </form>
