@@ -4,7 +4,7 @@ import * as React from "react";
 import ChevronsUpDownIcon from "~icons/lucide/chevrons-up-down";
 import CheckIcon from "~icons/lucide/check";
 
-import { cn, useStorage } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -19,8 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MODELS } from "@/lib/const";
-import type { IModelInfo } from "@/sdk/shared";
+import { useModels } from "@/lib/storage-hooks";
 
 export function ModelSelector({
   modelId,
@@ -29,7 +28,7 @@ export function ModelSelector({
   modelId: string;
   setModelId: (modelId: string) => void;
 }) {
-  const [models] = useStorage<IModelInfo[]>(MODELS, []);
+  const [models] = useModels();
 
   const [open, setOpen] = React.useState(false);
 

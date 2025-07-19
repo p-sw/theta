@@ -7,14 +7,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import LucideSun from "~icons/lucide/sun";
 import LucideMoon from "~icons/lucide/moon";
 import { useId } from "react";
-import { useStorage } from "@/lib/utils";
-import { THEME, type ITheme } from "@/lib/const";
+import { useTheme } from "@/lib/storage-hooks";
+import type { ITheme } from "@/lib/const";
 
 export function Appearance() {
   const themeLightId = useId();
   const themeDarkId = useId();
 
-  const [theme, setTheme] = useStorage<ITheme>(THEME, "light");
+  const [theme, setTheme] = useTheme();
 
   return (
     <SettingsSection

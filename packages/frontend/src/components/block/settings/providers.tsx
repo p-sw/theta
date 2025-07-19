@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { API_KEY, MODELS, type IApiKey } from "@/lib/const";
-import { useStorage } from "@/lib/utils";
+import { useApiKey, useModels } from "@/lib/storage-hooks";
 import { AiSdk } from "@/sdk";
 import type { IModelInfo } from "@/sdk/shared";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -52,10 +51,8 @@ function ModelItem({
 
 function ModelSection() {
   const [refetch, setRefetch] = useState(false);
-  const [apiKey] = useStorage<IApiKey>(API_KEY, {
-    anthropic: null,
-  });
-  const [models, setModels] = useStorage<IModelInfo[]>(MODELS, []);
+  const [apiKey] = useApiKey();
+  const [models, setModels] = useModels();
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -150,10 +147,10 @@ function ProviderProvider({
   onKeySave,
 }: {
   provider: string;
-  initialKey: string;
+  initialKey: string | null;
   onKeySave: (newKey: string) => void;
 }) {
-  const [key, setKey] = useState(initialKey);
+  const [key, setKey] = useState<string>(initialKey ?? "");
   const saveRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -185,9 +182,7 @@ function ProviderProvider({
 }
 
 function ProviderSection() {
-  const [apiKey, setApiKey] = useStorage<IApiKey>(API_KEY, {
-    anthropic: null,
-  });
+  const [apiKey, setApiKey] = useApiKey();
 
   return (
     <SettingsSubSection title="Providers">

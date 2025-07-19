@@ -1,13 +1,11 @@
 import Menu from "@/components/block/menu";
-import { PATH, PATHS } from "@/lib/const";
-import { useStorage } from "@/lib/utils";
+import { PATHS } from "@/lib/const";
+import { usePath } from "@/lib/storage-hooks";
 import Chat from "@/page/Chat";
 import Setting from "@/page/Setting";
 
 function App() {
-  const [path] = useStorage<string>(PATH, PATHS.CHAT, undefined, {
-    temp: true,
-  });
+  const [path] = usePath();
   return (
     <>
       <Menu />

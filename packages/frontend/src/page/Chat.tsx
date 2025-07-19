@@ -2,13 +2,12 @@ import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
-import { SELECTED_MODEL } from "@/lib/const";
-import { useStorage } from "@/lib/utils";
+import { useSelectedModel } from "@/lib/storage-hooks";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 
 export default function Chat() {
-  const [modelId, setModelId] = useStorage<string>(SELECTED_MODEL, "");
+  const [modelId, setModelId] = useSelectedModel();
 
   const form = useForm({
     defaultValues: {

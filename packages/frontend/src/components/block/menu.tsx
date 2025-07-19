@@ -8,23 +8,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PATH, PATHS, THEME, type ITheme } from "@/lib/const";
-import { useStorage } from "@/lib/utils";
+import { PATHS } from "@/lib/const";
 import { useEffect } from "react";
 import LucideMenu from "~icons/lucide/menu";
 import LucideSun from "~icons/lucide/sun";
 import LucideMoon from "~icons/lucide/moon";
 import LucideMessageCircleMore from "~icons/lucide/message-circle-more";
 import LucideSettings from "~icons/lucide/settings";
+import { usePath, useTheme } from "@/lib/storage-hooks";
 
 export default function Menu() {
-  const [theme, setTheme] = useStorage<ITheme>(
-    THEME,
-    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-  );
-  const [_, setPath] = useStorage<string>(PATH, PATHS.CHAT, undefined, {
-    temp: true,
-  });
+  const [theme, setTheme] = useTheme();
+  const [_, setPath] = usePath();
 
   useEffect(() => {
     document.body.classList.toggle("dark", theme === "dark");
