@@ -33,9 +33,7 @@ export interface IListModelsBody {
 /* IMessage */
 export interface IMessage {
   role: "user" | "assistant";
-  content:
-    | string
-    | (IMessageText | IMessageThinking | IMessageRedactedThinking)[];
+  content: (IMessageText | IMessageThinking | IMessageRedactedThinking)[];
 }
 
 // TODO: image, file, search operation, mcp, web search, code execution, server tool, container upload
@@ -54,13 +52,13 @@ export interface IMessageRedactedThinking {
 export interface IMessageText {
   type: "text";
   text: string;
-  cache_control: IMessageCacheControl | null;
-  citations: Citation[] | null;
+  cache_control?: IMessageCacheControl | null;
+  citations?: Citation[] | null;
 }
 
 export interface IMessageCacheControl {
   type: "ephemeral";
-  ttl: "5m" | "1h";
+  ttl?: "5m" | "1h";
 }
 
 export type Citation =
