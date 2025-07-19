@@ -39,7 +39,11 @@ export default function Chat() {
               <FormMessage />
             </FormItem>
             <div className="flex flex-row-reverse justify-between">
-              <Button type="submit" className="" size="icon">
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!modelId || !form.watch("message").trim()}
+              >
                 <LucideSend className="size-4" />
               </Button>
               <ModelSelector modelId={modelId} setModelId={setModelId} />
