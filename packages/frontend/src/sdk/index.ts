@@ -40,7 +40,7 @@ export class AISDK {
     requestMessage: IMessageRequest[]
   ) {
     const session = JSON.parse(
-      localStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "[]"
+      sessionStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "[]"
     ) as Session;
 
     session.push({
@@ -58,7 +58,7 @@ export class AISDK {
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
-      localStorage.setItem(
+      sessionStorage.setItem(
         SESSION_STORAGE_KEY(sessionId),
         JSON.stringify(session)
       );

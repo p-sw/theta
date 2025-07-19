@@ -19,7 +19,12 @@ export default function Chat() {
   const newSessionId = useHyperId();
   const [sessionId] = useState<string>(newSessionId);
 
-  const [session] = useStorage<Session>(SESSION_STORAGE_KEY(sessionId), []);
+  const [session] = useStorage<Session>(
+    SESSION_STORAGE_KEY(sessionId),
+    [],
+    undefined,
+    { temp: true }
+  );
 
   const form = useForm({
     defaultValues: {
