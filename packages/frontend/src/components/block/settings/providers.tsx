@@ -63,7 +63,17 @@ function ModelSection() {
     if (models.length > 0 && !refetch) return;
     const fetchModels = async () => {
       const models = await AiSdk.getAvailableModels();
-      setModels(models);
+      setModels((p) => {
+        // only add missing models, ignore existing models
+        const newModels = [...p];
+        models.forEach((model) => {
+          const index = newModels.findIndex((m) => m.id === model.id);
+          if (index === -1) {
+            newModels.push(model);
+          }
+        });
+        return newModels;
+      });
     };
     startTransition(fetchModels);
   }, [models, refetch, setModels, apiKey]);
