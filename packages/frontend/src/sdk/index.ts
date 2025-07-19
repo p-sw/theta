@@ -1,4 +1,4 @@
-import { API_KEY, SESSION, type IApiKey } from "@/lib/const";
+import { API_KEY, SESSION_STORAGE_KEY, type IApiKey } from "@/lib/const";
 import { dispatchStorageEvent, hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
@@ -40,7 +40,7 @@ export class AISDK {
     requestMessage: IMessageRequest[]
   ) {
     const session = JSON.parse(
-      localStorage.getItem(SESSION(sessionId)) ?? "[]"
+      localStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "[]"
     ) as Session;
 
     session.push({
@@ -58,8 +58,11 @@ export class AISDK {
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
-      localStorage.setItem(SESSION(sessionId), JSON.stringify(session));
-      dispatchStorageEvent(SESSION(sessionId));
+      localStorage.setItem(
+        SESSION_STORAGE_KEY(sessionId),
+        JSON.stringify(session)
+      );
+      dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
     }
 
     switch (provider) {

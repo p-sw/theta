@@ -18,4 +18,4 @@ export type IApiKey = Record<IProvider, string | null>;
 export const MODELS = "models";
 export const SELECTED_MODEL = "selected_model";
 
-export const SESSION = (id: string) => `session-${id}`;
+export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;

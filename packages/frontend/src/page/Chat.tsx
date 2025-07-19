@@ -8,7 +8,7 @@ import { AiSdk } from "@/sdk";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
-import { SESSION } from "@/lib/const";
+import { SESSION_STORAGE_KEY } from "@/lib/const";
 import type { Session } from "@/sdk/shared";
 import { UserMessage } from "@/components/block/chat/user-message";
 import { AssistantMessage } from "@/components/block/chat/assistant-message";
@@ -19,7 +19,7 @@ export default function Chat() {
   const newSessionId = useHyperId();
   const [sessionId] = useState<string>(newSessionId);
 
-  const [session] = useStorage<Session>(SESSION(sessionId), []);
+  const [session] = useStorage<Session>(SESSION_STORAGE_KEY(sessionId), []);
 
   const form = useForm({
     defaultValues: {
