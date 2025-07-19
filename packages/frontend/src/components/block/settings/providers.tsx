@@ -1,7 +1,7 @@
 import {
   SettingsSection,
   SettingsSubSection,
-} from "@/components/page-util/settings";
+} from "@/components/layout/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";

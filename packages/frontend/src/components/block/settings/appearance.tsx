@@ -1,7 +1,7 @@
 import {
   SettingsSection,
   SettingsSubSection,
-} from "@/components/page-util/settings";
+} from "@/components/layout/settings";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import LucideSun from "~icons/lucide/sun";
