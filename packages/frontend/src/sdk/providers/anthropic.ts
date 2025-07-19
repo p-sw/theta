@@ -12,8 +12,7 @@ import {
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
-import type { IModelInfo } from "@/sdk/shared";
-import type { Dispatch, SetStateAction } from "react";
+import type { IModelInfo, Session } from "@/sdk/shared";
 
 export class AnthropicUnexpectedMessageTypeError extends Error {
   readonly type: string;
@@ -48,7 +47,7 @@ function isErrorBody(body: unknown): body is IErrorBody {
   return true;
 }
 
-export class AnthropicProvider extends API {
+export class AnthropicProvider extends API<IMessage> {
   protected readonly API_BASE_URL = "https://api.anthropic.com/v1";
 
   constructor(apiKey: string) {
@@ -92,6 +91,35 @@ export class AnthropicProvider extends API {
     }
   }
 
+  protected translateSession(session: Session): IMessage[] {
+    const messages: IMessage[] = [];
+
+    for (const turn of session) {
+      const message: IMessage = {
+        role: turn.type === "request" ? "user" : "assistant",
+        content: [],
+      };
+      for (const turnPartial of turn.message) {
+        switch (turnPartial.type) {
+          case "text":
+            message.content.push({ type: "text", text: turnPartial.text });
+            break;
+          case "start":
+          case "end":
+            break;
+          default:
+            console.warn(
+              "[Anthropic] Unexpected message type while translating session:",
+              turnPartial
+            );
+        }
+      }
+      messages.push(message);
+    }
+
+    return messages;
+  }
+
   async getModels(): Promise<IModelInfo[]> {
     // get models from API
     const response = await proxyfetch(
@@ -112,10 +140,12 @@ export class AnthropicProvider extends API {
   }
 
   async message(
-    messages: IMessage[],
+    session: Session,
     model: string,
-    result: Dispatch<SetStateAction<IMessageResult[]>>
+    result: (updator: (message: IMessageResult[]) => IMessageResult[]) => void
   ): Promise<void> {
+    const messages = this.translateSession(session);
+
     const response = await proxyfetch(this.API_BASE_URL + "/messages", {
       ...this.buildAPIRequest("POST"),
       body: JSON.stringify({
