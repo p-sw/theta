@@ -22,7 +22,7 @@ export abstract class API<T> {
     method: RequestInit["method"]
   ): RequestInit;
   protected abstract ensureSuccess(response: Response): Promise<void>;
-  protected abstract translateRequestMessage(message: IMessageRequest[]): T[];
+  protected abstract translateSession(session: Session): T[];
   abstract message(
     session: Session,
     model: string,
