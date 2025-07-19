@@ -55,7 +55,9 @@ export class AnthropicProvider extends API<IMessage> {
     this.apiKey = apiKey;
   }
 
-  protected buildAPIRequest(method: RequestInit["method"]): RequestInit {
+  protected buildAPIRequest(
+    method: RequestInit["method"]
+  ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> } {
     return {
       headers: {
         "x-api-key": this.apiKey,
@@ -148,7 +150,7 @@ export class AnthropicProvider extends API<IMessage> {
 
     const response = await proxyfetch(this.API_BASE_URL + "/messages", {
       ...this.buildAPIRequest("POST"),
-      body: JSON.stringify({
+      body: {
         model,
         max_tokens: 1024,
         messages,
@@ -159,7 +161,7 @@ export class AnthropicProvider extends API<IMessage> {
             text: "Today's datetime is " + new Date().toISOString(),
           },
         ],
-      }),
+      },
     });
 
     await this.ensureSuccess(response);

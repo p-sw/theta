@@ -20,7 +20,7 @@ export abstract class API<T> {
 
   protected abstract buildAPIRequest(
     method: RequestInit["method"]
-  ): RequestInit;
+  ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };
   protected abstract ensureSuccess(response: Response): Promise<void>;
   protected abstract translateSession(session: Session): T[];
   abstract message(
