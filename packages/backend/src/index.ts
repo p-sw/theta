@@ -35,34 +35,30 @@ const app = new Elysia()
           body: method === "GET" ? undefined : JSON.stringify(data),
         });
 
-        // Process response data
-        const responseData = await response.text();
-        let parsedData;
-
-        try {
-          parsedData = JSON.parse(responseData);
-        } catch {
-          parsedData = responseData;
-        }
-
-        return {
-          ok: response.ok,
+        // Return the response directly with all original headers and body
+        return new Response(response.body, {
           status: response.status,
           statusText: response.statusText,
           headers: Object.fromEntries(response.headers.entries()),
-          data: parsedData,
-        };
+        });
       } catch (error) {
         console.error("Error occurred during proxy request:", error);
 
-        return {
-          ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred",
-          status: 500,
-        };
+        return new Response(
+          JSON.stringify({
+            proxyerror:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Theta-Proxy-Error": "true",
+            },
+          }
+        );
       }
     },
     {
