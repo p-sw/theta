@@ -1,3 +1,4 @@
+import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
@@ -38,6 +39,7 @@ export default function Chat() {
               <Button type="submit" className="" size="icon">
                 <LucideSend className="size-4" />
               </Button>
+              <ModelSelector />
             </div>
           </TextareaContainer>
         </form>
