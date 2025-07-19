@@ -15,3 +15,4 @@ export interface IApiKey {
 }
 
 export const MODELS = "models";
+export const SELECTED_MODEL = "selected_model";

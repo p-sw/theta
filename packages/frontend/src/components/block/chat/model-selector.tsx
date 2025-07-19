@@ -19,14 +19,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MODELS } from "@/lib/const";
+import { MODELS, SELECTED_MODEL } from "@/lib/const";
 import type { IModelInfo } from "@/sdk/shared";
 
 export function ModelSelector() {
   const [models] = useStorage<IModelInfo[]>(MODELS, []);
 
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState(""); // IModelInfo.id
+  const [value, setValue] = useStorage<string>(SELECTED_MODEL, ""); // IModelInfo.id
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
