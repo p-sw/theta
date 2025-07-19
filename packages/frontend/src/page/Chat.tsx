@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea, TextareaContainer } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 
@@ -22,24 +22,24 @@ export default function Chat() {
               console.log(data);
             });
           }}
-          className="relative p-4 h-1/3"
+          className="relative p-4 h-2/5"
         >
-          <FormItem className="h-full">
-            <FormControl>
-              <Textarea
-                {...form.register("message")}
-                className="resize-none text-sm"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-          <Button
-            type="submit"
-            className="absolute bottom-6 right-6"
-            size="icon"
-          >
-            <LucideSend className="size-4" />
-          </Button>
+          <TextareaContainer className="flex flex-col gap-1 h-full">
+            <FormItem className="w-full h-full">
+              <FormControl>
+                <Textarea
+                  {...form.register("message")}
+                  className="resize-none text-sm"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+            <div className="flex flex-row-reverse justify-between">
+              <Button type="submit" className="" size="icon">
+                <LucideSend className="size-4" />
+              </Button>
+            </div>
+          </TextareaContainer>
         </form>
       </Form>
     </main>
