@@ -110,13 +110,13 @@ export function useStorage<T>(
   return [value, updateToStorage];
 }
 
-const hid = hyperid();
+export const hyperidInstance = hyperid();
 
 export function useHyperId() {
-  const [id, setId] = useState<string>(hid());
+  const [id, setId] = useState<string>(hyperidInstance());
 
   useEffect(() => {
-    setId(hid());
+    setId(hyperidInstance());
   }, []);
 
   return id;
