@@ -26,7 +26,7 @@ export abstract class API<T> {
   abstract message(
     session: Session,
     model: string,
-    result: (updator: (message: IMessageResult[]) => IMessageResult[]) => void // prev -> new
+    result: (updator: (message: IMessageResult[]) => void) => void // prev -> new
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
 }

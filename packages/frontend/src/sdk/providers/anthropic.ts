@@ -142,7 +142,7 @@ export class AnthropicProvider extends API<IMessage> {
   async message(
     session: Session,
     model: string,
-    result: (updator: (message: IMessageResult[]) => IMessageResult[]) => void
+    result: (updator: (message: IMessageResult[]) => void) => void
   ): Promise<void> {
     const messages = this.translateSession(session);
 
@@ -175,6 +175,8 @@ export class AnthropicProvider extends API<IMessage> {
 
     const decoder = new TextDecoder();
     let buffer = "";
+    // actual index of content block in message result
+    const contentBlockMap: Record<number, number> = {};
 
     try {
       while (true) {
@@ -205,42 +207,35 @@ export class AnthropicProvider extends API<IMessage> {
                   console.log("pong!");
                   break;
                 case "message_start":
-                  result((prev) => [
-                    ...prev,
-                    {
-                      type: "start",
-                    },
-                  ]);
+                  result((prev) => prev.push({ type: "start" }));
                   break;
                 case "message_stop":
-                  result((prev) => [
-                    ...prev,
-                    {
-                      type: "end",
-                    },
-                  ]);
+                  result((prev) => prev.push({ type: "end" }));
                   break;
                 case "content_block_start":
-                  result((prev) => [
-                    ...prev,
-                    {
+                  result((prev) => {
+                    const index = (event as IMessageResultContentBlockStart)
+                      .index;
+                    contentBlockMap[index] = prev.length;
+                    prev.push({
                       type: "text",
                       text: (event as IMessageResultContentBlockStart)
                         .content_block.text,
-                    },
-                  ]);
+                    });
+                  });
                   break;
                 case "content_block_delta":
-                  result((prev) => [
-                    ...prev.slice(0, event.index),
-                    {
+                  result((prev) => {
+                    const index = (event as IMessageResultContentBlockDelta)
+                      .index;
+                    const actualIndex = contentBlockMap[index];
+                    prev[actualIndex] = {
                       type: "text",
                       text:
-                        (prev[event.index] as IMessageResultText).text +
+                        (prev[actualIndex] as IMessageResultText).text +
                         (event as IMessageResultContentBlockDelta).delta.text,
-                    },
-                    ...prev.slice(event.index + 1),
-                  ]);
+                    };
+                  });
                   break;
                 case "content_block_stop":
                 case "message_delta":
