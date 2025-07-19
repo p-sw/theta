@@ -15,6 +15,7 @@ import LucideSun from "~icons/lucide/sun";
 import LucideMoon from "~icons/lucide/moon";
 import LucideMessageCircleMore from "~icons/lucide/message-circle-more";
 import LucideSettings from "~icons/lucide/settings";
+import LucideHistory from "~icons/lucide/history";
 import { usePath, useTheme } from "@/lib/storage-hooks";
 
 export default function Menu() {
@@ -56,6 +57,9 @@ export default function Menu() {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setPath(PATHS.SETTINGS)}>
             <LucideSettings className="size-4" /> Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setPath(PATHS.SESSIONS)}>
+            <LucideHistory className="size-4" /> Sessions
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

@@ -9,6 +9,7 @@ export const PATH = "path";
 export const PATHS = {
   CHAT: "/",
   SETTINGS: "/settings",
+  SESSIONS: "/sessions",
 };
 
 export const API_KEY = "api_key";
