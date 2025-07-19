@@ -1,5 +1,3 @@
-import type { Dispatch, SetStateAction } from "react";
-
 export type IProvider = "anthropic";
 export interface IProviderInfo {
   id: IProvider;
@@ -28,7 +26,7 @@ export abstract class API<T> {
   abstract message(
     prompt: IMessageRequest[],
     model: string,
-    result: Dispatch<SetStateAction<IMessageResult[]>>
+    result: (message: IMessageResult[]) => IMessageResult[] // prev -> new
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
 }
