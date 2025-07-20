@@ -12,7 +12,7 @@ import {
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
-import type { IModelInfo, Session } from "@/sdk/shared";
+import type { IModelInfo, SessionTurns } from "@/sdk/shared";
 
 export class AnthropicUnexpectedMessageTypeError extends Error {
   readonly type: string;
@@ -93,7 +93,7 @@ export class AnthropicProvider extends API<IMessage> {
     }
   }
 
-  protected translateSession(session: Session): IMessage[] {
+  protected translateSession(session: SessionTurns): IMessage[] {
     const messages: IMessage[] = [];
 
     for (const turn of session) {
@@ -142,7 +142,7 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   async message(
-    session: Session,
+    session: SessionTurns,
     model: string,
     result: (updator: (message: IMessageResult[]) => void) => void
   ): Promise<void> {

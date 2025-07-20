@@ -6,7 +6,7 @@ import type {
   IMessageResult,
   IProvider,
   IProviderInfo,
-  Session,
+  TemporarySession,
 } from "@/sdk/shared";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
@@ -40,17 +40,17 @@ export class AISDK {
     requestMessage: IMessageRequest[]
   ) {
     const session = JSON.parse(
-      sessionStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "[]"
-    ) as Session;
+      sessionStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
+    ) as TemporarySession;
 
-    session.push({
+    session.turns.push({
       type: "request",
       messageId: hyperidInstance(),
       message: requestMessage,
     });
 
     const resultMessage: IMessageResult[] = [];
-    session.push({
+    session.turns.push({
       type: "response",
       messageId: hyperidInstance(),
       message: resultMessage,
@@ -68,7 +68,7 @@ export class AISDK {
     switch (provider) {
       case "anthropic":
         return this.anthropic?.message(
-          session.slice(
+          session.turns.slice(
             0,
             -1
           ) /* removes just inserted empty response buffer */,

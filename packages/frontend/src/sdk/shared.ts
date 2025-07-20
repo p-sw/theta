@@ -22,9 +22,9 @@ export abstract class API<T> {
     method: RequestInit["method"]
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };
   protected abstract ensureSuccess(response: Response): Promise<void>;
-  protected abstract translateSession(session: Session): T[];
+  protected abstract translateSession(session: SessionTurns): T[];
   abstract message(
-    session: Session,
+    session: SessionTurns,
     model: string,
     result: (updator: (message: IMessageResult[]) => void) => void // prev -> new
   ): Promise<void>;
@@ -63,7 +63,7 @@ export interface IModelInfo {
   disabled: boolean;
 }
 
-export type Session = (
+export type SessionTurns = (
   | {
       type: "request";
       messageId: string;
@@ -75,3 +75,12 @@ export type Session = (
       message: IMessageResult[];
     }
 )[];
+export type PermanentSession = {
+  id: string;
+  title: string;
+  turns: SessionTurns;
+};
+export type TemporarySession = {
+  id: string;
+  turns: SessionTurns;
+};
