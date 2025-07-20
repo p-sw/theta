@@ -12,10 +12,15 @@ interface IStorageOptions {
   temp?: boolean;
 }
 
+export function dispatchEvent<T = unknown>(
+  key: string,
+  data?: CustomEventInit<T> | undefined
+) {
+  window.dispatchEvent(new CustomEvent<T>(key, data));
+}
+
 export function dispatchStorageEvent<T = unknown>(key: string, data?: T) {
-  window.dispatchEvent(
-    new CustomEvent<T>(STORAGE_CHANGE_EVENT(key), { detail: data })
-  );
+  dispatchEvent(STORAGE_CHANGE_EVENT(key), { detail: data });
 }
 
 export function useStorage<T>(
