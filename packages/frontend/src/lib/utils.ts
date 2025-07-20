@@ -23,6 +23,18 @@ export function dispatchStorageEvent<T = unknown>(key: string, data?: T) {
   dispatchEvent(STORAGE_CHANGE_EVENT(key), { detail: data });
 }
 
+export function useEventListener<T = unknown>(
+  key: string,
+  onEvent: (event: CustomEvent<T>) => void
+) {
+  useEffect(() => {
+    window.addEventListener(key, onEvent as EventListener);
+    return () => {
+      window.removeEventListener(key, onEvent as EventListener);
+    };
+  }, [key, onEvent]);
+}
+
 export function useStorage<T>(
   key: string,
   fallbackValue: T,
