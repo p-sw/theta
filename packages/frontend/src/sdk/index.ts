@@ -35,12 +35,14 @@ export class AISDK {
 
   async message(
     sessionId: string,
+    isPermanentSession: boolean,
     provider: IProvider,
     model: string,
     requestMessage: IMessageRequest[]
   ) {
+    const storage = isPermanentSession ? localStorage : sessionStorage;
     const session = JSON.parse(
-      sessionStorage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
+      storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
     ) as TemporarySession;
 
     session.turns.push({
@@ -58,10 +60,7 @@ export class AISDK {
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
-      sessionStorage.setItem(
-        SESSION_STORAGE_KEY(sessionId),
-        JSON.stringify(session)
-      );
+      storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
       dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
     }
 
