@@ -19,3 +19,7 @@ export const MODELS = "models";
 export const SELECTED_MODEL = "selected_model";
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
+
+export const NEW_SESSION_EVENT = "new-session";
+export const CLEAR_SESSION_EVENT = "clear-session";
+export const SAVE_SESSION_EVENT = "save-session";

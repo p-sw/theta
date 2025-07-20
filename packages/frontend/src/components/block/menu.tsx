@@ -8,7 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PATHS } from "@/lib/const";
+import {
+  CLEAR_SESSION_EVENT,
+  NEW_SESSION_EVENT,
+  PATHS,
+  SAVE_SESSION_EVENT,
+} from "@/lib/const";
 import { useEffect } from "react";
 import LucideMenu from "~icons/lucide/menu";
 import LucideSun from "~icons/lucide/sun";
@@ -17,6 +22,10 @@ import LucideMessageCircleMore from "~icons/lucide/message-circle-more";
 import LucideSettings from "~icons/lucide/settings";
 import LucideHistory from "~icons/lucide/history";
 import { usePath, useTheme } from "@/lib/storage-hooks";
+import LucidePlus from "~icons/lucide/plus";
+import LucideTrash from "~icons/lucide/trash";
+import LucideSave from "~icons/lucide/save";
+import { dispatchEvent } from "@/lib/utils";
 
 export default function Menu() {
   const [theme, setTheme] = useTheme();
@@ -39,7 +48,6 @@ export default function Menu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => setTheme("light")}>
             <LucideSun className="size-4" /> Light
@@ -50,7 +58,6 @@ export default function Menu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Page</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => setPath(PATHS.CHAT)}>
             <LucideMessageCircleMore className="size-4" /> Chat
@@ -60,6 +67,19 @@ export default function Menu() {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setPath(PATHS.SESSIONS)}>
             <LucideHistory className="size-4" /> Sessions
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Session Control</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => dispatchEvent(NEW_SESSION_EVENT)}>
+            <LucidePlus className="size-4" /> New session
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => dispatchEvent(CLEAR_SESSION_EVENT)}>
+            <LucideTrash className="size-4" /> Clear this session
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => dispatchEvent(SAVE_SESSION_EVENT)}>
+            <LucideSave className="size-4" /> Save this session
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
