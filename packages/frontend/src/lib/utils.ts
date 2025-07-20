@@ -97,8 +97,11 @@ export function useStorage<T>(
 
   const initKey = useCallback(() => {
     const item = storage.getItem(key);
+    if (!item) {
+      storage.setItem(key, setParse(fallbackValue));
+    }
     return item ? getParse(item) : fallbackValue;
-  }, [key, getParse, fallbackValue, storage]);
+  }, [key, getParse, fallbackValue, storage, setParse]);
 
   const [value, setValue] = useState<T>(initKey);
 
