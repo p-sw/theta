@@ -28,7 +28,7 @@ export default function Sessions() {
   const temporaryKeys = useSessionKeys({ sessionStorage: true });
 
   return (
-    <main className="h-svh p-8 flex flex-col gap-8">
+    <main className="min-h-svhfull p-8 flex flex-col gap-8">
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Saved Sessions</h1>
         <div className="flex flex-col gap-2">

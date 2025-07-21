@@ -94,7 +94,7 @@ export default function Chat() {
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
 
   return (
-    <main className="h-svh flex flex-col">
+    <main className="h-svhfull flex flex-col">
       <section className="h-full overflow-y-auto p-8 flex flex-col gap-8">
         {session.turns.map((message) =>
           message.type === "request" ? (

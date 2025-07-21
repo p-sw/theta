@@ -59,14 +59,10 @@ export default function Menu() {
   const [saveSessionDialogOpen, setSaveSessionDialogOpen] = useState(false);
 
   return (
-    <>
+    <nav className="fixed top-0 inset-x-0 z-50 h-16 bg-background/75 dark:bg-background/75 border-b backdrop-blur-sm flex flex-row justify-between items-center px-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed top-4 left-4 z-50 bg-background dark:bg-background"
-          >
+          <Button variant="outline" size="icon">
             <LucideMenu />
           </Button>
         </DropdownMenuTrigger>
@@ -116,7 +112,7 @@ export default function Menu() {
       >
         <SaveSessionItem />
       </Dialog>
-    </>
+    </nav>
   );
 }
 

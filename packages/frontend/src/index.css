@@ -49,6 +49,7 @@
     BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
     "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --height-svhfull: calc(100svh - 4rem);
 }
 
 :root {
@@ -125,6 +126,10 @@
     @apply border-border outline-ring/50 font-pretendard;
   }
   body {
+    /* cannot apply pt-16 to body due to scroll-lock on DropdownMenu open */
     @apply bg-background text-foreground transition-colors duration-300;
+  }
+  #root {
+    @apply pt-16 min-h-svhfull;
   }
 }
