@@ -4,8 +4,9 @@ import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
 import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
+import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
-import { use, useCallback } from "react";
+import { use, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 import {
@@ -34,6 +35,7 @@ export default function Chat() {
     setIsPermanentSession,
   } = use(ChatContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
+  const { scrollContainerRef, triggerAutoScroll } = useAutoScroll<HTMLElement>();
 
   const [session, setSession] = useStorage<
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
@@ -93,9 +95,14 @@ export default function Chat() {
   useEventListener(CLEAR_SESSION_EVENT, handleClearSession);
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
 
+  // Trigger auto-scroll when session turns change (new messages)
+  useEffect(() => {
+    triggerAutoScroll();
+  }, [session.turns.length, triggerAutoScroll]);
+
   return (
     <main className="h-svhfull flex flex-col">
-      <section className="h-full overflow-y-auto p-8 flex flex-col gap-8">
+      <section ref={scrollContainerRef} className="h-full overflow-y-auto p-8 flex flex-col gap-8">
         {session.turns.map((message) =>
           message.type === "request" ? (
             <UserMessage
