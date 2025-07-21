@@ -1,7 +1,6 @@
 import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
   IErrorBody,
-  IListModelsBody,
   IMessage,
   IMessageResultData,
   IMessageResultMessageDelta,

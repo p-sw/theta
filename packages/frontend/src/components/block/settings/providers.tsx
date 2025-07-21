@@ -58,7 +58,8 @@ function ModelSection() {
   useEffect(() => {
     if (Object.values(apiKey).every((v) => v === null)) return;
     if (models.length > 0 && !refetch) return;
-    const fetchModels = async () => {
+    setRefetch(false);
+    startTransition(async () => {
       const models = await AiSdk.getAvailableModels();
       setModels((p) => {
         // only add missing models, ignore existing models
@@ -71,8 +72,7 @@ function ModelSection() {
         });
         return newModels;
       });
-    };
-    startTransition(fetchModels);
+    });
   }, [models, refetch, setModels, apiKey]);
 
   return (
