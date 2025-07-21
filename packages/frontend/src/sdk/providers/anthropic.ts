@@ -207,46 +207,52 @@ export class AnthropicProvider extends API<IMessage> {
                 switch (event.delta.stop_reason) {
                   case "end_turn":
                     setStop({
-                      reason: "Assistant has finished its turn.",
-                      level: "none",
+                      type: "log",
+                      message: "Assistant has finished its turn.",
                     });
                     break;
                   case "max_tokens":
                     setStop({
+                      type: "message",
                       reason:
                         "The response reached the maximum number of tokens.",
-                      level: "info",
+                      level: "error",
                     });
                     break;
                   case "stop_sequence":
                     setStop({
+                      type: "message",
                       reason: `The response reached the stop sequence: ${
                         (event as IMessageResultMessageDelta).delta
                           .stop_sequence
                       }`,
-                      level: "info",
+                      level: "subtext",
                     });
                     break;
                   case "tool_use":
                     setStop({
+                      type: "message",
                       reason: "Claude AI used a tool.",
                       level: "info",
-                    });
+                    }); // TODO: handle tool use with type: 'tool'
                     break;
                   case "pause_turn":
                     setStop({
+                      type: "message",
                       reason: "Claude AI paused its turn.",
                       level: "info",
-                    });
+                    }); // TODO: maybe retry?
                     break;
                   case "refusal":
                     setStop({
+                      type: "message",
                       reason: "Claude AI refused to answer.",
                       level: "error",
                     });
                     break;
                   default:
                     setStop({
+                      type: "message",
                       reason: `The response reached an unknown stop reason: ${event.delta.stop_reason}`,
                       level: "error",
                     });

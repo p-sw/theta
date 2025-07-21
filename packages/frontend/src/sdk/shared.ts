@@ -74,17 +74,35 @@ export type SessionTurnsResponse = {
   type: "response";
   messageId: string;
   message: IMessageResult[];
-  stop?: {
-    reason: string;
-    /**
-     * error: the response was terminated due to an error
-     * info: user should know, but not that important
-     * subtext: user may want to know, but not that important
-     * none: it will not be shown to the user
-     */
-    level: "error" | "info" | "subtext" | "none";
-  };
+  stop?: SessionTurnsResponseStop;
 };
+
+export type SessionTurnsResponseStop =
+  | SessionTurnsResponseStopMessage
+  | SessionTurnsResponseStopLog;
+
+/**
+ * Messages that are shown to the user
+ */
+export interface SessionTurnsResponseStopMessage {
+  type: "message";
+  reason: string;
+  /**
+   * error: the response was terminated due to an error
+   * info: user should know, but not that important
+   * subtext: user may want to know, but not that important
+   * none: it will not be shown to the user
+   */
+  level: "error" | "info" | "subtext";
+}
+
+/**
+ * Logs that are not shown to the user
+ */
+export interface SessionTurnsResponseStopLog {
+  type: "log";
+  message: string;
+}
 
 export type SessionTurns = (SessionTurnsRequest | SessionTurnsResponse)[];
 export interface ISessionBase {
