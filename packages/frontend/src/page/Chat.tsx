@@ -33,9 +33,14 @@ export default function Chat() {
 
   const [session, setSession] = useStorage<
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
-  >(SESSION_STORAGE_KEY(sessionId), { id: sessionId, turns: [] }, undefined, {
-    temp: !isPermanentSession,
-  });
+  >(
+    SESSION_STORAGE_KEY(sessionId),
+    { id: sessionId, turns: [], createdAt: Date.now(), updatedAt: Date.now() },
+    undefined,
+    {
+      temp: !isPermanentSession,
+    }
+  );
 
   const form = useForm({
     defaultValues: {
@@ -55,14 +60,23 @@ export default function Chat() {
     setSessionId(hyperInstance());
   }, [hyperInstance]);
   const handleClearSession = useCallback(() => {
-    setSession({ id: sessionId, turns: [] });
+    setSession((prev) => ({
+      id: sessionId,
+      turns: [],
+      createdAt: prev.createdAt,
+      updatedAt: Date.now(),
+    }));
   }, [sessionId]);
   const handleSaveSession = useCallback(
     (e: CustomEvent<SaveSessionForm>) => {
       // copy from sessionStorage to localStorage
       localStorage.setItem(
         SESSION_STORAGE_KEY(sessionId),
-        JSON.stringify({ ...session, title: e.detail.title })
+        JSON.stringify({
+          ...session,
+          title: e.detail.title,
+          updatedAt: Date.now(),
+        })
       );
       // make this page use localStorage
       setIsPermanentSession(true);

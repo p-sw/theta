@@ -60,6 +60,7 @@ export class AISDK {
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
+      session.updatedAt = Date.now();
       storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
       dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
     }

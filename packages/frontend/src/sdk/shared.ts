@@ -75,12 +75,13 @@ export type SessionTurns = (
       message: IMessageResult[];
     }
 )[];
-export type PermanentSession = {
+export interface ISessionBase {
   id: string;
+  turns: SessionTurns;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface PermanentSession extends ISessionBase {
   title: string;
-  turns: SessionTurns;
-};
-export type TemporarySession = {
-  id: string;
-  turns: SessionTurns;
-};
+}
+export interface TemporarySession extends ISessionBase {}
