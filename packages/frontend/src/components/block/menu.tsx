@@ -137,7 +137,7 @@ export function SaveSessionItem() {
   return (
     <DialogContent>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
           <DialogHeader>
             <DialogTitle>Save this session</DialogTitle>
             <DialogDescription>
