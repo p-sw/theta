@@ -2,10 +2,10 @@ import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
-import { useEventListener, useHyperInstance, useStorage } from "@/lib/utils";
+import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { AiSdk } from "@/sdk";
-import { useCallback, useState } from "react";
+import { use, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 import {
@@ -24,12 +24,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SaveSessionForm } from "@/components/block/menu";
+import { ChatContext } from "./context/Chat";
 
 export default function Chat() {
-  const [isPermanentSession, setIsPermanentSession] = useState(false);
+  const {
+    sessionId,
+    setNewSession,
+    isPermanentSession,
+    setIsPermanentSession,
+  } = use(ChatContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
-  const hyperInstance = useHyperInstance();
-  const [sessionId, setSessionId] = useState<string>(hyperInstance());
 
   const [session, setSession] = useStorage<
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
@@ -57,8 +61,8 @@ export default function Chat() {
   };
 
   const handleNewSession = useCallback(() => {
-    setSessionId(hyperInstance());
-  }, [hyperInstance]);
+    setNewSession();
+  }, [setNewSession]);
   const handleClearSession = useCallback(() => {
     setSession((prev) => ({
       id: sessionId,

@@ -1,4 +1,4 @@
-import { STORAGE_CHANGE_EVENT } from "@/lib/const";
+import { STORAGE_CHANGE_EVENT, STORAGE_CHANGE_EVENT_ALL } from "@/lib/const";
 import { clsx, type ClassValue } from "clsx";
 import hyperid from "hyperid";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -99,6 +99,7 @@ export function useStorage<T>(
     const item = storage.getItem(key);
     if (!item) {
       storage.setItem(key, setParse(fallbackValue));
+      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     }
     return item ? getParse(item) : fallbackValue;
   }, [key, getParse, fallbackValue, storage, setParse]);
@@ -114,6 +115,7 @@ export function useStorage<T>(
       setValue(modified);
       storage.setItem(key, setParse(modified));
       dispatchStorageEvent(key);
+      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     },
     [key, setParse, storage, value]
   );
@@ -130,6 +132,29 @@ export function useStorage<T>(
   }, [key]);
 
   return [value, updateToStorage];
+}
+
+export function useStorageKey({
+  sessionStorage: _sessionStorage,
+}: {
+  sessionStorage: boolean;
+}) {
+  const [keys, setKeys] = useState<string[]>(
+    Object.keys(_sessionStorage ? sessionStorage : localStorage)
+  );
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setKeys(Object.keys(_sessionStorage ? sessionStorage : localStorage));
+    };
+
+    window.addEventListener(STORAGE_CHANGE_EVENT_ALL, handleStorageChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGE_EVENT_ALL, handleStorageChange);
+    };
+  }, []);
+
+  return keys;
 }
 
 export const hyperidInstance = hyperid();

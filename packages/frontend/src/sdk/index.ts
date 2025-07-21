@@ -1,5 +1,14 @@
-import { API_KEY, SESSION_STORAGE_KEY, type IApiKey } from "@/lib/const";
-import { dispatchStorageEvent, hyperidInstance } from "@/lib/utils";
+import {
+  API_KEY,
+  SESSION_STORAGE_KEY,
+  STORAGE_CHANGE_EVENT_ALL,
+  type IApiKey,
+} from "@/lib/const";
+import {
+  dispatchEvent,
+  dispatchStorageEvent,
+  hyperidInstance,
+} from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
   IMessageRequest,
@@ -63,6 +72,7 @@ export class AISDK {
       session.updatedAt = Date.now();
       storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
       dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
+      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     }
 
     switch (provider) {
