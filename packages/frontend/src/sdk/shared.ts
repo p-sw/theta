@@ -26,7 +26,8 @@ export abstract class API<T> {
   abstract message(
     session: SessionTurns,
     model: string,
-    result: (updator: (message: IMessageResult[]) => void) => void // prev -> new
+    result: (updator: (message: IMessageResult[]) => void) => void, // prev -> new
+    setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
 }
@@ -63,18 +64,29 @@ export interface IModelInfo {
   disabled: boolean;
 }
 
-export type SessionTurns = (
-  | {
-      type: "request";
-      messageId: string;
-      message: IMessageRequest[];
-    }
-  | {
-      type: "response";
-      messageId: string;
-      message: IMessageResult[];
-    }
-)[];
+export type SessionTurnsRequest = {
+  type: "request";
+  messageId: string;
+  message: IMessageRequest[];
+};
+
+export type SessionTurnsResponse = {
+  type: "response";
+  messageId: string;
+  message: IMessageResult[];
+  stop?: {
+    reason: string;
+    /**
+     * error: the response was terminated due to an error
+     * info: user should know, but not that important
+     * subtext: user may want to know, but not that important
+     * none: it will not be shown to the user
+     */
+    level: "error" | "info" | "subtext" | "none";
+  };
+};
+
+export type SessionTurns = (SessionTurnsRequest | SessionTurnsResponse)[];
 export interface ISessionBase {
   id: string;
   turns: SessionTurns;

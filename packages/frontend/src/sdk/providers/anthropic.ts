@@ -3,12 +3,13 @@ import type {
   IErrorBody,
   IListModelsBody,
   IMessage,
-  IMessageResultContentBlockDelta,
-  IMessageResultContentBlockStart,
+  IMessageResultData,
+  IMessageResultMessageDelta,
 } from "@/sdk/providers/anthropic.types";
 import {
   API,
   ExpectedError,
+  type SessionTurnsResponse,
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
@@ -144,7 +145,8 @@ export class AnthropicProvider extends API<IMessage> {
   async message(
     session: SessionTurns,
     model: string,
-    result: (updator: (message: IMessageResult[]) => void) => void
+    result: (updator: (message: IMessageResult[]) => void) => void,
+    setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void> {
     const messages = this.translateSession(session);
 
@@ -194,56 +196,88 @@ export class AnthropicProvider extends API<IMessage> {
             const data = line.slice(6);
 
             try {
-              const event = JSON.parse(data);
-
-              // handling:
-              // - ping
-              // - message_start
-              // - message_stop
-              // - content_block_start
-              // - content_block_delta
-              // - content_block_stop
-              // - message_delta - todo
-              switch (event.type) {
-                case "ping":
-                  console.log("pong!");
-                  break;
-                case "message_start":
-                  result((prev) => prev.push({ type: "start" }));
-                  break;
-                case "message_stop":
-                  result((prev) => prev.push({ type: "end" }));
-                  break;
-                case "content_block_start":
-                  result((prev) => {
-                    const index = (event as IMessageResultContentBlockStart)
-                      .index;
-                    contentBlockMap[index] = prev.length;
-                    prev.push({
-                      type: "text",
-                      text: (event as IMessageResultContentBlockStart)
-                        .content_block.text,
+              const event = JSON.parse(data) as IMessageResultData;
+              if (event.type === "ping") {
+                console.log("pong!");
+              } else if (event.type === "message_start") {
+                result((prev) => prev.push({ type: "start" }));
+              } else if (event.type === "message_stop") {
+                result((prev) => prev.push({ type: "end" }));
+              } else if (event.type === "message_delta") {
+                switch (event.delta.stop_reason) {
+                  case "end_turn":
+                    setStop({
+                      reason: "Assistant has finished its turn.",
+                      level: "none",
                     });
+                    break;
+                  case "max_tokens":
+                    setStop({
+                      reason:
+                        "The response reached the maximum number of tokens.",
+                      level: "info",
+                    });
+                    break;
+                  case "stop_sequence":
+                    setStop({
+                      reason: `The response reached the stop sequence: ${
+                        (event as IMessageResultMessageDelta).delta
+                          .stop_sequence
+                      }`,
+                      level: "info",
+                    });
+                    break;
+                  case "tool_use":
+                    setStop({
+                      reason: "Claude AI used a tool.",
+                      level: "info",
+                    });
+                    break;
+                  case "pause_turn":
+                    setStop({
+                      reason: "Claude AI paused its turn.",
+                      level: "info",
+                    });
+                    break;
+                  case "refusal":
+                    setStop({
+                      reason: "Claude AI refused to answer.",
+                      level: "error",
+                    });
+                    break;
+                  default:
+                    setStop({
+                      reason: `The response reached an unknown stop reason: ${event.delta.stop_reason}`,
+                      level: "error",
+                    });
+                    break;
+                }
+              } else if (event.type === "content_block_start") {
+                result((prev) => {
+                  const index = event.index;
+                  contentBlockMap[index] = prev.length;
+                  prev.push({
+                    type: "text",
+                    text: event.content_block.text,
                   });
-                  break;
-                case "content_block_delta":
-                  result((prev) => {
-                    const index = (event as IMessageResultContentBlockDelta)
-                      .index;
-                    const actualIndex = contentBlockMap[index];
-                    prev[actualIndex] = {
-                      type: "text",
-                      text:
-                        (prev[actualIndex] as IMessageResultText).text +
-                        (event as IMessageResultContentBlockDelta).delta.text,
-                    };
-                  });
-                  break;
-                case "content_block_stop":
-                case "message_delta":
-                  break;
-                default:
-                  throw new AnthropicUnexpectedMessageTypeError(event.type);
+                });
+                break;
+              } else if (event.type === "content_block_delta") {
+                result((prev) => {
+                  const index = event.index;
+                  const actualIndex = contentBlockMap[index];
+                  prev[actualIndex] = {
+                    type: "text",
+                    text:
+                      (prev[actualIndex] as IMessageResultText).text +
+                      event.delta.text,
+                  };
+                });
+              } else if (event.type === "content_block_stop") {
+              } else {
+                throw new AnthropicUnexpectedMessageTypeError(
+                  (event as { type: string }).type
+                );
               }
             } catch (e) {
               console.error("JSON 파싱 에러:", e);

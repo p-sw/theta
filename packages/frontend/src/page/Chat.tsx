@@ -110,6 +110,7 @@ export default function Chat() {
               sessionId={sessionId}
               messageId={message.messageId}
               messages={message.message}
+              stop={message.stop}
             />
           )
         )}

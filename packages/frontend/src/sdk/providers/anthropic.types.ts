@@ -10,6 +10,14 @@ type ErrorType =
   | "timeout_error" // from List-Models response docs
   | "billing_error"; // from List-Models response docs
 
+export type StopReason =
+  | "end_turn"
+  | "max_tokens"
+  | "stop_sequence"
+  | "tool_use"
+  | "pause_turn"
+  | "refusal";
+
 export interface IErrorBody<T extends ErrorType = ErrorType> {
   type: "error";
   error: {
@@ -109,6 +117,33 @@ export interface IMessageCitationRequestSearchResultLocationCitation {
   title: string | null;
 }
 
+export type IMessageResultData =
+  | IMessageResultContentBlockStart
+  | IMessageResultContentBlockDelta
+  | IMessageResultContentBlockStop
+  | IMessageResultMessageDelta
+  | IMessageResultMessageStart
+  | IMessageResultMessageStop
+  | IMessageResultPing;
+
+export interface IMessageResultPing {
+  type: "ping";
+}
+
+export interface IMessageResultMessageStart {
+  type: "message_start";
+  message: {
+    id: string;
+    type: "message";
+    role: "assistant";
+    // ...
+  };
+}
+
+export interface IMessageResultMessageStop {
+  type: "message_stop";
+}
+
 export interface IMessageResultContentBlockStart {
   type: "content_block_start";
   index: number;
@@ -130,4 +165,16 @@ export interface IMessageResultContentBlockDelta {
 export interface IMessageResultContentBlockStop {
   type: "content_block_stop";
   index: number;
+}
+
+export interface IMessageResultMessageDelta {
+  type: "message_delta";
+  delta: {
+    stop_reason: StopReason;
+    stop_sequence: string | null;
+  };
+  usage?: {
+    input_tokens?: number;
+    output_tokens: number;
+  };
 }

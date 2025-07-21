@@ -15,6 +15,7 @@ import type {
   IMessageResult,
   IProvider,
   IProviderInfo,
+  SessionTurnsResponse,
   TemporarySession,
 } from "@/sdk/shared";
 
@@ -61,18 +62,23 @@ export class AISDK {
     });
 
     const resultMessage: IMessageResult[] = [];
-    session.turns.push({
-      type: "response",
+    const resultTurn: SessionTurnsResponse = {
+      type: "response" as const,
       messageId: hyperidInstance(),
       message: resultMessage,
-    });
+    };
+    session.turns.push(resultTurn);
+
+    function saveSession() {
+      storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
+      dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
+      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
+    }
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
       session.updatedAt = Date.now();
-      storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
-      dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
+      saveSession();
     }
 
     switch (provider) {
@@ -83,7 +89,11 @@ export class AISDK {
             -1
           ) /* removes just inserted empty response buffer */,
           model,
-          updateSession
+          updateSession,
+          (stop) => {
+            resultTurn.stop = stop;
+            saveSession();
+          }
         );
       default:
         throw new Error(`Provider ${provider} not supported`);
