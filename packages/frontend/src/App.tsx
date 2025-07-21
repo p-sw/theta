@@ -1,6 +1,6 @@
 import Menu from "@/components/block/menu";
-import { PATHS } from "@/lib/const";
-import { usePath } from "@/lib/storage-hooks";
+import { PATHS, SESSION_STORAGE_ID } from "@/lib/const";
+import { usePath, useSessionKeys } from "@/lib/storage-hooks";
 import Chat from "@/page/Chat";
 import Sessions from "@/page/Sessions";
 import Setting from "@/page/Setting";
@@ -12,7 +12,23 @@ import { useHyperInstance } from "@/lib/utils";
 function App() {
   const [path] = usePath();
   const hyperInstance = useHyperInstance();
-  const [sessionId, setSessionId] = useState<string>(hyperInstance()); // null: new session, string: existing session
+  const sessionKeys = useSessionKeys({ sessionStorage: true });
+  const [sessionId, setSessionId] = useState<string>(() => {
+    // if there's already a session with empty turns (not used), use it instead of creating a new one
+    let emptySessionId = hyperInstance();
+    for (const key of sessionKeys) {
+      const sessionString = sessionStorage.getItem(key);
+      if (!sessionString) continue;
+      try {
+        const session = JSON.parse(sessionString);
+        if (session.turns.length === 0) {
+          emptySessionId = SESSION_STORAGE_ID(key);
+          break;
+        }
+      } catch (e) {}
+    }
+    return emptySessionId;
+  });
   const [isPermanentSession, setIsPermanentSession] = useState(false);
 
   return (
