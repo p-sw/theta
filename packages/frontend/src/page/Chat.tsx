@@ -35,7 +35,8 @@ export default function Chat() {
     setIsPermanentSession,
   } = use(ChatContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
-  const { scrollContainerRef, triggerAutoScroll } = useAutoScroll<HTMLElement>();
+  const { scrollContainerRef, triggerAutoScroll } =
+    useAutoScroll<HTMLElement>();
 
   const [session, setSession] = useStorage<
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
@@ -63,6 +64,7 @@ export default function Chat() {
   };
 
   const handleNewSession = useCallback(() => {
+    setIsPermanentSession(false);
     setNewSession();
   }, [setNewSession]);
   const handleClearSession = useCallback(() => {
@@ -102,7 +104,10 @@ export default function Chat() {
 
   return (
     <main className="h-svhfull flex flex-col">
-      <section ref={scrollContainerRef} className="h-full overflow-y-auto p-8 flex flex-col gap-8">
+      <section
+        ref={scrollContainerRef}
+        className="h-full overflow-y-auto p-8 flex flex-col gap-8"
+      >
         {session.turns.map((message) =>
           message.type === "request" ? (
             <UserMessage
