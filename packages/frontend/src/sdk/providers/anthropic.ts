@@ -15,6 +15,120 @@ import {
 } from "@/sdk/shared";
 import type { IModelInfo, SessionTurns } from "@/sdk/shared";
 
+const AnthropicModelRegistry: {
+  id: string;
+  displayName: string;
+  extendedThinking: boolean;
+  contextWindow: number;
+  maxOutput: number;
+  pricing: {
+    baseInput: number; // $/1M tokens
+    output: number; // $/1M tokens
+    mCacheWrite: number; // 5m Cache Write, $/1M tokens
+    hCacheWrite: number; // 1h Cache Write, $/1M tokens
+    cacheHitRefresh: number; // Cache Hit Refresh, $/1M tokens
+  };
+}[] = [
+  {
+    id: "claude-3-haiku-20240307",
+    displayName: "Claude Haiku 3",
+    extendedThinking: false,
+    contextWindow: 200000,
+    maxOutput: 4096,
+    pricing: {
+      baseInput: 0.25,
+      mCacheWrite: 0.3,
+      hCacheWrite: 0.5,
+      cacheHitRefresh: 0.03,
+      output: 1.25,
+    },
+  },
+  {
+    id: "claude-3-opus-20240229",
+    displayName: "Claude Opus 3",
+    extendedThinking: false,
+    contextWindow: 200000,
+    maxOutput: 4096,
+    pricing: {
+      baseInput: 15,
+      mCacheWrite: 18.75,
+      hCacheWrite: 30,
+      cacheHitRefresh: 1.5,
+      output: 75,
+    },
+  },
+  {
+    id: "claude-3-5-haiku-20241022",
+    displayName: "Claude Haiku 3.5",
+    extendedThinking: false,
+    contextWindow: 200000,
+    maxOutput: 8192,
+    pricing: {
+      baseInput: 0.8,
+      mCacheWrite: 1,
+      hCacheWrite: 1.6,
+      cacheHitRefresh: 0.08,
+      output: 4,
+    },
+  },
+  {
+    id: "claude-3-5-sonnet-20241022",
+    displayName: "Claude Sonnet 3.5",
+    extendedThinking: false,
+    contextWindow: 200000,
+    maxOutput: 8192,
+    pricing: {
+      baseInput: 3,
+      mCacheWrite: 3.75,
+      hCacheWrite: 6,
+      cacheHitRefresh: 0.3,
+      output: 15,
+    },
+  },
+  {
+    id: "claude-3-7-sonnet-20250219",
+    displayName: "Claude Sonnet 3.7",
+    extendedThinking: true,
+    contextWindow: 200000,
+    maxOutput: 64000,
+    pricing: {
+      baseInput: 3,
+      mCacheWrite: 3.75,
+      hCacheWrite: 6,
+      cacheHitRefresh: 0.3,
+      output: 15,
+    },
+  },
+  {
+    id: "claude-sonnet-4-20250514",
+    displayName: "Claude Sonnet 4",
+    extendedThinking: true,
+    contextWindow: 200000,
+    maxOutput: 64000,
+    pricing: {
+      baseInput: 3,
+      mCacheWrite: 3.75,
+      hCacheWrite: 6,
+      cacheHitRefresh: 0.3,
+      output: 15,
+    },
+  },
+  {
+    id: "claude-opus-4-20250514",
+    displayName: "Claude Opus 4",
+    extendedThinking: true,
+    contextWindow: 200000,
+    maxOutput: 32000,
+    pricing: {
+      baseInput: 15,
+      mCacheWrite: 18.75,
+      hCacheWrite: 30,
+      cacheHitRefresh: 1.5,
+      output: 75,
+    },
+  },
+];
+
 export class AnthropicUnexpectedMessageTypeError extends Error {
   readonly type: string;
 
@@ -124,20 +238,10 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   async getModels(): Promise<IModelInfo[]> {
-    // get models from API
-    const response = await proxyfetch(
-      this.API_BASE_URL + "/models",
-      this.buildAPIRequest("GET")
-    );
-
-    await this.ensureSuccess(response);
-
-    const body = (await response.json()) as IListModelsBody;
-
-    return body.data.map((model) => ({
+    return AnthropicModelRegistry.map((model) => ({
       provider: "anthropic",
       id: model.id,
-      displayName: model.display_name,
+      displayName: model.displayName,
       disabled: false,
     }));
   }
