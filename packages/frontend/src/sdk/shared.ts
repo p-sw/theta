@@ -21,7 +21,7 @@ export abstract class API<T> {
   protected apiKey!: string;
 
   protected abstract buildAPIRequest(
-    method: RequestInit["method"]
+    method: RequestInit["method"],
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };
   protected abstract ensureSuccess(response: Response): Promise<void>;
   protected abstract translateSession(session: SessionTurns): T[];
@@ -29,12 +29,12 @@ export abstract class API<T> {
     session: SessionTurns,
     model: string,
     result: (updator: (message: IMessageResult[]) => void) => void, // prev -> new
-    setStop: (stop: SessionTurnsResponse["stop"]) => void
+    setStop: (stop: SessionTurnsResponse["stop"]) => void,
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
   abstract getDefaultModelConfig(modelId: string): object;
   abstract getModelConfigSchema(
-    modelId: string
+    modelId: string,
   ): [Record<string, IModelConfigSchema>, z.ZodSchema];
   protected abstract getModelConfig(modelId: string): object;
 }
@@ -159,4 +159,6 @@ export interface ISessionBase {
 export interface PermanentSession extends ISessionBase {
   title: string;
 }
-export interface TemporarySession extends ISessionBase {}
+export interface TemporarySession extends ISessionBase {
+  title: string;
+}

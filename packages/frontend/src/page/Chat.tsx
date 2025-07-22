@@ -24,7 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { SaveSessionForm } from "@/components/block/menu";
+import type { SaveSessionForm } from "@/components/block/dialogs/save-session";
 import { ChatContext } from "./context/Chat";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 
@@ -43,7 +43,13 @@ export default function Chat() {
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
   >(
     SESSION_STORAGE_KEY(sessionId),
-    { id: sessionId, turns: [], createdAt: Date.now(), updatedAt: Date.now() },
+    {
+      id: sessionId,
+      title: Date.now().toLocaleString(),
+      turns: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
     undefined,
     {
       temp: !isPermanentSession,
