@@ -423,10 +423,10 @@ export class AnthropicProvider extends API<IMessage> {
 
   getDefaultModelConfig(): IModelConfig {
     return {
-      temperature: 0.5,
+      temperature: 1,
       maxOutput: 2048,
       stopSequences: [],
-      extendedThinking: false,
+      extendedThinking: true,
       thinkingBudget: 1024,
     };
   }
@@ -466,6 +466,7 @@ export class AnthropicProvider extends API<IMessage> {
           min: 0,
           max: 1,
           step: 0.01,
+          disabled: { $ref: "extendedThinking" },
         },
         maxOutput: {
           displayName: "Max Output",
@@ -496,7 +497,7 @@ export class AnthropicProvider extends API<IMessage> {
           min: 1024,
           max: { $ref: "maxOutput" },
           step: 1,
-          disabled: { $ref: "extendedThinking" },
+          disabled: { $ref: "extendedThinking", not: true },
         },
       },
       z

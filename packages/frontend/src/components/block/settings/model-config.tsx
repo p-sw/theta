@@ -164,8 +164,10 @@ function FormControlNumber({
         value={[field.value]}
         onValueChange={(v) => field.onChange(v[0])}
         disabled={
-          typeof schema.disabled === "object" && schema.disabled.$ref
-            ? !form.watch(schema.disabled.$ref)
+          typeof schema.disabled === "object"
+            ? schema.disabled.not
+              ? !form.watch(schema.disabled.$ref)
+              : form.watch(schema.disabled.$ref)
             : (schema.disabled as boolean)
         }
       />
@@ -187,8 +189,10 @@ function FormControlNumber({
           value={field.value}
           onChange={(e) => field.onChange(parseFloat(e.target.value))}
           disabled={
-            typeof schema.disabled === "object" && schema.disabled.$ref
-              ? !form.watch(schema.disabled.$ref)
+            typeof schema.disabled === "object"
+              ? schema.disabled.not
+                ? !form.watch(schema.disabled.$ref)
+                : form.watch(schema.disabled.$ref)
               : (schema.disabled as boolean)
           }
         />
@@ -211,8 +215,10 @@ function FormControlString({
       <Input
         {...field}
         disabled={
-          typeof schema.disabled === "object" && schema.disabled.$ref
-            ? !form.watch(schema.disabled.$ref)
+          typeof schema.disabled === "object"
+            ? schema.disabled.not
+              ? !form.watch(schema.disabled.$ref)
+              : form.watch(schema.disabled.$ref)
             : (schema.disabled as boolean)
         }
       />
@@ -235,8 +241,10 @@ function FormControlBoolean({
         checked={field.value}
         onCheckedChange={field.onChange}
         disabled={
-          typeof schema.disabled === "object" && schema.disabled.$ref
-            ? !form.watch(schema.disabled.$ref)
+          typeof schema.disabled === "object"
+            ? schema.disabled.not
+              ? !form.watch(schema.disabled.$ref)
+              : form.watch(schema.disabled.$ref)
             : (schema.disabled as boolean)
         }
       />

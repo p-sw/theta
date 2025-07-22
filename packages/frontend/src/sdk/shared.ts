@@ -48,7 +48,7 @@ export type IModelConfigSchema =
 export interface IModelConfigSchemaBase {
   displayName: string;
   description: string;
-  disabled?: boolean | { $ref: string };
+  disabled?: boolean | { $ref: string; not?: boolean };
 }
 
 export interface IModelConfigSchemaNumber extends IModelConfigSchemaBase {
