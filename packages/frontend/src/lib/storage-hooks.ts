@@ -1,19 +1,16 @@
 import {
   API_KEY,
+  type IApiKey,
+  type ITheme,
   MODELS,
   PATH,
   PATHS,
-  PER_MODEL_CONFIG_KEY,
   SELECTED_MODEL,
   STORAGE_CHANGE_EVENT_ALL,
   THEME,
-  type IApiKey,
-  type ITheme,
 } from "@/lib/const";
 import { dispatchEvent, useStorage, useStorageKey } from "@/lib/utils";
-import type { IModelConfig } from "@/sdk/providers/anthropic.types";
-import type { IModelInfo, IProvider } from "@/sdk/shared";
-import type { TemporarySession } from "@/sdk/shared";
+import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
 import { useCallback } from "react";
 
 export function usePath() {
@@ -25,7 +22,7 @@ export function usePath() {
 export function useTheme() {
   return useStorage<ITheme>(
     THEME,
-    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
   );
 }
 
@@ -43,14 +40,6 @@ export function useSelectedModel() {
   return useStorage<[IProvider, string] | []>(SELECTED_MODEL, []);
 }
 
-export function useAnthropicModelConfig(modelId: string) {
-  return useStorage<IModelConfig>(PER_MODEL_CONFIG_KEY("anthropic", modelId), {
-    temperature: 0.5,
-    maxOutput: 1024,
-    stopSequences: [],
-  });
-}
-
 export function useSessionKeys({
   sessionStorage,
 }: {
@@ -64,7 +53,7 @@ export function useSessionKeys({
 export function useSessionCleanup() {
   return useCallback(() => {
     const sessionsFromSessionStorage = Object.keys(sessionStorage).filter(
-      (key) => key.startsWith("session-")
+      (key) => key.startsWith("session-"),
     );
     for (const sessionKey of sessionsFromSessionStorage) {
       const sessionString = localStorage.getItem(sessionKey);
@@ -76,7 +65,6 @@ export function useSessionCleanup() {
       if ((JSON.parse(sessionString) as TemporarySession).turns.length === 0) {
         sessionStorage.removeItem(sessionKey);
         dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
-        continue;
       }
     }
   }, []);
