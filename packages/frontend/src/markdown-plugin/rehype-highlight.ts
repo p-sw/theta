@@ -1,0 +1,97 @@
+import type { ElementContent, Element, Root } from "hast";
+import type { VFile } from "vfile";
+import { toText } from "hast-util-to-text";
+import { common, createLowlight } from "lowlight";
+import { visit } from "unist-util-visit";
+
+export default function rehypeHighlight() {
+  let name = "hljs";
+  const prefix = name + "-";
+  const lowlight = createLowlight(common);
+
+  return function (tree: Root, file: VFile) {
+    visit(tree, "element", function (node, _, parent) {
+      if (
+        node.tagName !== "code" ||
+        !parent ||
+        parent.type !== "element" ||
+        parent.tagName !== "pre"
+      ) {
+        return;
+      }
+
+      // const ICodeMetaParams = node.properties
+      //  .ICodeMetaParams! as unknown as Record<string, string>;
+      node.properties = Object.fromEntries(
+        Object.entries(node.properties).filter(([k]) => k !== "ICodeMetaParams")
+      );
+      const lang = language(node);
+
+      if (!lang) {
+        return;
+      }
+
+      if (!Array.isArray(node.properties.className)) {
+        node.properties.className = [];
+      }
+
+      if (!node.properties.className.includes(name)) {
+        node.properties.className.unshift(name);
+      }
+
+      const text = toText(node, { whitespace: "pre" });
+      let result;
+
+      try {
+        result = lowlight.highlight(lang, text, { prefix });
+      } catch (error: unknown) {
+        const cause = error as Error;
+        if (lang && /Unknown language/.test(cause.message)) {
+          file.message(
+            "Cannot highlight as `" + lang + "`, it’s not registered",
+            {
+              ancestors: [parent, node],
+              cause,
+              place: node.position,
+              ruleId: "missing-language",
+              source: "rehype-highlight",
+            }
+          );
+          return;
+        }
+        throw cause;
+      }
+      if (!lang && result.data && result.data.language) {
+        node.properties.className.push("language-" + result.data.language);
+      }
+      if (result.children.length > 0) {
+        node.children = result.children as ElementContent[];
+      }
+    });
+  };
+}
+
+function language(node: Element): string | undefined {
+  const list = node.properties.className;
+  let index = -1;
+
+  if (!Array.isArray(list)) {
+    return;
+  }
+
+  let name;
+
+  while (++index < list.length) {
+    const value = String(list[index]);
+
+    if (!name && value.startsWith("lang-")) {
+      name = value.slice(5);
+    }
+
+    if (!name && value.startsWith("language-")) {
+      name = value.slice(9);
+    }
+  }
+
+  return name;
+}

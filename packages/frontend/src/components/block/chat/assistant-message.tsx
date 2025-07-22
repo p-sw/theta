@@ -9,6 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import rehypeHighlight from "@/markdown-plugin/rehype-highlight";
 
 export function AssistantMessage({
   sessionId,
@@ -31,7 +32,10 @@ export function AssistantMessage({
           if (message.type === "text") {
             return (
               <div className="prose dark:prose-invert w-full prose-neutral">
-                <Markdown key={`${sessionId}-${messageId}-${index}`}>
+                <Markdown
+                  key={`${sessionId}-${messageId}-${index}`}
+                  rehypePlugins={[rehypeHighlight]}
+                >
                   {message.text}
                 </Markdown>
               </div>
@@ -50,7 +54,10 @@ export function AssistantMessage({
                     Thinking
                   </AccordionTrigger>
                   <AccordionContent className="prose dark:prose-invert prose-sm opacity-60">
-                    <Markdown>{message.thinking}</Markdown>
+                    <Markdown remarkPlugins={[]}>
+                      {/* intentionally not highlighted */}
+                      {message.thinking}
+                    </Markdown>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
