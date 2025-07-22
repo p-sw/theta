@@ -3,6 +3,12 @@ import type { IMessageResult, SessionTurnsResponseStop } from "@/sdk/shared";
 import LucidAlertCircle from "~icons/lucide/alert-circle";
 import LucidInfo from "~icons/lucide/info";
 import Markdown from "react-markdown";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export function AssistantMessage({
   sessionId,
@@ -21,17 +27,27 @@ export function AssistantMessage({
         <span className="text-sm text-muted-foreground">Assistant</span>
       </div>
       <div className="flex flex-col items-start justify-start gap-4 w-full">
-        <div className="prose dark:prose-invert w-full">
-          {messages.map((message, index) => {
-            if (message.type === "text") {
-              return (
+        {messages.map((message, index) => {
+          if (message.type === "text") {
+            return (
+              <div className="prose dark:prose-invert w-full">
                 <Markdown key={`${sessionId}-${messageId}-${index}`}>
                   {message.text}
                 </Markdown>
-              );
-            }
-          })}
-        </div>
+              </div>
+            );
+          }
+          if (message.type === "thinking") {
+            return (
+              <Accordion type="single" collapsible>
+                <AccordionItem value="thinking">
+                  <AccordionTrigger>Thinking</AccordionTrigger>
+                  <AccordionContent>{message.thinking}</AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            );
+          }
+        })}
         <StopIndicator stop={stop} />
       </div>
     </div>
