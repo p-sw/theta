@@ -27,7 +27,7 @@ export const providerRegistry: Record<IProvider, IProviderInfo> = {
 };
 
 export class AISDK {
-  private anthropic: AnthropicProvider | null = null;
+  anthropic: AnthropicProvider | null = null;
 
   constructor() {
     const apiKey: IApiKey = JSON.parse(localStorage.getItem(API_KEY) ?? "{}");
@@ -98,6 +98,22 @@ export class AISDK {
       default:
         throw new Error(`Provider ${provider} not supported`);
     }
+  }
+
+  getDefaultModelConfig(provider: IProvider, _modelId: string) {
+    if (!this[provider]) {
+      throw new Error(`Provider ${provider} not supported`);
+    }
+
+    return this[provider].getDefaultModelConfig();
+  }
+
+  getModelConfigSchema(provider: IProvider, modelId: string) {
+    if (!this[provider]) {
+      throw new Error(`Provider ${provider} not supported`);
+    }
+
+    return this[provider].getModelConfigSchema(modelId);
   }
 }
 

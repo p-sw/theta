@@ -20,6 +20,8 @@ export type IApiKey = Record<IProvider, string | null>;
 
 export const MODELS = "models";
 export const SELECTED_MODEL = "selected_model";
+export const PER_MODEL_CONFIG_KEY = (provider: IProvider, model: string) =>
+  `model-config-${provider}-${model}`;
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
 export const SESSION_STORAGE_ID = (key: string) =>

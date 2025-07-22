@@ -1,9 +1,11 @@
+import { PER_MODEL_CONFIG_KEY } from "@/lib/const";
 import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
   IErrorBody,
   IMessage,
   IMessageResultData,
   IMessageResultMessageDelta,
+  IModelConfig,
 } from "@/sdk/providers/anthropic.types";
 import {
   API,
@@ -12,7 +14,12 @@ import {
   type IMessageResult,
   type IMessageResultText,
 } from "@/sdk/shared";
-import type { IModelInfo, SessionTurns } from "@/sdk/shared";
+import type {
+  IModelConfigSchema,
+  IModelInfo,
+  SessionTurns,
+} from "@/sdk/shared";
+import z from "zod";
 
 const AnthropicModelRegistry: {
   id: string;
@@ -389,7 +396,7 @@ export class AnthropicProvider extends API<IMessage> {
                 );
               }
             } catch (e) {
-              console.error("JSON 파싱 에러:", e);
+              console.error("JSON parse error:", e);
             }
           }
         }
@@ -397,5 +404,78 @@ export class AnthropicProvider extends API<IMessage> {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  getDefaultModelConfig(): IModelConfig {
+    return {
+      temperature: 0.5,
+      maxOutput: 1024,
+      stopSequences: [],
+    };
+  }
+
+  protected getModelConfig(modelId: string): IModelConfig {
+    const configString = localStorage.getItem(
+      PER_MODEL_CONFIG_KEY("anthropic", modelId)
+    );
+    if (!configString) {
+      return this.getDefaultModelConfig();
+    }
+    try {
+      return {
+        ...this.getDefaultModelConfig(),
+        ...(JSON.parse(configString) as IModelConfig),
+      };
+    } catch (e) {
+      console.error("JSON parse error:", e);
+      return this.getDefaultModelConfig();
+    }
+  }
+
+  getModelConfigSchema(
+    modelId: string
+  ): [Record<string, IModelConfigSchema>, z.ZodSchema] {
+    const modelInfo = this.getModelInfo(modelId);
+    if (!modelInfo) {
+      throw new ExpectedError(404, "model_not_found", "Model not found");
+    }
+
+    return [
+      {
+        temperature: {
+          displayName: "Temperature",
+          description: "The temperature of the model.",
+          type: "number",
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        maxOutput: {
+          displayName: "Max Output",
+          description: "The maximum number of tokens to output.",
+          type: "number",
+          min: 1024,
+          max: modelInfo.maxOutput,
+          step: 1,
+        },
+        stopSequences: {
+          displayName: "Stop Sequences",
+          description: "The stop sequences of the model.",
+          type: "array",
+          items: {
+            type: "string",
+          },
+        },
+      },
+      z.object({
+        temperature: z.number().min(0).max(1),
+        maxOutput: z.number().min(1024).max(modelInfo.maxOutput),
+        stopSequences: z.array(z.string()),
+      }),
+    ];
+  }
+
+  getModelInfo(modelId: string) {
+    return AnthropicModelRegistry.find((m) => m.id === modelId);
   }
 }

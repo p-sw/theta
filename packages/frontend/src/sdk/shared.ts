@@ -1,3 +1,5 @@
+import type z from "zod";
+
 export type IProvider = "anthropic";
 export interface IProviderInfo {
   id: IProvider;
@@ -30,6 +32,37 @@ export abstract class API<T> {
     setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
+  abstract getDefaultModelConfig(modelId: string): object;
+  abstract getModelConfigSchema(
+    modelId: string
+  ): [Record<string, IModelConfigSchema>, z.ZodSchema];
+  protected abstract getModelConfig(modelId: string): object;
+}
+
+export type IModelConfigSchema =
+  | IModelConfigSchemaNumber
+  | IModelConfigSchemaString
+  | IModelConfigSchemaArray;
+
+export interface IModelConfigSchemaBase {
+  displayName: string;
+  description: string;
+}
+
+export interface IModelConfigSchemaNumber extends IModelConfigSchemaBase {
+  type: "number";
+  min: number;
+  max: number;
+  step: number;
+}
+
+export interface IModelConfigSchemaString extends IModelConfigSchemaBase {
+  type: "string" | "textarea";
+}
+
+export interface IModelConfigSchemaArray extends IModelConfigSchemaBase {
+  type: "array";
+  items: Omit<IModelConfigSchema, "displayName" | "description">;
 }
 
 export type IMessageRequest = IMessageRequestText;

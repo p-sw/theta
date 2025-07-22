@@ -3,6 +3,7 @@ import {
   MODELS,
   PATH,
   PATHS,
+  PER_MODEL_CONFIG_KEY,
   SELECTED_MODEL,
   STORAGE_CHANGE_EVENT_ALL,
   THEME,
@@ -10,6 +11,7 @@ import {
   type ITheme,
 } from "@/lib/const";
 import { dispatchEvent, useStorage, useStorageKey } from "@/lib/utils";
+import type { IModelConfig } from "@/sdk/providers/anthropic.types";
 import type { IModelInfo, IProvider } from "@/sdk/shared";
 import type { TemporarySession } from "@/sdk/shared";
 import { useCallback } from "react";
@@ -39,6 +41,14 @@ export function useApiKey() {
 
 export function useSelectedModel() {
   return useStorage<[IProvider, string] | []>(SELECTED_MODEL, []);
+}
+
+export function useAnthropicModelConfig(modelId: string) {
+  return useStorage<IModelConfig>(PER_MODEL_CONFIG_KEY("anthropic", modelId), {
+    temperature: 0.5,
+    maxOutput: 1024,
+    stopSequences: [],
+  });
 }
 
 export function useSessionKeys({

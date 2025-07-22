@@ -1,3 +1,9 @@
+export interface IModelConfig {
+  temperature: number;
+  maxOutput: number;
+  stopSequences: string[];
+}
+
 type ErrorType =
   | "invalid_request_error"
   | "authentication_error"
