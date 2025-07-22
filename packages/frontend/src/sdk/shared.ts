@@ -42,22 +42,28 @@ export abstract class API<T> {
 export type IModelConfigSchema =
   | IModelConfigSchemaNumber
   | IModelConfigSchemaString
+  | IModelConfigSchemaBoolean
   | IModelConfigSchemaArray;
 
 export interface IModelConfigSchemaBase {
   displayName: string;
   description: string;
+  disabled?: boolean | { $ref: string };
 }
 
 export interface IModelConfigSchemaNumber extends IModelConfigSchemaBase {
   type: "number";
-  min: number;
-  max: number;
+  min: number | { $ref: string };
+  max: number | { $ref: string };
   step: number;
 }
 
 export interface IModelConfigSchemaString extends IModelConfigSchemaBase {
   type: "string" | "textarea";
+}
+
+export interface IModelConfigSchemaBoolean extends IModelConfigSchemaBase {
+  type: "boolean";
 }
 
 export interface IModelConfigSchemaArray extends IModelConfigSchemaBase {

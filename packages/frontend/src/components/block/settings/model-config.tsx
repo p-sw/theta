@@ -1,12 +1,17 @@
 import { AiSdk } from "@/sdk";
 import type {
   IModelConfigSchemaArray,
+  IModelConfigSchemaBoolean,
   IModelConfigSchemaNumber,
   IModelConfigSchemaString,
   IProvider,
 } from "@/sdk/shared";
 import { useCallback, useMemo } from "react";
-import { useForm, type ControllerRenderProps } from "react-hook-form";
+import {
+  useForm,
+  type ControllerRenderProps,
+  type UseFormReturn,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -23,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { LucideSave, LucideTrash, LucidePlus } from "lucide-react";
 import { PER_MODEL_CONFIG_KEY } from "@/lib/const";
 import { useStorage } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 export function ModelConfigForm({
   provider,
@@ -85,10 +91,25 @@ export function ModelConfigForm({
                 )}
                 <FormDescription>{fieldSchema.description}</FormDescription>
                 {fieldSchema.type === "number" && (
-                  <FormControlNumber schema={fieldSchema} field={field} />
+                  <FormControlNumber
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
                 )}
                 {fieldSchema.type === "string" && (
-                  <FormControlString schema={fieldSchema} field={field} />
+                  <FormControlString
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
+                )}
+                {fieldSchema.type === "boolean" && (
+                  <FormControlBoolean
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
                 )}
                 {fieldSchema.type === "array" && (
                   <FormControlArray schema={fieldSchema} field={field} />
@@ -110,28 +131,56 @@ export function ModelConfigForm({
 function FormControlNumber({
   schema,
   field,
+  form,
 }: {
   schema: IModelConfigSchemaNumber;
   field: ControllerRenderProps;
+  form: UseFormReturn;
 }) {
   return (
     <div className="flex flex-row gap-1 items-center">
       <Slider
-        min={schema.min}
-        max={schema.max}
+        min={
+          typeof schema.min === "object" && schema.min.$ref
+            ? form.watch(schema.min.$ref)
+            : schema.min
+        }
+        max={
+          typeof schema.max === "object" && schema.max.$ref
+            ? form.watch(schema.max.$ref)
+            : schema.max
+        }
         step={schema.step}
         value={[field.value]}
         onValueChange={(v) => field.onChange(v[0])}
+        disabled={
+          typeof schema.disabled === "object" && schema.disabled.$ref
+            ? !form.watch(schema.disabled.$ref)
+            : (schema.disabled as boolean)
+        }
       />
       <FormControl>
         <Input
           type="number"
           className="w-24 text-xs"
-          min={schema.min}
-          max={schema.max}
+          min={
+            typeof schema.min === "object" && schema.min.$ref
+              ? form.watch(schema.min.$ref)
+              : schema.min
+          }
+          max={
+            typeof schema.max === "object" && schema.max.$ref
+              ? form.watch(schema.max.$ref)
+              : schema.max
+          }
           step={schema.step}
           value={field.value}
           onChange={(e) => field.onChange(parseFloat(e.target.value))}
+          disabled={
+            typeof schema.disabled === "object" && schema.disabled.$ref
+              ? !form.watch(schema.disabled.$ref)
+              : (schema.disabled as boolean)
+          }
         />
       </FormControl>
     </div>
@@ -139,13 +188,50 @@ function FormControlNumber({
 }
 
 function FormControlString({
-  schema: _,
+  schema,
   field,
+  form,
 }: {
   schema: IModelConfigSchemaString;
   field: ControllerRenderProps;
+  form: UseFormReturn;
 }) {
-  return <Input {...field} />;
+  return (
+    <FormControl>
+      <Input
+        {...field}
+        disabled={
+          typeof schema.disabled === "object" && schema.disabled.$ref
+            ? !form.watch(schema.disabled.$ref)
+            : (schema.disabled as boolean)
+        }
+      />
+    </FormControl>
+  );
+}
+
+function FormControlBoolean({
+  schema,
+  field,
+  form,
+}: {
+  schema: IModelConfigSchemaBoolean;
+  field: ControllerRenderProps;
+  form: UseFormReturn;
+}) {
+  return (
+    <FormControl>
+      <Switch
+        checked={field.value}
+        onCheckedChange={field.onChange}
+        disabled={
+          typeof schema.disabled === "object" && schema.disabled.$ref
+            ? !form.watch(schema.disabled.$ref)
+            : (schema.disabled as boolean)
+        }
+      />
+    </FormControl>
+  );
 }
 
 function FormControlArray({

@@ -276,6 +276,10 @@ export class AnthropicProvider extends API<IMessage> {
             text: "Today's datetime is " + new Date().toISOString(),
           },
         ],
+        thinking: {
+          type: modelConfig.extendedThinking ? "enabled" : "disabled",
+          budget_tokens: modelConfig.thinkingBudget,
+        },
       },
     });
 
@@ -412,8 +416,10 @@ export class AnthropicProvider extends API<IMessage> {
   getDefaultModelConfig(): IModelConfig {
     return {
       temperature: 0.5,
-      maxOutput: 1024,
+      maxOutput: 2048,
       stopSequences: [],
+      extendedThinking: false,
+      thinkingBudget: 1024,
     };
   }
 
@@ -469,12 +475,38 @@ export class AnthropicProvider extends API<IMessage> {
             type: "string",
           },
         },
+        extendedThinking: {
+          displayName: "Extended Thinking",
+          description: "Whether to use thinking.",
+          type: "boolean",
+        },
+        thinkingBudget: {
+          displayName: "Thinking Budget",
+          description:
+            "The token budget for extended thinking. Should be less than maxOutput.",
+          type: "number",
+          min: 1024,
+          max: { $ref: "maxOutput" },
+          step: 1,
+          disabled: { $ref: "extendedThinking" },
+        },
       },
-      z.object({
-        temperature: z.number().min(0).max(1),
-        maxOutput: z.number().min(1024).max(modelInfo.maxOutput),
-        stopSequences: z.array(z.string()),
-      }),
+      z
+        .object({
+          temperature: z.number().min(0).max(1),
+          maxOutput: z.number().min(1024).max(modelInfo.maxOutput),
+          stopSequences: z.array(z.string()),
+          extendedThinking: z.boolean(),
+          thinkingBudget: z.number().min(512),
+        })
+        .refine(
+          (data) =>
+            data.extendedThinking ? data.thinkingBudget < data.maxOutput : true,
+          {
+            message: "Thinking budget must be less than maxOutput.",
+            path: ["thinkingBudget"],
+          }
+        ),
     ];
   }
 

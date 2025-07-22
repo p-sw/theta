@@ -2,6 +2,8 @@ export interface IModelConfig {
   temperature: number;
   maxOutput: number;
   stopSequences: string[];
+  extendedThinking: boolean;
+  thinkingBudget: number;
 }
 
 type ErrorType =
