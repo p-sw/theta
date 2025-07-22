@@ -132,7 +132,8 @@ export type IMessageResultData =
   | IMessageResultMessageDelta
   | IMessageResultMessageStart
   | IMessageResultMessageStop
-  | IMessageResultPing;
+  | IMessageResultPing
+  | IErrorBody;
 
 export interface IMessageResultPing {
   type: "ping";

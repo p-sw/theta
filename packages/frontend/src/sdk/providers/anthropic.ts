@@ -314,6 +314,13 @@ export class AnthropicProvider extends API<IMessage> {
 
             try {
               const event = JSON.parse(data) as IMessageResultData;
+              if (isErrorBody(event)) {
+                throw new ExpectedError(
+                  response.status,
+                  event.error.type,
+                  `[Anthropic] ${event.error.type}: ${event.error.message}`
+                );
+              }
               if (event.type === "ping") {
                 console.log("pong!");
               } else if (event.type === "message_start") {
