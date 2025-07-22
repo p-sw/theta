@@ -140,6 +140,10 @@ HIGHLIGHT THEME
 **/
 pre:has(code.hljs) {
   @apply border rounded-md;
+
+  code.hljs {
+    @apply leading-5;
+  }
 }
 
 .dark .hljs {

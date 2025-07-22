@@ -65,6 +65,43 @@ export default function rehypeHighlight() {
         node.properties.className.push("language-" + result.data.language);
       }
       if (result.children.length > 0) {
+        // line number, working but hard to set line-height
+        /*
+        let newlineCount: number[] = [1];
+        function newlines(children: RootContent[]) {
+          for (const child of children) {
+            if (child.type === "element") {
+              newlines(child.children);
+            } else if (child.type === "text" && child.value.includes("\n")) {
+              for (const _ of child.value.split("\n").slice(1)) {
+                newlineCount.push(newlineCount.length + 1);
+              }
+            }
+          }
+        }
+
+        newlines(result.children);
+
+        const lineNumbers = {
+          type: "element",
+          tagName: "div",
+          properties: {
+            className: ["line-numbers"],
+          },
+          children: newlineCount.map(
+            (lineNumber): ElementContent => ({
+              type: "element",
+              tagName: "span",
+              properties: {
+                dataLineNumber: lineNumber,
+              },
+              children: [{ type: "text", value: lineNumber.toString() + "\n" }],
+            })
+          ),
+        } satisfies Element;
+
+        parent.children = [lineNumbers, node];
+        */
         node.children = result.children as ElementContent[];
       }
     });
