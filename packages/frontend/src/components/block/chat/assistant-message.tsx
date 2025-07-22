@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import rehypeHighlight from "@/markdown-plugin/rehype-highlight";
+import { Separator } from "@/components/ui/separator";
 
 export function AssistantMessage({
   sessionId,
@@ -24,9 +25,11 @@ export function AssistantMessage({
 }) {
   return (
     <div className="flex flex-col items-start gap-2 w-full">
-      <div className="flex flex-row justify-end items-center gap-1">
-        <span className="text-sm text-muted-foreground">Assistant</span>
-      </div>
+      <Separator className="relative mb-2">
+        <div className="bg-background dark:bg-background rounded-md px-2 absolute left-4 inset-y-0 flex flex-row justify-end items-center gap-1">
+          <span className="text-sm text-muted-foreground">Assistant</span>
+        </div>
+      </Separator>
       <div className="flex flex-col items-start justify-start gap-4 w-full">
         {messages.map((message, index) => {
           if (message.type === "text") {
@@ -53,8 +56,8 @@ export function AssistantMessage({
                   <AccordionTrigger className="w-full">
                     Thinking
                   </AccordionTrigger>
-                  <AccordionContent className="prose dark:prose-invert prose-sm opacity-60">
-                    <Markdown remarkPlugins={[]}>
+                  <AccordionContent className="border-l-2 border-muted-foreground/20 pl-4 prose dark:prose-invert prose-sm opacity-60">
+                    <Markdown>
                       {/* intentionally not highlighted */}
                       {message.thinking}
                     </Markdown>

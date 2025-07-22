@@ -138,6 +138,10 @@
 /**
 HIGHLIGHT THEME
 **/
+pre:has(code.hljs) {
+  @apply border rounded-md;
+}
+
 .dark .hljs {
   /*!
     Theme: Tokyo-night-Dark
