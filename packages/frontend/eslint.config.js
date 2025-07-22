@@ -3,6 +3,7 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import tseslintplugin from "@typescript-eslint/eslint-plugin"
 import { globalIgnores } from "eslint/config";
 
 export default tseslint.config([
@@ -15,6 +16,9 @@ export default tseslint.config([
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
     ],
+    plugins: {
+      "typescript-eslint": tseslintplugin,
+    },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
