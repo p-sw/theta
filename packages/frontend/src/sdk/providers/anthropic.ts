@@ -259,12 +259,15 @@ export class AnthropicProvider extends API<IMessage> {
     setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void> {
     const messages = this.translateSession(session);
+    const modelConfig = this.getModelConfig(model);
 
     const response = await proxyfetch(this.API_BASE_URL + "/messages", {
       ...this.buildAPIRequest("POST"),
       body: {
         model,
-        max_tokens: 1024,
+        max_tokens: modelConfig.maxOutput,
+        temperature: modelConfig.temperature,
+        stop_sequences: modelConfig.stopSequences,
         messages,
         stream: true,
         system: [
