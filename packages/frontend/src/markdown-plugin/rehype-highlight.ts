@@ -48,7 +48,7 @@ export default function rehypeHighlight() {
         const cause = error as Error;
         if (lang && /Unknown language/.test(cause.message)) {
           file.message(
-            "Cannot highlight as `" + lang + "`, it’s not registered",
+            "Cannot highlight as `" + lang + "`, it is not registered",
             {
               ancestors: [parent, node],
               cause,
