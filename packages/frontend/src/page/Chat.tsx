@@ -56,6 +56,7 @@ export default function Chat() {
   });
 
   const handleSubmit = (data: { message: string }) => {
+    form.reset();
     AiSdk.message(sessionId, isPermanentSession, provider!, modelId!, [
       { type: "text", text: data.message },
     ]).catch((e) => {
