@@ -15,6 +15,7 @@ import {
   type IMessageResultText,
 } from "@/sdk/shared";
 import type {
+  IMessageResultThinking,
   IModelConfigSchema,
   IModelInfo,
   SessionTurns,
@@ -387,8 +388,7 @@ export class AnthropicProvider extends API<IMessage> {
                   const index = event.index;
                   contentBlockMap[index] = prev.length;
                   prev.push({
-                    type: "text",
-                    text: event.content_block.text,
+                    ...event.content_block,
                   });
                 });
                 break;
@@ -396,12 +396,13 @@ export class AnthropicProvider extends API<IMessage> {
                 result((prev) => {
                   const index = event.index;
                   const actualIndex = contentBlockMap[index];
-                  prev[actualIndex] = {
-                    type: "text",
-                    text:
-                      (prev[actualIndex] as IMessageResultText).text +
-                      event.delta.text,
-                  };
+                  if (event.delta.type === "text_delta") {
+                    (prev[actualIndex] as IMessageResultText).text +=
+                      event.delta.text;
+                  } else if (event.delta.type === "thinking_delta") {
+                    (prev[actualIndex] as IMessageResultThinking).thinking +=
+                      event.delta.thinking;
+                  }
                 });
               } else if (event.type === "content_block_stop") {
               } else {

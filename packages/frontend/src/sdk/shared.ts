@@ -81,11 +81,17 @@ export interface IMessageRequestText {
 export type IMessageResult =
   | IMessageResultText
   | IMessageResultStart
-  | IMessageResultEnd;
+  | IMessageResultEnd
+  | IMessageResultThinking;
 
 export interface IMessageResultText {
   type: "text";
   text: string;
+}
+
+export interface IMessageResultThinking {
+  type: "thinking";
+  thinking: string;
 }
 
 export interface IMessageResultStart {

@@ -129,11 +129,41 @@ export type IMessageResultData =
   | IMessageResultContentBlockStart
   | IMessageResultContentBlockDelta
   | IMessageResultContentBlockStop
+  | IMessageResultThinkingStart
+  | IMessageResultThinkingDelta
+  | IMessageResultThinkingSignatureDelta
   | IMessageResultMessageDelta
   | IMessageResultMessageStart
   | IMessageResultMessageStop
   | IMessageResultPing
   | IErrorBody;
+
+export interface IMessageResultThinkingStart {
+  type: "content_block_start";
+  index: number;
+  content_block: {
+    type: "thinking";
+    thinking: string;
+  };
+}
+
+export interface IMessageResultThinkingDelta {
+  type: "content_block_delta";
+  index: number;
+  delta: {
+    type: "thinking_delta";
+    thinking: string;
+  };
+}
+
+export interface IMessageResultThinkingSignatureDelta {
+  type: "content_block_delta";
+  index: number;
+  delta: {
+    type: "signature_delta";
+    signature: string;
+  };
+}
 
 export interface IMessageResultPing {
   type: "ping";
