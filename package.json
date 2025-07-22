@@ -2,6 +2,7 @@
   "name": "theta",
   "module": "index.ts",
   "devDependencies": {
+    "@catppuccin/highlightjs": "^1.0.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/bun": "latest"
   },
