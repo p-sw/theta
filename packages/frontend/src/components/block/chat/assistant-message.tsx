@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { IMessageResult, SessionTurnsResponseStop } from "@/sdk/shared";
 import LucidAlertCircle from "~icons/lucide/alert-circle";
 import LucidInfo from "~icons/lucide/info";
+import Markdown from "react-markdown";
 
 export function AssistantMessage({
   sessionId,
@@ -19,14 +20,18 @@ export function AssistantMessage({
       <div className="flex flex-row justify-end items-center gap-1">
         <span className="text-sm text-muted-foreground">Assistant</span>
       </div>
-      <div className="flex flex-col items-center justify-start gap-4">
-        {messages.map((message, index) => {
-          if (message.type === "text") {
-            return (
-              <p key={`${sessionId}-${messageId}-${index}`}>{message.text}</p>
-            );
-          }
-        })}
+      <div className="flex flex-col items-start justify-start gap-4 w-full">
+        <div className="prose dark:prose-invert w-full">
+          {messages.map((message, index) => {
+            if (message.type === "text") {
+              return (
+                <Markdown key={`${sessionId}-${messageId}-${index}`}>
+                  {message.text}
+                </Markdown>
+              );
+            }
+          })}
+        </div>
         <StopIndicator stop={stop} />
       </div>
     </div>
