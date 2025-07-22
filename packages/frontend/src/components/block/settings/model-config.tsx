@@ -29,6 +29,7 @@ import { LucideSave, LucideTrash, LucidePlus } from "lucide-react";
 import { PER_MODEL_CONFIG_KEY } from "@/lib/const";
 import { useStorage } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export function ModelConfigForm({
   provider,
@@ -55,6 +56,15 @@ export function ModelConfigForm({
   const onSubmit = useCallback(
     (data: typeof config) => {
       setModelConfig(data);
+      toast("Config saved", {
+        description: `Model ${modelId} config saved`,
+        action: {
+          label: "Reset",
+          onClick: () => {
+            setModelConfig(AiSdk.getDefaultModelConfig(provider, modelId));
+          },
+        },
+      });
     },
     [setModelConfig]
   );
