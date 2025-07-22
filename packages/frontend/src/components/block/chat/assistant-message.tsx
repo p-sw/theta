@@ -30,7 +30,7 @@ export function AssistantMessage({
         {messages.map((message, index) => {
           if (message.type === "text") {
             return (
-              <div className="prose dark:prose-invert w-full">
+              <div className="prose dark:prose-invert w-full prose-neutral">
                 <Markdown key={`${sessionId}-${messageId}-${index}`}>
                   {message.text}
                 </Markdown>
@@ -39,10 +39,19 @@ export function AssistantMessage({
           }
           if (message.type === "thinking") {
             return (
-              <Accordion type="single" collapsible>
-                <AccordionItem value="thinking">
-                  <AccordionTrigger>Thinking</AccordionTrigger>
-                  <AccordionContent>{message.thinking}</AccordionContent>
+              <Accordion
+                key={`${sessionId}-${messageId}-${index}`}
+                type="single"
+                collapsible
+                className="w-full"
+              >
+                <AccordionItem value="thinking" className="w-full">
+                  <AccordionTrigger className="w-full">
+                    Thinking
+                  </AccordionTrigger>
+                  <AccordionContent className="prose dark:prose-invert prose-sm opacity-60">
+                    <Markdown>{message.thinking}</Markdown>
+                  </AccordionContent>
                 </AccordionItem>
               </Accordion>
             );
