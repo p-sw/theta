@@ -15,7 +15,7 @@ import {
   SESSION_STORAGE_KEY,
 } from "@/lib/const.ts";
 import { dispatchEvent } from "@/lib/utils.ts";
-import { SaveSessionItem } from "@/components/block/menu.tsx";
+import { SaveSessionItem } from "@/components/block/dialogs/save-session";
 
 export function DesktopNav() {
   const permanentKeys = useSessionKeys({ sessionStorage: false });
