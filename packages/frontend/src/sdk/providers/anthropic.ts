@@ -267,7 +267,9 @@ export class AnthropicProvider extends API<IMessage> {
       body: {
         model,
         max_tokens: modelConfig.maxOutput,
-        temperature: modelConfig.temperature,
+        temperature: !modelConfig.extendedThinking
+          ? modelConfig.temperature
+          : 1,
         stop_sequences: modelConfig.stopSequences,
         messages,
         stream: true,
