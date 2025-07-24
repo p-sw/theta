@@ -37,11 +37,6 @@ import {
 import LucideSave from "~icons/lucide/save";
 import { DeleteSessionDialog } from "@/components/block/dialogs/delete-session.tsx";
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "short",
-  timeStyle: "short",
-});
-
 export interface WSessionItemProps {
   sessionKey: string;
   compact?: boolean;
@@ -230,7 +225,7 @@ export function TemporarySessionItem({
   ]);
 
   const props = {
-    title: dateFormatter.format(new Date(session.createdAt)),
+    title: session.title,
     updatedAt: session.updatedAt,
     onOpen,
     onDelete,
