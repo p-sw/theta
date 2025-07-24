@@ -310,13 +310,19 @@ function CompactSessionItem({
       onClick={onOpen}
     >
       <div>
-        <span className={"h-fit text-sm font-light select-none"}>{title}</span>
+        <span
+          className={
+            "h-fit text-sm font-light select-none line-clamp-1 text-ellipsis grow text"
+          }
+        >
+          {title}
+        </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant={"ghost"}
               className={
-                "group-hover:opacity-100 opacity-0 transition-[opacity,background-color,color] duration-100 size-6"
+                "group-hover:opacity-100 opacity-0 transition-[opacity,background-color,color] duration-100 size-6 shrink-0"
               }
               onClick={(e) => e.stopPropagation()}
             >
