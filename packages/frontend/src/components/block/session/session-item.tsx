@@ -16,6 +16,7 @@ import {
   type MouseEventHandler,
   use,
   useCallback,
+  useState,
 } from "react";
 import {
   PATHS,
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import LucideSave from "~icons/lucide/save";
+import { DeleteSessionDialog } from "@/components/block/dialogs/delete-session.tsx";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "short",
@@ -74,9 +76,6 @@ export function PermanentSessionItem({
     use(ChatContext);
   const [_, setPath] = usePath();
 
-  const sessionKeysTemp = useSessionKeys({ sessionStorage: true });
-  const sessionKeysPerm = useSessionKeys({ sessionStorage: false });
-
   const onOpen = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
@@ -87,43 +86,48 @@ export function PermanentSessionItem({
     [setSessionId, setPath, sessionKey, setIsPermanentSession],
   );
 
-  const onDelete = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation();
-      if (sessionId === SESSION_STORAGE_ID(sessionKey)) {
-        // must move to another session
-        setIsPermanentSession(true);
-        // get another existing key
-        // 1. find in perm, higher priority
-        // 2. find in temp
-        const anotherSessionKey = sessionKeysPerm.find(
-          (key) => key !== sessionKey,
-        );
-        const anotherSessionKeyTemp = anotherSessionKey ?? sessionKeysTemp[0];
-        if (!anotherSessionKeyTemp) {
-          // if no session, create one
-          setNewSession();
-        } else {
-          if (!anotherSessionKey) {
-            // it's temp session
-            setIsPermanentSession(false);
-          }
-          setSessionId(SESSION_STORAGE_ID(anotherSessionKeyTemp));
+  const [deleteSessionDialogOpen, setDeleteSessionDialogOpen] = useState(false);
+  const onDelete = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
+    setDeleteSessionDialogOpen(true);
+  }, []);
+
+  const sessionKeysPerm = useSessionKeys({ sessionStorage: false });
+  const sessionKeysTemp = useSessionKeys({ sessionStorage: true });
+
+  const onDeleteAction = useCallback(() => {
+    if (sessionId === SESSION_STORAGE_ID(sessionKey)) {
+      // must move to another session
+      setIsPermanentSession(true);
+      // get another existing key
+      // 1. find in perm, higher priority
+      // 2. find in temp
+      const anotherSessionKey = sessionKeysPerm.find(
+        (key) => key !== sessionKey,
+      );
+      const anotherSessionKeyTemp = anotherSessionKey ?? sessionKeysTemp[0];
+      if (!anotherSessionKeyTemp) {
+        // if no session, create one
+        setNewSession();
+      } else {
+        if (!anotherSessionKey) {
+          // it's temp session
+          setIsPermanentSession(false);
         }
+        setSessionId(SESSION_STORAGE_ID(anotherSessionKeyTemp));
       }
-      localStorage.removeItem(sessionKey);
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
-    },
-    [
-      sessionId,
-      sessionKey,
-      setIsPermanentSession,
-      sessionKeysPerm,
-      sessionKeysTemp,
-      setNewSession,
-      setSessionId,
-    ],
-  );
+    }
+    localStorage.removeItem(sessionKey);
+    dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
+  }, [
+    sessionId,
+    sessionKey,
+    setIsPermanentSession,
+    sessionKeysPerm,
+    sessionKeysTemp,
+    setNewSession,
+    setSessionId,
+  ]);
 
   const props = {
     title: session.title,
@@ -136,7 +140,17 @@ export function PermanentSessionItem({
 
   const Component = compact ? CompactSessionItem : SessionItem;
 
-  return <Component {...props} />;
+  return (
+    <>
+      <Component {...props} />
+      <DeleteSessionDialog
+        open={deleteSessionDialogOpen}
+        onOpenChange={setDeleteSessionDialogOpen}
+        sessionTitle={session.title}
+        onDelete={onDeleteAction}
+      />
+    </>
+  );
 }
 
 export function TemporarySessionItem({
@@ -151,6 +165,7 @@ export function TemporarySessionItem({
     sessionKey,
     {
       id: SESSION_STORAGE_ID(sessionKey),
+      title: new Date(Date.now()).toLocaleString(),
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -158,8 +173,6 @@ export function TemporarySessionItem({
     undefined,
     { temp: true },
   );
-  const sessionKeysTemp = useSessionKeys({ sessionStorage: true });
-  const sessionKeysPerm = useSessionKeys({ sessionStorage: false });
   const [_, setPath] = usePath();
 
   const onOpen = useCallback(
@@ -172,43 +185,49 @@ export function TemporarySessionItem({
     [sessionKey, setIsPermanentSession, setPath, setSessionId],
   );
 
-  const onDelete = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation();
-      if (sessionId === SESSION_STORAGE_ID(sessionKey)) {
-        // must move to another session
-        setIsPermanentSession(false);
-        // get another existing key
-        // 1. find in temp, higher priority
-        // 2. find in perm
-        const anotherSessionKey = sessionKeysTemp.find(
-          (key) => key !== sessionKey,
-        );
-        const anotherSessionKeyPerm = anotherSessionKey ?? sessionKeysPerm[0];
-        if (!anotherSessionKeyPerm) {
-          // if no session, create one
-          setNewSession();
-        } else {
-          if (!anotherSessionKey) {
-            // it's perm session
-            setIsPermanentSession(true);
-          }
-          setSessionId(SESSION_STORAGE_ID(anotherSessionKeyPerm));
+  const sessionKeysPerm = useSessionKeys({ sessionStorage: false });
+  const sessionKeysTemp = useSessionKeys({ sessionStorage: true });
+
+  const [deleteSessionDialogOpen, setDeleteSessionDialogOpen] = useState(false);
+
+  const onDelete = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
+    setDeleteSessionDialogOpen(true);
+  }, []);
+
+  const onDeleteAction = useCallback(() => {
+    if (sessionId === SESSION_STORAGE_ID(sessionKey)) {
+      // must move to another session
+      setIsPermanentSession(false);
+      // get another existing key
+      // 1. find in temp, higher priority
+      // 2. find in perm
+      const anotherSessionKey = sessionKeysTemp.find(
+        (key) => key !== sessionKey,
+      );
+      const anotherSessionKeyPerm = anotherSessionKey ?? sessionKeysPerm[0];
+      if (!anotherSessionKeyPerm) {
+        // if no session, create one
+        setNewSession();
+      } else {
+        if (!anotherSessionKey) {
+          // it's perm session
+          setIsPermanentSession(true);
         }
+        setSessionId(SESSION_STORAGE_ID(anotherSessionKeyPerm));
       }
-      sessionStorage.removeItem(sessionKey);
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
-    },
-    [
-      sessionId,
-      sessionKey,
-      sessionKeysPerm,
-      sessionKeysTemp,
-      setIsPermanentSession,
-      setNewSession,
-      setSessionId,
-    ],
-  );
+    }
+    sessionStorage.removeItem(sessionKey);
+    dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
+  }, [
+    sessionId,
+    sessionKey,
+    sessionKeysPerm,
+    sessionKeysTemp,
+    setIsPermanentSession,
+    setNewSession,
+    setSessionId,
+  ]);
 
   const props = {
     title: dateFormatter.format(new Date(session.createdAt)),
@@ -222,7 +241,18 @@ export function TemporarySessionItem({
 
   const Component = compact ? CompactSessionItem : SessionItem;
 
-  return <Component {...props} />;
+  return (
+    <>
+      <Component {...props} />
+      <DeleteSessionDialog
+        open={deleteSessionDialogOpen}
+        onOpenChange={setDeleteSessionDialogOpen}
+        sessionTitle={session.title}
+        sessionId={session.id}
+        onDelete={onDeleteAction}
+      />{" "}
+    </>
+  );
 }
 
 function SessionItem({

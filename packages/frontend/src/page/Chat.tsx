@@ -45,7 +45,7 @@ export default function Chat() {
     SESSION_STORAGE_KEY(sessionId),
     {
       id: sessionId,
-      title: Date.now().toLocaleString(),
+      title: new Date(Date.now()).toLocaleString(),
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
