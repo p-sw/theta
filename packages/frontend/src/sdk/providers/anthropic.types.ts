@@ -1,9 +1,17 @@
+import type { JSONSchema7 } from "json-schema";
+
 export interface IModelConfig {
   temperature: number;
   maxOutput: number;
   stopSequences: string[];
   extendedThinking: boolean;
   thinkingBudget: number;
+}
+
+export interface IClientToolSchema {
+  name: string; // ^[a-zA-Z0-9_-]{1,64}$
+  description: string;
+  input_schema: JSONSchema7;
 }
 
 type ErrorType =

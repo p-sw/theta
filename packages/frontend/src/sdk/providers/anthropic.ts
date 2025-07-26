@@ -1,6 +1,7 @@
 import { PER_MODEL_CONFIG_KEY, SYSTEM_PROMPTS_KEY } from "@/lib/const";
 import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
+  IClientToolSchema,
   IErrorBody,
   IMessage,
   IMessageResultData,
@@ -11,6 +12,7 @@ import type {
   IMessageResultThinking,
   IModelConfigSchema,
   IModelInfo,
+  IToolSchemaRegistry,
   SessionTurns,
 } from "@/sdk/shared";
 import {
@@ -169,7 +171,7 @@ function isErrorBody(body: unknown): body is IErrorBody {
   return true;
 }
 
-export class AnthropicProvider extends API<IMessage> {
+export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
   protected readonly API_BASE_URL = "https://api.anthropic.com/v1";
 
   constructor(apiKey: string) {
@@ -249,6 +251,16 @@ export class AnthropicProvider extends API<IMessage> {
     }
 
     return messages;
+  }
+
+  protected translateToolSchema(
+    schema: IToolSchemaRegistry
+  ): IClientToolSchema[] {
+    return schema.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      input_schema: tool.parameters,
+    }));
   }
 
   async getModels(): Promise<IModelInfo[]> {

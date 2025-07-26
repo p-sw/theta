@@ -1,4 +1,5 @@
 import type z from "zod";
+import type { JSONSchema7 } from "json-schema";
 
 export type IProvider = "anthropic";
 export interface IProviderInfo {
@@ -20,7 +21,7 @@ export interface ISystemPrompt {
   systemPrompts: string[];
 }
 
-export abstract class API<T> {
+export abstract class API<ProviderSession, ProviderToolSchema> {
   protected abstract readonly API_BASE_URL: string;
   protected apiKey!: string;
 
@@ -28,7 +29,10 @@ export abstract class API<T> {
     method: RequestInit["method"]
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };
   protected abstract ensureSuccess(response: Response): Promise<void>;
-  protected abstract translateSession(session: SessionTurns): T[];
+  protected abstract translateSession(session: SessionTurns): ProviderSession[];
+  protected abstract translateToolSchema(
+    schema: IToolSchemaRegistry
+  ): ProviderToolSchema[];
   abstract message(
     session: SessionTurns,
     model: string,
@@ -74,6 +78,14 @@ export interface IModelConfigSchemaArray extends IModelConfigSchemaBase {
   type: "array";
   items: Omit<IModelConfigSchema, "displayName" | "description">;
 }
+
+export interface IToolSchema {
+  name: string;
+  description: string;
+  parameters: JSONSchema7;
+}
+
+export type IToolSchemaRegistry = IToolSchema[];
 
 export type IMessageRequest = IMessageRequestText;
 
