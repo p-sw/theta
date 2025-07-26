@@ -231,6 +231,12 @@ export class AnthropicProvider extends API<IMessage> {
           case "start":
           case "end":
             break;
+          case "thinking":
+            message.content.push({
+              type: "thinking",
+              thinking: turnPartial.thinking,
+            });
+            break;
           default:
             console.warn(
               "[Anthropic] Unexpected message type while translating session:",
