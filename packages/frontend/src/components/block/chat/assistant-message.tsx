@@ -34,11 +34,11 @@ export function AssistantMessage({
         {messages.map((message, index) => {
           if (message.type === "text") {
             return (
-              <div className="prose dark:prose-invert w-full prose-neutral">
-                <Markdown
-                  key={`${sessionId}-${messageId}-${index}`}
-                  rehypePlugins={[rehypeHighlight]}
-                >
+              <div
+                key={`${sessionId}-${messageId}-${index}`}
+                className="prose dark:prose-invert w-full prose-neutral"
+              >
+                <Markdown rehypePlugins={[rehypeHighlight]}>
                   {message.text}
                 </Markdown>
               </div>
