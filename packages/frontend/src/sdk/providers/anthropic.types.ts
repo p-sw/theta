@@ -55,7 +55,7 @@ export interface IMessage {
 // TODO: image, file, search operation, mcp, web search, code execution, server tool, container upload
 
 export interface IMessageThinking {
-  signature?: string;
+  signature: string;
   thinking: string;
   type: "thinking";
 }

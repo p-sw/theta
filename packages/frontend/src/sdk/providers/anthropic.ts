@@ -178,7 +178,7 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   protected buildAPIRequest(
-    method: RequestInit["method"],
+    method: RequestInit["method"]
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> } {
     return {
       headers: {
@@ -206,7 +206,7 @@ export class AnthropicProvider extends API<IMessage> {
         throw new ExpectedError(
           response.status,
           errorBody.error.type,
-          `[Anthropic] ${errorBody.error.type}: ${errorBody.error.message}`,
+          `[Anthropic] ${errorBody.error.type}: ${errorBody.error.message}`
         );
       }
 
@@ -235,12 +235,13 @@ export class AnthropicProvider extends API<IMessage> {
             message.content.push({
               type: "thinking",
               thinking: turnPartial.thinking,
+              signature: turnPartial.signature,
             });
             break;
           default:
             console.warn(
               "[Anthropic] Unexpected message type while translating session:",
-              turnPartial,
+              turnPartial
             );
         }
       }
@@ -263,7 +264,7 @@ export class AnthropicProvider extends API<IMessage> {
     session: SessionTurns,
     model: string,
     result: (updator: (message: IMessageResult[]) => void) => void,
-    setStop: (stop: SessionTurnsResponse["stop"]) => void,
+    setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void> {
     const messages = this.translateSession(session);
     const modelConfig = this.getModelConfig(model);
@@ -325,7 +326,7 @@ export class AnthropicProvider extends API<IMessage> {
       throw new ExpectedError(
         response.status,
         "common_http_error",
-        "No reader",
+        "No reader"
       );
     }
 
@@ -353,7 +354,7 @@ export class AnthropicProvider extends API<IMessage> {
                 throw new ExpectedError(
                   response.status,
                   event.error.type,
-                  `[Anthropic] ${event.error.type}: ${event.error.message}`,
+                  `[Anthropic] ${event.error.type}: ${event.error.message}`
                 );
               }
               if (event.type === "ping") {
@@ -421,9 +422,18 @@ export class AnthropicProvider extends API<IMessage> {
                 result((prev) => {
                   const index = event.index;
                   contentBlockMap[index] = prev.length;
-                  prev.push({
-                    ...event.content_block,
-                  });
+                  if (event.content_block.type === "text") {
+                    prev.push({
+                      type: "text",
+                      text: event.content_block.text,
+                    });
+                  } else if (event.content_block.type === "thinking") {
+                    prev.push({
+                      type: "thinking",
+                      thinking: event.content_block.thinking,
+                      signature: "",
+                    });
+                  }
                 });
                 break;
               } else if (event.type === "content_block_delta") {
@@ -436,13 +446,16 @@ export class AnthropicProvider extends API<IMessage> {
                   } else if (event.delta.type === "thinking_delta") {
                     (prev[actualIndex] as IMessageResultThinking).thinking +=
                       event.delta.thinking;
+                  } else if (event.delta.type === "signature_delta") {
+                    (prev[actualIndex] as IMessageResultThinking).signature =
+                      event.delta.signature;
                   }
                 });
               } else if (event.type === "content_block_stop") {
                 // No action needed for content_block_stop events
               } else {
                 throw new AnthropicUnexpectedMessageTypeError(
-                  (event as { type: string }).type,
+                  (event as { type: string }).type
                 );
               }
             } catch (e) {
@@ -468,7 +481,7 @@ export class AnthropicProvider extends API<IMessage> {
 
   protected getModelConfig(modelId: string): IModelConfig {
     const configString = localStorage.getItem(
-      PER_MODEL_CONFIG_KEY("anthropic", modelId),
+      PER_MODEL_CONFIG_KEY("anthropic", modelId)
     );
     if (!configString) {
       return this.getDefaultModelConfig();
@@ -485,7 +498,7 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   getModelConfigSchema(
-    modelId: string,
+    modelId: string
   ): [Record<string, IModelConfigSchema>, z.ZodSchema] {
     const modelInfo = this.getModelInfo(modelId);
     if (!modelInfo) {
@@ -549,7 +562,7 @@ export class AnthropicProvider extends API<IMessage> {
           {
             message: "Thinking budget must be less than maxOutput.",
             path: ["thinkingBudget"],
-          },
+          }
         ),
     ];
   }
