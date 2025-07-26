@@ -55,11 +55,18 @@ export class AISDK {
       storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
     ) as TemporarySession;
 
+    function saveSession() {
+      storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
+      dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
+      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
+    }
+
     session.turns.push({
       type: "request",
       messageId: hyperidInstance(),
       message: requestMessage,
     });
+    saveSession();
 
     const resultMessage: IMessageResult[] = [];
     const resultTurn: SessionTurnsResponse = {
@@ -68,12 +75,7 @@ export class AISDK {
       message: resultMessage,
     };
     session.turns.push(resultTurn);
-
-    function saveSession() {
-      storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
-      dispatchStorageEvent(SESSION_STORAGE_KEY(sessionId));
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
-    }
+    saveSession();
 
     function updateSession(updator: (message: IMessageResult[]) => void) {
       updator(resultMessage);
