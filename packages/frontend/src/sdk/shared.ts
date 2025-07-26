@@ -16,6 +16,10 @@ export class ExpectedError extends Error {
   }
 }
 
+export interface ISystemPrompt {
+  systemPrompts: string[];
+}
+
 export abstract class API<T> {
   protected abstract readonly API_BASE_URL: string;
   protected apiKey!: string;

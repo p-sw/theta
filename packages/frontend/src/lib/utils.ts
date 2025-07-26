@@ -152,7 +152,7 @@ export function useStorageKey({
     return () => {
       window.removeEventListener(STORAGE_CHANGE_EVENT_ALL, handleStorageChange);
     };
-  }, []);
+  }, [_sessionStorage]);
 
   return keys;
 }

@@ -1,4 +1,4 @@
-import { PER_MODEL_CONFIG_KEY } from "@/lib/const";
+import { PER_MODEL_CONFIG_KEY, SYSTEM_PROMPTS_KEY } from "@/lib/const";
 import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
   IErrorBody,
@@ -7,18 +7,18 @@ import type {
   IMessageResultMessageDelta,
   IModelConfig,
 } from "@/sdk/providers/anthropic.types";
-import {
-  API,
-  ExpectedError,
-  type SessionTurnsResponse,
-  type IMessageResult,
-  type IMessageResultText,
-} from "@/sdk/shared";
 import type {
   IMessageResultThinking,
   IModelConfigSchema,
   IModelInfo,
   SessionTurns,
+} from "@/sdk/shared";
+import {
+  API,
+  ExpectedError,
+  type IMessageResult,
+  type IMessageResultText,
+  type SessionTurnsResponse,
 } from "@/sdk/shared";
 import z from "zod";
 
@@ -178,7 +178,7 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   protected buildAPIRequest(
-    method: RequestInit["method"]
+    method: RequestInit["method"],
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> } {
     return {
       headers: {
@@ -206,7 +206,7 @@ export class AnthropicProvider extends API<IMessage> {
         throw new ExpectedError(
           response.status,
           errorBody.error.type,
-          `[Anthropic] ${errorBody.error.type}: ${errorBody.error.message}`
+          `[Anthropic] ${errorBody.error.type}: ${errorBody.error.message}`,
         );
       }
 
@@ -234,7 +234,7 @@ export class AnthropicProvider extends API<IMessage> {
           default:
             console.warn(
               "[Anthropic] Unexpected message type while translating session:",
-              turnPartial
+              turnPartial,
             );
         }
       }
@@ -257,10 +257,41 @@ export class AnthropicProvider extends API<IMessage> {
     session: SessionTurns,
     model: string,
     result: (updator: (message: IMessageResult[]) => void) => void,
-    setStop: (stop: SessionTurnsResponse["stop"]) => void
+    setStop: (stop: SessionTurnsResponse["stop"]) => void,
   ): Promise<void> {
     const messages = this.translateSession(session);
     const modelConfig = this.getModelConfig(model);
+
+    // Get system prompts from localStorage
+    const systemPrompts = [
+      {
+        type: "text" as const,
+        text: "Today's datetime is " + new Date().toISOString(),
+      },
+    ];
+
+    try {
+      const systemPromptsString = localStorage.getItem(SYSTEM_PROMPTS_KEY);
+      if (systemPromptsString) {
+        const systemPromptsData = JSON.parse(systemPromptsString);
+        if (
+          systemPromptsData.systemPrompts &&
+          Array.isArray(systemPromptsData.systemPrompts)
+        ) {
+          // Add user-defined system prompts
+          systemPromptsData.systemPrompts.forEach((prompt: string) => {
+            if (prompt.trim()) {
+              systemPrompts.push({
+                type: "text" as const,
+                text: prompt,
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing system prompts:", e);
+    }
 
     const response = await proxyfetch(this.API_BASE_URL + "/messages", {
       ...this.buildAPIRequest("POST"),
@@ -273,12 +304,7 @@ export class AnthropicProvider extends API<IMessage> {
         stop_sequences: modelConfig.stopSequences,
         messages,
         stream: true,
-        system: [
-          {
-            type: "text",
-            text: "Today's datetime is " + new Date().toISOString(),
-          },
-        ],
+        system: systemPrompts,
         thinking: {
           type: modelConfig.extendedThinking ? "enabled" : "disabled",
           budget_tokens: modelConfig.thinkingBudget,
@@ -293,7 +319,7 @@ export class AnthropicProvider extends API<IMessage> {
       throw new ExpectedError(
         response.status,
         "common_http_error",
-        "No reader"
+        "No reader",
       );
     }
 
@@ -321,7 +347,7 @@ export class AnthropicProvider extends API<IMessage> {
                 throw new ExpectedError(
                   response.status,
                   event.error.type,
-                  `[Anthropic] ${event.error.type}: ${event.error.message}`
+                  `[Anthropic] ${event.error.type}: ${event.error.message}`,
                 );
               }
               if (event.type === "ping") {
@@ -407,9 +433,10 @@ export class AnthropicProvider extends API<IMessage> {
                   }
                 });
               } else if (event.type === "content_block_stop") {
+                // No action needed for content_block_stop events
               } else {
                 throw new AnthropicUnexpectedMessageTypeError(
-                  (event as { type: string }).type
+                  (event as { type: string }).type,
                 );
               }
             } catch (e) {
@@ -435,7 +462,7 @@ export class AnthropicProvider extends API<IMessage> {
 
   protected getModelConfig(modelId: string): IModelConfig {
     const configString = localStorage.getItem(
-      PER_MODEL_CONFIG_KEY("anthropic", modelId)
+      PER_MODEL_CONFIG_KEY("anthropic", modelId),
     );
     if (!configString) {
       return this.getDefaultModelConfig();
@@ -452,7 +479,7 @@ export class AnthropicProvider extends API<IMessage> {
   }
 
   getModelConfigSchema(
-    modelId: string
+    modelId: string,
   ): [Record<string, IModelConfigSchema>, z.ZodSchema] {
     const modelInfo = this.getModelInfo(modelId);
     if (!modelInfo) {
@@ -516,7 +543,7 @@ export class AnthropicProvider extends API<IMessage> {
           {
             message: "Thinking budget must be less than maxOutput.",
             path: ["thinkingBudget"],
-          }
+          },
         ),
     ];
   }

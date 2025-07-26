@@ -37,6 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ModelConfigForm } from "@/components/block/settings/model-config";
+import { SystemPromptSection } from "@/components/block/settings/system-prompt";
 
 function ModelItemSkeleton() {
   return (
@@ -296,6 +297,7 @@ export function Providers() {
     >
       <ModelSection />
       <ProviderSection />
+      <SystemPromptSection />
     </SettingsSection>
   );
 }
