@@ -181,11 +181,6 @@ export function TemporarySessionItem({
 
   const [deleteSessionDialogOpen, setDeleteSessionDialogOpen] = useState(false);
 
-  const onDelete = useCallback((e: MouseEvent) => {
-    e.stopPropagation();
-    setDeleteSessionDialogOpen(true);
-  }, []);
-
   const onDeleteAction = useCallback(() => {
     if (sessionId === SESSION_STORAGE_ID(sessionKey)) {
       // must move to another session
@@ -219,6 +214,16 @@ export function TemporarySessionItem({
     setSessionId,
   ]);
 
+  const onDelete = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation();
+      // skip dialog for temp session
+      // setDeleteSessionDialogOpen(true);
+      onDeleteAction();
+    },
+    [onDeleteAction]
+  );
+
   const props = {
     title: session.title,
     updatedAt: session.updatedAt,
@@ -240,7 +245,7 @@ export function TemporarySessionItem({
         sessionTitle={session.title}
         sessionId={session.id}
         onDelete={onDeleteAction}
-      />{" "}
+      />
     </>
   );
 }
