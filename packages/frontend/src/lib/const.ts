@@ -1,9 +1,41 @@
 import type { IProvider } from "@/sdk/shared";
 
-export const STORAGE_CHANGE_EVENT = (key: string) => `storage-change-${key}`;
+/*
+ * STORAGE CHANGE EVENTS
+ */
+export interface IStorageChangeEventDelta {
+  type: "new" | "removed" | "changed";
+  key: string;
+  previousValue: string | null;
+  newValue: string | null;
+}
+export interface IStorageChangeEventStorage {
+  storageType: "local" | "session";
+  keys: string[];
+  isCleared: boolean;
+  hasNew: boolean;
+  hasRemoved: boolean;
+  hasChanged: boolean;
+  delta: IStorageChangeEventDelta[];
+}
 
-// fired when any storage key is set/removed
-export const STORAGE_CHANGE_EVENT_ALL = "storage-change";
+export const STORAGE_CHANGE_EVENT = (key: string) => `storage-change-${key}`;
+export type StorageChangeEventBody = IStorageChangeEventStorage;
+export type StorageChangeEvent = CustomEvent<StorageChangeEventBody>;
+
+// fired when any storage key is set/removed - to fire a storage event for current tab
+export const STORAGE_CHANGE_EVENT_ALL = "storage";
+export type StorageChangeEventAllBody = IStorageChangeEventStorage;
+export type StorageChangeEventAll = CustomEvent<StorageChangeEventAllBody>;
+
+// fired when storage key list changes (key added/removed)
+export const STORAGE_CHANGE_EVENT_KEY = "storage-change-key";
+export type StorageChangeEventKeyBody = IStorageChangeEventStorage;
+export type StorageChangeEventKey = CustomEvent<StorageChangeEventKeyBody>;
+
+/*
+ * GLOBAL CONSTANTS
+ */
 
 export const THEME = "theme";
 export type ITheme = "light" | "dark";

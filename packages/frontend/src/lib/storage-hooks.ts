@@ -6,12 +6,12 @@ import {
   PATH,
   PATHS,
   SELECTED_MODEL,
-  STORAGE_CHANGE_EVENT_ALL,
   THEME,
 } from "@/lib/const";
-import { dispatchEvent, useStorage, useStorageKey } from "@/lib/utils";
+import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
 import { useCallback } from "react";
+import { sessionStorage } from "@/lib/storage";
 
 export function usePath() {
   return useStorage<string>(PATH, PATHS.CHAT, undefined, {
@@ -22,7 +22,7 @@ export function usePath() {
 export function useTheme() {
   return useStorage<ITheme>(
     THEME,
-    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
   );
 }
 
@@ -53,18 +53,16 @@ export function useSessionKeys({
 export function useSessionCleanup() {
   return useCallback(() => {
     const sessionsFromSessionStorage = Object.keys(sessionStorage).filter(
-      (key) => key.startsWith("session-"),
+      (key) => key.startsWith("session-")
     );
     for (const sessionKey of sessionsFromSessionStorage) {
       const sessionString = localStorage.getItem(sessionKey);
       if (!sessionString || sessionString.length === 0) {
         sessionStorage.removeItem(sessionKey);
-        dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
         continue;
       }
       if ((JSON.parse(sessionString) as TemporarySession).turns.length === 0) {
         sessionStorage.removeItem(sessionKey);
-        dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
       }
     }
   }, []);

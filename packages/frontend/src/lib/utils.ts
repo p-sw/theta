@@ -1,4 +1,5 @@
-import { STORAGE_CHANGE_EVENT, STORAGE_CHANGE_EVENT_ALL } from "@/lib/const";
+import { STORAGE_CHANGE_EVENT, STORAGE_CHANGE_EVENT_KEY } from "@/lib/const";
+import { localStorage, sessionStorage } from "@/lib/storage";
 import { clsx, type ClassValue } from "clsx";
 import hyperid from "hyperid";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -14,23 +15,19 @@ interface IStorageOptions {
 
 export function dispatchEvent<T = unknown>(
   key: string,
-  data?: CustomEventInit<T> | undefined
+  data: CustomEventInit<T>
 ) {
   window.dispatchEvent(new CustomEvent<T>(key, data));
 }
 
-export function dispatchStorageEvent<T = unknown>(key: string, data?: T) {
-  dispatchEvent(STORAGE_CHANGE_EVENT(key), { detail: data });
-}
-
-export function useEventListener<T = unknown>(
+export function useEventListener<T extends Event = Event>(
   key: string,
-  onEvent: (event: CustomEvent<T>) => void
+  onEvent: (event: T) => void
 ) {
   useEffect(() => {
-    window.addEventListener(key, onEvent as EventListener);
+    window.addEventListener(key, onEvent as (event: Event) => void);
     return () => {
-      window.removeEventListener(key, onEvent as EventListener);
+      window.removeEventListener(key, onEvent as (event: Event) => void);
     };
   }, [key, onEvent]);
 }
@@ -99,7 +96,6 @@ export function useStorage<T>(
     const item = storage.getItem(key);
     if (!item) {
       storage.setItem(key, setParse(fallbackValue));
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     }
     return item ? getParse(item) : fallbackValue;
   }, [key, getParse, fallbackValue, storage, setParse]);
@@ -114,8 +110,6 @@ export function useStorage<T>(
           : updator;
       setValue(modified);
       storage.setItem(key, setParse(modified));
-      dispatchStorageEvent(key);
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     },
     [key, setParse, storage, value]
   );
@@ -148,9 +142,9 @@ export function useStorageKey({
       setKeys(Object.keys(_sessionStorage ? sessionStorage : localStorage));
     };
 
-    window.addEventListener(STORAGE_CHANGE_EVENT_ALL, handleStorageChange);
+    window.addEventListener(STORAGE_CHANGE_EVENT_KEY, handleStorageChange);
     return () => {
-      window.removeEventListener(STORAGE_CHANGE_EVENT_ALL, handleStorageChange);
+      window.removeEventListener(STORAGE_CHANGE_EVENT_KEY, handleStorageChange);
     };
   }, [_sessionStorage]);
 

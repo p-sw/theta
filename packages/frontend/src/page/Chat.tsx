@@ -2,7 +2,7 @@ import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
-import { dispatchEvent, useEventListener, useStorage } from "@/lib/utils";
+import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
@@ -13,7 +13,6 @@ import {
   NEW_SESSION_EVENT,
   SAVE_SESSION_EVENT,
   SESSION_STORAGE_KEY,
-  STORAGE_CHANGE_EVENT_ALL,
 } from "@/lib/const";
 import type { PermanentSession, TemporarySession } from "@/sdk/shared";
 import { UserMessage } from "@/components/block/chat/user-message";
@@ -27,6 +26,7 @@ import {
 import type { SaveSessionForm } from "@/components/block/dialogs/save-session";
 import { ChatContext } from "./context/Chat";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
+import { localStorage, sessionStorage } from "@/lib/storage";
 
 export default function Chat() {
   const {
@@ -53,7 +53,7 @@ export default function Chat() {
     undefined,
     {
       temp: !isPermanentSession,
-    },
+    }
   );
 
   const form = useForm({
@@ -84,16 +84,14 @@ export default function Chat() {
           ...session,
           title: e.detail.title,
           updatedAt: Date.now(),
-        }),
+        })
       );
       // make this page use localStorage
       setIsPermanentSession(true);
       // remove from sessionStorage
       sessionStorage.removeItem(SESSION_STORAGE_KEY(sessionId));
-
-      dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
     },
-    [sessionId, session, setIsPermanentSession],
+    [sessionId, session, setIsPermanentSession]
   );
   useEventListener(NEW_SESSION_EVENT, handleNewSession);
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
@@ -127,7 +125,7 @@ export default function Chat() {
                 messages={message.message}
                 stop={message.stop}
               />
-            ),
+            )
           )}
         </section>
         <Form {...form}>

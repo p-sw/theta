@@ -1,4 +1,4 @@
-import { dispatchEvent, useStorage } from "@/lib/utils";
+import { useStorage } from "@/lib/utils";
 import type { PermanentSession, TemporarySession } from "@/sdk/shared";
 import LucideTrash2 from "~icons/lucide/trash-2";
 import LucideFileSymlink from "~icons/lucide/file-symlink";
@@ -18,12 +18,9 @@ import {
   useCallback,
   useState,
 } from "react";
-import {
-  PATHS,
-  SESSION_STORAGE_ID,
-  STORAGE_CHANGE_EVENT_ALL,
-} from "@/lib/const";
+import { PATHS, SESSION_STORAGE_ID } from "@/lib/const";
 import { usePath, useSessionKeys } from "@/lib/storage-hooks";
+import { localStorage, sessionStorage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -78,7 +75,7 @@ export function PermanentSessionItem({
       setSessionId(SESSION_STORAGE_ID(sessionKey));
       setPath(PATHS.CHAT);
     },
-    [setSessionId, setPath, sessionKey, setIsPermanentSession],
+    [setSessionId, setPath, sessionKey, setIsPermanentSession]
   );
 
   const [deleteSessionDialogOpen, setDeleteSessionDialogOpen] = useState(false);
@@ -98,7 +95,7 @@ export function PermanentSessionItem({
       // 1. find in perm, higher priority
       // 2. find in temp
       const anotherSessionKey = sessionKeysPerm.find(
-        (key) => key !== sessionKey,
+        (key) => key !== sessionKey
       );
       const anotherSessionKeyTemp = anotherSessionKey ?? sessionKeysTemp[0];
       if (!anotherSessionKeyTemp) {
@@ -113,7 +110,6 @@ export function PermanentSessionItem({
       }
     }
     localStorage.removeItem(sessionKey);
-    dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
   }, [
     sessionId,
     sessionKey,
@@ -166,7 +162,7 @@ export function TemporarySessionItem({
       updatedAt: Date.now(),
     },
     undefined,
-    { temp: true },
+    { temp: true }
   );
   const [_, setPath] = usePath();
 
@@ -177,7 +173,7 @@ export function TemporarySessionItem({
       setSessionId(SESSION_STORAGE_ID(sessionKey));
       setPath(PATHS.CHAT);
     },
-    [sessionKey, setIsPermanentSession, setPath, setSessionId],
+    [sessionKey, setIsPermanentSession, setPath, setSessionId]
   );
 
   const sessionKeysPerm = useSessionKeys({ sessionStorage: false });
@@ -198,7 +194,7 @@ export function TemporarySessionItem({
       // 1. find in temp, higher priority
       // 2. find in perm
       const anotherSessionKey = sessionKeysTemp.find(
-        (key) => key !== sessionKey,
+        (key) => key !== sessionKey
       );
       const anotherSessionKeyPerm = anotherSessionKey ?? sessionKeysPerm[0];
       if (!anotherSessionKeyPerm) {
@@ -213,7 +209,6 @@ export function TemporarySessionItem({
       }
     }
     sessionStorage.removeItem(sessionKey);
-    dispatchEvent(STORAGE_CHANGE_EVENT_ALL);
   }, [
     sessionId,
     sessionKey,

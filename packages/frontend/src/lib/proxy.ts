@@ -12,7 +12,7 @@ export class ClientSideHttpError extends Error {
 export class ServerSideHttpError extends Error {
   public readonly status: number;
   public readonly statusText: string;
-  public readonly data?: any;
+  public readonly data?: unknown;
 
   constructor(status: number, statusText: string) {
     super(`Server-side HTTP Error: ${status} ${statusText}`);

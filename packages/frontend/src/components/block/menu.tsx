@@ -70,7 +70,7 @@ export default function Menu() {
           <DropdownMenuGroup className={"md:hidden"}>
             <DropdownMenuItem
               onClick={() => {
-                dispatchEvent(NEW_SESSION_EVENT);
+                dispatchEvent<undefined>(NEW_SESSION_EVENT, {});
                 setPath(PATHS.CHAT);
               }}
             >

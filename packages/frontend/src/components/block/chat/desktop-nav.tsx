@@ -81,7 +81,7 @@ export function DesktopNav() {
         {/* new session, settings btn */}
         <Button
           onClick={() => {
-            dispatchEvent(NEW_SESSION_EVENT);
+            dispatchEvent<undefined>(NEW_SESSION_EVENT, {});
             setPath(PATHS.CHAT);
           }}
           className={"w-full"}

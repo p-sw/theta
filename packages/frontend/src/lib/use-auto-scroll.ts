@@ -45,7 +45,7 @@ export function useAutoScroll<T extends HTMLElement>() {
   const handleScroll = () => {
     const nearBottom = checkIfNearBottom();
     setIsNearBottom(nearBottom);
-    
+
     // Enable auto-scroll when user scrolls to bottom
     if (nearBottom && !shouldAutoScroll) {
       setShouldAutoScroll(true);
@@ -72,10 +72,11 @@ export function useAutoScroll<T extends HTMLElement>() {
     if (!container) return;
 
     container.addEventListener("scroll", handleScroll, { passive: true });
-    
+
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldAutoScroll]);
 
   // Initial scroll to bottom on mount
