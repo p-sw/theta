@@ -36,7 +36,7 @@ export function AssistantMessage({
             return (
               <div
                 key={`${sessionId}-${messageId}-${index}`}
-                className="prose dark:prose-invert w-full prose-neutral"
+                className="prose dark:prose-invert w-full prose-neutral max-w-full"
               >
                 <Markdown rehypePlugins={[rehypeHighlight]}>
                   {message.text}
@@ -53,10 +53,10 @@ export function AssistantMessage({
                 className="w-full"
               >
                 <AccordionItem value="thinking" className="w-full">
-                  <AccordionTrigger className="w-full">
+                  <AccordionTrigger className="pt-0 pb-2 max-w-fit">
                     Thinking
                   </AccordionTrigger>
-                  <AccordionContent className="border-l-2 border-muted-foreground/20 pl-4 prose dark:prose-invert prose-sm opacity-60">
+                  <AccordionContent className="border-l-2 border-muted-foreground/20 pl-4 prose dark:prose-invert prose-sm opacity-60 max-w-full py-2">
                     <Markdown>
                       {/* intentionally not highlighted */}
                       {message.thinking}

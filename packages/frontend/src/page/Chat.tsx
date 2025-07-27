@@ -107,7 +107,7 @@ export default function Chat() {
       <main className="h-svhfull flex flex-col w-full max-w-4xl mx-auto">
         <section
           ref={scrollContainerRef}
-          className="h-full overflow-y-auto p-8 flex flex-col gap-8"
+          className="h-full overflow-y-auto p-8 flex flex-col gap-16"
         >
           {session.turns.map((message) =>
             message.type === "request" ? (

@@ -18,7 +18,7 @@ export function UserMessage({
           <span className="text-sm text-muted-foreground">User</span>
         </div>
       </Separator>
-      <div className="flex flex-col items-end justify-start prose dark:prose-invert w-full">
+      <div className="flex flex-col items-end justify-start prose dark:prose-invert w-full max-w-full">
         {messages.map((message, index) => {
           if (message.type === "text") {
             return (
