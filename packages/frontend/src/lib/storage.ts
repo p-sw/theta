@@ -136,6 +136,8 @@ class StorageWrapper implements Storage {
   }
 
   setItem(key: string, value: string): void {
+    const delta = [this.getStorageEventDelta(key, value)];
+
     const isNewKey = !this.keys.has(key);
     this.storage.setItem(key, value);
 
@@ -147,7 +149,7 @@ class StorageWrapper implements Storage {
       ...this.getStorageEventBase(),
       hasNew: isNewKey,
       hasChanged: !isNewKey,
-      delta: [this.getStorageEventDelta(key, value)],
+      delta,
     };
 
     dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
