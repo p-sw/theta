@@ -37,6 +37,7 @@ class StorageWrapper implements Storage {
     const isNew = previousValue === null;
     const isRemoved = newValue === null;
     const isChanged = !isNew && !isRemoved && previousValue !== newValue; // string -> string
+    const isSame = previousValue === newValue;
     let type!: IStorageChangeEventDelta["type"];
     switch (true) {
       case isNew:
@@ -47,6 +48,9 @@ class StorageWrapper implements Storage {
         break;
       case isChanged:
         type = "changed";
+        break;
+      case isSame:
+        type = "same";
         break;
       default:
         console.warn(

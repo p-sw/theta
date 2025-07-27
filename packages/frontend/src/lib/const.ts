@@ -4,7 +4,7 @@ import type { IProvider } from "@/sdk/shared";
  * STORAGE CHANGE EVENTS
  */
 export interface IStorageChangeEventDelta {
-  type: "new" | "removed" | "changed";
+  type: "new" | "removed" | "changed" | "same";
   key: string;
   previousValue: string | null;
   newValue: string | null;
