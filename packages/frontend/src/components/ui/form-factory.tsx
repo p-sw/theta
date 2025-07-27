@@ -4,8 +4,9 @@ import type {
   IConfigSchemaNumber,
   IConfigSchemaString,
   IConfigSchema,
+  IConfigSchemaEnum,
 } from "@/sdk/shared";
-import { useCallback } from "react";
+import { useCallback, useId } from "react";
 import {
   useForm,
   type ControllerRenderProps,
@@ -27,6 +28,15 @@ import { Button } from "@/components/ui/button";
 import { LucideSave, LucideTrash, LucidePlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import type { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface FormFactoryProps<T = Record<string, unknown>> {
   schema: Record<string, IConfigSchema>;
@@ -109,7 +119,18 @@ export function FormFactory<T = Record<string, unknown>>({
                   />
                 )}
                 {fieldSchema.type === "array" && (
-                  <FormControlArray schema={fieldSchema} field={field} />
+                  <FormControlArray
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
+                )}
+                {fieldSchema.type === "enum" && (
+                  <FormControlEnum
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
                 )}
                 <FormMessage />
               </FormItem>
@@ -125,15 +146,17 @@ export function FormFactory<T = Record<string, unknown>>({
   );
 }
 
+interface FormControlProps<T> {
+  schema: T;
+  field: ControllerRenderProps;
+  form: UseFormReturn;
+}
+
 function FormControlNumber({
   schema,
   field,
   form,
-}: {
-  schema: IConfigSchemaNumber;
-  field: ControllerRenderProps;
-  form: UseFormReturn;
-}) {
+}: FormControlProps<IConfigSchemaNumber>) {
   return (
     <div className="flex flex-row gap-1 items-center">
       <Slider
@@ -192,11 +215,7 @@ function FormControlString({
   schema,
   field,
   form,
-}: {
-  schema: IConfigSchemaString;
-  field: ControllerRenderProps;
-  form: UseFormReturn;
-}) {
+}: FormControlProps<IConfigSchemaString>) {
   return (
     <FormControl>
       <Input
@@ -217,11 +236,7 @@ function FormControlBoolean({
   schema,
   field,
   form,
-}: {
-  schema: IConfigSchemaBoolean;
-  field: ControllerRenderProps;
-  form: UseFormReturn;
-}) {
+}: FormControlProps<IConfigSchemaBoolean>) {
   return (
     <FormControl>
       <Switch
@@ -242,15 +257,17 @@ function FormControlBoolean({
 function FormControlArray({
   schema,
   field,
-}: {
-  schema: IConfigSchemaArray;
-  field: ControllerRenderProps;
-}) {
+}: FormControlProps<IConfigSchemaArray>) {
+  const id = useId();
+
   return (
     <div className="flex flex-col gap-2">
       {field.value.map((item: string, index: number) => (
-        <div key={index} className="flex flex-row gap-2 items-center">
-          <FormControl id={`array-${index}`}>
+        <div
+          key={`${id}-${index}`}
+          className="flex flex-row gap-2 items-center"
+        >
+          <FormControl>
             <Input
               type={schema.items.type === "string" ? "text" : "number"}
               onBlur={field.onBlur}
@@ -283,9 +300,45 @@ function FormControlArray({
   );
 }
 
+function FormControlEnum({
+  schema,
+  field,
+}: FormControlProps<IConfigSchemaEnum>) {
+  const id = useId();
+
+  return (
+    <Select onValueChange={field.onChange} defaultValue={field.value}>
+      <FormControl>
+        <SelectTrigger>
+          <SelectValue placeholder={schema.placeholder} />
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {schema.items.map((item) =>
+          item.type === "item" ? (
+            <SelectItem key={`${id}-${item.value}`} value={item.value}>
+              {item.name}
+            </SelectItem>
+          ) : (
+            <SelectGroup key={`${id}-${item.label}`}>
+              <SelectLabel>{item.label}</SelectLabel>
+              {item.items.map((item) => (
+                <SelectItem key={`${id}-${item.value}`} value={item.value}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )
+        )}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export {
   FormControlNumber,
   FormControlString,
   FormControlBoolean,
   FormControlArray,
+  FormControlEnum,
 };

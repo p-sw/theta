@@ -53,7 +53,8 @@ export type IConfigSchema =
   | IConfigSchemaNumber
   | IConfigSchemaString
   | IConfigSchemaBoolean
-  | IConfigSchemaArray;
+  | IConfigSchemaArray
+  | IConfigSchemaEnum;
 
 export interface IConfigSchemaBase {
   displayName: string;
@@ -81,10 +82,16 @@ export interface IConfigSchemaArray extends IConfigSchemaBase {
   items: Omit<IConfigSchema, "displayName" | "description">;
 }
 
-export interface IToolSchema {
-  name: string;
-  description: string;
-  parameters: JSONSchema7;
+export interface IConfigSchemaEnum extends IConfigSchemaBase {
+  type: "enum";
+  placeholder: string;
+  items:
+    | { type: "item"; name: string; value: string }[]
+    | {
+        type: "group";
+        label: string;
+        items: { name: string; value: string }[];
+      }[];
 }
 
 export type IToolSchemaRegistry = IToolSchema[];
