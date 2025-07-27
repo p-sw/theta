@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { usePath } from "@/lib/storage-hooks.ts";
 import { PATHS } from "@/lib/const.ts";
 import LucideArrowLeft from "~icons/lucide/arrow-left";
+import { Tools } from "@/components/block/settings/tools";
 
 export default function Setting() {
   const [_, setPath] = usePath();
@@ -24,6 +25,7 @@ export default function Setting() {
         </Button>
         <Appearance />
         <Providers />
+        <Tools />
       </div>
     </main>
   );

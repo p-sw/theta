@@ -89,6 +89,34 @@ export interface IToolSchema {
 
 export type IToolSchemaRegistry = IToolSchema[];
 
+export interface ITool<T> {
+  id: string;
+  displayName: string;
+  description: string;
+  schema: IToolSchema;
+  schemaZod: z.ZodSchema;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  execute: (parameters: any) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ensureParameters(parameters: any): Promise<void>;
+  getDefaultConfig(): T;
+  getConfigSchema(): [Record<string, IConfigSchema>, z.ZodSchema<T>];
+}
+
+export interface IToolRegistry {
+  get<T>(toolId: string): ITool<T> | undefined;
+  getAll<T>(): ITool<T>[];
+  getToolSchemas(): IToolSchemaRegistry;
+  isToolEnabled(toolId: string): boolean;
+}
+
+export interface IToolConfig<T> {
+  disabled: boolean;
+  config: T;
+}
+
+export interface IToolWithConfig<T> extends ITool<T>, IToolConfig<T> {}
+
 export type IMessageRequest = IMessageRequestText;
 
 export interface IMessageRequestText {
