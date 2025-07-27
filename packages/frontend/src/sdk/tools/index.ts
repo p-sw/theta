@@ -1,4 +1,9 @@
-import type { ITool, IToolRegistry, IToolSchemaRegistry } from "../shared";
+import type {
+  ITool,
+  IToolRegistry,
+  IToolSchema,
+  IToolSchemaRegistry,
+} from "../shared";
 import { openWeatherTool } from "./openweather";
 import { getToolConfig } from "@/sdk/tools/lib/utils";
 
@@ -8,16 +13,28 @@ export const TOOLS = {
 export type ToolId = keyof typeof TOOLS;
 
 export default {
-  get<T>(toolId: keyof typeof TOOLS): ITool<T> | undefined {
+  get<T>(toolId: ToolId): ITool<T> | undefined {
     return TOOLS[toolId] as ITool<T>;
   },
   getAll<T>(): ITool<T>[] {
     return Object.values(TOOLS) as ITool<T>[];
   },
-  getToolSchemas(): IToolSchemaRegistry {
-    return Object.values(TOOLS).map((tool) => tool.schema);
+  getToolSchema(toolId: ToolId): IToolSchema {
+    return TOOLS[toolId].schema;
   },
-  isToolEnabled(toolId: keyof typeof TOOLS): boolean {
+  getEnabledTools(): IToolSchemaRegistry {
+    return Object.entries(TOOLS)
+      .filter(
+        ([toolId, tool]) =>
+          !getToolConfig(
+            toolId as ToolId,
+            tool.getDefaultConfig(),
+            tool.getConfigSchema()[1]
+          ).disabled
+      )
+      .map(([_, tool]) => tool.schema);
+  },
+  isToolEnabled(toolId: ToolId): boolean {
     const tool = TOOLS[toolId];
 
     const config = getToolConfig(

@@ -106,7 +106,8 @@ export interface ITool<T> {
 export interface IToolRegistry {
   get<T>(toolId: string): ITool<T> | undefined;
   getAll<T>(): ITool<T>[];
-  getToolSchemas(): IToolSchemaRegistry;
+  getToolSchema(toolId: string): IToolSchema;
+  getEnabledTools(): IToolSchemaRegistry;
   isToolEnabled(toolId: string): boolean;
 }
 
