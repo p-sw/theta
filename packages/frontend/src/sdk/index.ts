@@ -67,8 +67,11 @@ export class AISDK {
     session.turns.push(resultTurn);
     saveSession();
 
-    function updateSession(updator: (message: IMessageResult[]) => void) {
-      updator(resultMessage);
+    async function updateSession(
+      updator: (message: IMessageResult[]) => Promise<unknown>
+    ) {
+      await updator(resultMessage);
+      console.debug("updateSession", [...resultMessage]);
       session.updatedAt = Date.now();
       saveSession();
     }

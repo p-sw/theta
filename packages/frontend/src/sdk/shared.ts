@@ -36,7 +36,9 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
   abstract message(
     session: SessionTurns,
     model: string,
-    result: (updator: (message: IMessageResult[]) => void) => void, // prev -> new
+    result: (
+      updator: (message: IMessageResult[]) => Promise<unknown>
+    ) => Promise<void>, // prev -> new
     setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;

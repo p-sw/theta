@@ -275,7 +275,9 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
   async message(
     session: SessionTurns,
     model: string,
-    result: (updator: (message: IMessageResult[]) => void) => void,
+    result: (
+      updator: (message: IMessageResult[]) => Promise<unknown>
+    ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void
   ): Promise<void> {
     const messages = this.translateSession(session);
@@ -353,15 +355,21 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
+        console.group("[AnthropicProvider] SSE Debug");
         const lines = buffer.split("\n");
+        console.debug("Buffer after split:", [...lines]);
         buffer = lines.pop() || "";
+        console.debug("Buffer after pop:", buffer);
 
         for (const line of lines) {
+          console.debug("Running line:", line);
           if (line.trim() && line.startsWith("data: ")) {
             const data = line.slice(6);
+            console.debug("DataString:", data);
 
             try {
               const event = JSON.parse(data) as IMessageResultData;
+              console.debug("Parsed event:", event);
               if (isErrorBody(event)) {
                 throw new ExpectedError(
                   response.status,
@@ -370,11 +378,11 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                 );
               }
               if (event.type === "ping") {
-                console.log("pong!");
+                // no-op
               } else if (event.type === "message_start") {
-                result((prev) => prev.push({ type: "start" }));
+                result(async (prev) => prev.push({ type: "start" }));
               } else if (event.type === "message_stop") {
-                result((prev) => prev.push({ type: "end" }));
+                result(async (prev) => prev.push({ type: "end" }));
               } else if (event.type === "message_delta") {
                 switch (event.delta.stop_reason) {
                   case "end_turn":
@@ -431,7 +439,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                     break;
                 }
               } else if (event.type === "content_block_start") {
-                result((prev) => {
+                result(async (prev) => {
                   const index = event.index;
                   contentBlockMap[index] = prev.length;
                   if (event.content_block.type === "text") {
@@ -447,9 +455,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                     });
                   }
                 });
-                break;
               } else if (event.type === "content_block_delta") {
-                result((prev) => {
+                result(async (prev) => {
                   const index = event.index;
                   const actualIndex = contentBlockMap[index];
                   if (event.delta.type === "text_delta") {
@@ -472,6 +479,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
               }
             } catch (e) {
               console.error("JSON parse error:", e);
+            } finally {
+              console.groupEnd();
             }
           }
         }
