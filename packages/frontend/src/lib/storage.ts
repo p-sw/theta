@@ -111,6 +111,10 @@ class StorageWrapper implements Storage {
     return this.storage.key(index);
   }
 
+  getKeys(): string[] {
+    return Array.from(this.keys);
+  }
+
   removeItem(key: string): void {
     const hadKey = this.keys.has(key);
     this.storage.removeItem(key);

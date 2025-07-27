@@ -133,13 +133,13 @@ export function useStorageKey({
 }: {
   sessionStorage: boolean;
 }) {
-  const [keys, setKeys] = useState<string[]>(
-    Object.keys(_sessionStorage ? sessionStorage : localStorage)
-  );
+  const [keys, setKeys] = useState<string[]>(() => {
+    return (_sessionStorage ? sessionStorage : localStorage).getKeys();
+  });
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setKeys(Object.keys(_sessionStorage ? sessionStorage : localStorage));
+      setKeys((_sessionStorage ? sessionStorage : localStorage).getKeys());
     };
 
     window.addEventListener(STORAGE_CHANGE_EVENT_KEY, handleStorageChange);
