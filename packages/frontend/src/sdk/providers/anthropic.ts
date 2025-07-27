@@ -10,7 +10,7 @@ import type {
 } from "@/sdk/providers/anthropic.types";
 import type {
   IMessageResultThinking,
-  IModelConfigSchema,
+  IConfigSchema,
   IModelInfo,
   IToolSchemaRegistry,
   SessionTurns,
@@ -520,7 +520,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
 
   getModelConfigSchema(
     modelId: string
-  ): [Record<string, IModelConfigSchema>, z.ZodSchema] {
+  ): [Record<keyof IModelConfig, IConfigSchema>, z.ZodSchema<IModelConfig>] {
     const modelInfo = this.getModelInfo(modelId);
     if (!modelInfo) {
       throw new ExpectedError(404, "model_not_found", "Model not found");

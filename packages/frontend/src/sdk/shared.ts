@@ -45,40 +45,40 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
   abstract getDefaultModelConfig(modelId: string): object;
   abstract getModelConfigSchema(
     modelId: string
-  ): [Record<string, IModelConfigSchema>, z.ZodSchema];
+  ): [Record<string, IConfigSchema>, z.ZodSchema];
   protected abstract getModelConfig(modelId: string): object;
 }
 
-export type IModelConfigSchema =
-  | IModelConfigSchemaNumber
-  | IModelConfigSchemaString
-  | IModelConfigSchemaBoolean
-  | IModelConfigSchemaArray;
+export type IConfigSchema =
+  | IConfigSchemaNumber
+  | IConfigSchemaString
+  | IConfigSchemaBoolean
+  | IConfigSchemaArray;
 
-export interface IModelConfigSchemaBase {
+export interface IConfigSchemaBase {
   displayName: string;
   description: string;
   disabled?: boolean | { $ref: string; not?: boolean };
 }
 
-export interface IModelConfigSchemaNumber extends IModelConfigSchemaBase {
+export interface IConfigSchemaNumber extends IConfigSchemaBase {
   type: "number";
   min: number | { $ref: string };
   max: number | { $ref: string };
   step: number;
 }
 
-export interface IModelConfigSchemaString extends IModelConfigSchemaBase {
+export interface IConfigSchemaString extends IConfigSchemaBase {
   type: "string" | "textarea";
 }
 
-export interface IModelConfigSchemaBoolean extends IModelConfigSchemaBase {
+export interface IConfigSchemaBoolean extends IConfigSchemaBase {
   type: "boolean";
 }
 
-export interface IModelConfigSchemaArray extends IModelConfigSchemaBase {
+export interface IConfigSchemaArray extends IConfigSchemaBase {
   type: "array";
-  items: Omit<IModelConfigSchema, "displayName" | "description">;
+  items: Omit<IConfigSchema, "displayName" | "description">;
 }
 
 export interface IToolSchema {
