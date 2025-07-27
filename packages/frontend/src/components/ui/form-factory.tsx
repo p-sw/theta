@@ -5,6 +5,7 @@ import type {
   IConfigSchemaString,
   IConfigSchema,
   IConfigSchemaEnum,
+  IConfigSchemaEnumGroup,
 } from "@/sdk/shared";
 import { useCallback, useId } from "react";
 import {
@@ -127,6 +128,13 @@ export function FormFactory<T = Record<string, unknown>>({
                 )}
                 {fieldSchema.type === "enum" && (
                   <FormControlEnum
+                    schema={fieldSchema}
+                    field={field}
+                    form={form}
+                  />
+                )}
+                {fieldSchema.type === "enumgroup" && (
+                  <FormControlEnumGroup
                     schema={fieldSchema}
                     field={field}
                     form={form}
@@ -314,22 +322,40 @@ function FormControlEnum({
         </SelectTrigger>
       </FormControl>
       <SelectContent>
-        {schema.items.map((item) =>
-          item.type === "item" ? (
-            <SelectItem key={`${id}-${item.value}`} value={item.value}>
-              {item.name}
-            </SelectItem>
-          ) : (
-            <SelectGroup key={`${id}-${item.label}`}>
-              <SelectLabel>{item.label}</SelectLabel>
-              {item.items.map((item) => (
-                <SelectItem key={`${id}-${item.value}`} value={item.value}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )
-        )}
+        {schema.items.map((item) => (
+          <SelectItem key={`${id}-${item.value}`} value={item.value}>
+            {item.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FormControlEnumGroup({
+  schema,
+  field,
+}: FormControlProps<IConfigSchemaEnumGroup>) {
+  const id = useId();
+
+  return (
+    <Select onValueChange={field.onChange} defaultValue={field.value}>
+      <FormControl>
+        <SelectTrigger>
+          <SelectValue placeholder={schema.placeholder} />
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {schema.items.map((item) => (
+          <SelectGroup key={`${id}-${item.label}`}>
+            <SelectLabel>{item.label}</SelectLabel>
+            {item.items.map((item2) => (
+              <SelectItem key={`${id}-${item2.value}`} value={item2.value}>
+                {item2.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ))}
       </SelectContent>
     </Select>
   );
@@ -341,4 +367,5 @@ export {
   FormControlBoolean,
   FormControlArray,
   FormControlEnum,
+  FormControlEnumGroup,
 };

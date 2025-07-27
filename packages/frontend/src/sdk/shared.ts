@@ -54,7 +54,8 @@ export type IConfigSchema =
   | IConfigSchemaString
   | IConfigSchemaBoolean
   | IConfigSchemaArray
-  | IConfigSchemaEnum;
+  | IConfigSchemaEnum
+  | IConfigSchemaEnumGroup;
 
 export interface IConfigSchemaBase {
   displayName: string;
@@ -85,10 +86,13 @@ export interface IConfigSchemaArray extends IConfigSchemaBase {
 export interface IConfigSchemaEnum extends IConfigSchemaBase {
   type: "enum";
   placeholder: string;
-  items:
-    | { type: "item"; name: string; value: string }[]
-    | {
-        type: "group";
+  items: { name: string; value: string }[];
+}
+
+export interface IConfigSchemaEnumGroup extends IConfigSchemaBase {
+  type: "enumgroup";
+  placeholder: string;
+  items: {
         label: string;
         items: { name: string; value: string }[];
       }[];
