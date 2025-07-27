@@ -13,7 +13,7 @@ export function ModelConfigForm({
   provider: IProvider;
   modelId: string;
 }) {
-  const [_config, setModelConfig] = useStorage(
+  const [config, setModelConfig] = useStorage(
     PER_MODEL_CONFIG_KEY(provider, modelId),
     AiSdk.getDefaultModelConfig(provider, modelId)
   );
@@ -24,7 +24,7 @@ export function ModelConfigForm({
   );
 
   const onSubmit = useCallback(
-    (data: typeof _config) => {
+    (data: typeof config) => {
       setModelConfig(data);
       toast("Config saved", {
         description: `Model ${modelId} config saved`,
@@ -43,7 +43,7 @@ export function ModelConfigForm({
     <FormFactory
       schema={schema}
       schemaZod={schemaZod}
-      defaultValues={AiSdk.getDefaultModelConfig(provider, modelId)}
+      defaultValues={config}
       onSubmit={onSubmit}
     />
   );
