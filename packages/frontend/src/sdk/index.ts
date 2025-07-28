@@ -10,6 +10,7 @@ import type {
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
+import { toolRegistry } from "@/sdk/tools";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -88,7 +89,8 @@ export class AISDK {
           (stop) => {
             resultTurn.stop = stop;
             saveSession();
-          }
+          },
+          toolRegistry.getEnabledTools()
         );
       default:
         throw new Error(`Provider ${provider} not supported`);

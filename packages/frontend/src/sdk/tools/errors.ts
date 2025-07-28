@@ -1,3 +1,6 @@
+/**
+ * Throw before/after tool execution
+ */
 export class ToolRegistryError extends Error {
   constructor(message: string) {
     super(`[ToolRegistryError] ${message}`);
@@ -5,6 +8,9 @@ export class ToolRegistryError extends Error {
   }
 }
 
+/**
+ * Throw on parameter validation time
+ */
 export class ToolParameterError extends Error {
   constructor(message: string) {
     super(`[ToolParameterError] ${message}`);
@@ -12,6 +18,9 @@ export class ToolParameterError extends Error {
   }
 }
 
+/**
+ * Throw on tool execution time
+ */
 export class ToolExecutionError extends Error {
   constructor(message: string) {
     super(`[ToolExecutionError] ${message}`);

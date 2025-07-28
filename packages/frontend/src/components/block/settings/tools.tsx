@@ -2,15 +2,10 @@ import {
   SettingsSection,
   SettingsSubSection,
 } from "@/components/layout/settings";
-import { type ITool, type IToolConfig } from "@/sdk/shared";
-import { useToolRegistry } from "@/sdk/tools/hooks";
-import LucideWrench from "~icons/lucide/wrench";
 import { Button } from "@/components/ui/button";
 import LucideSettings from "~icons/lucide/settings";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { TOOL_CONFIG_KEY } from "@/lib/const";
-import { useStorage } from "@/lib/utils";
 import {
   Sheet,
   SheetCloseIcon,
@@ -20,69 +15,144 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ToolConfigForm } from "@/components/block/settings/tool-config";
-import type { ToolId } from "@/sdk/tools";
+import {
+  useProviderToolEnabled,
+  useToolProvidersMeta,
+  useTools,
+} from "@/lib/tools";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useId } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TOOL_PROVIDER_SEPARATOR } from "@/lib/const";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { IToolProviderMeta } from "@/sdk/shared";
+import { ToolProviderConfigForm } from "@/components/block/settings/tool-provider-config";
 
-export function ToolItem({ tool }: { tool: ITool<unknown> }) {
-  const [config, setConfig] = useStorage<IToolConfig<unknown>>(
-    TOOL_CONFIG_KEY(tool.id),
-    {
-      disabled: false,
-      config: tool.getDefaultConfig(),
-    }
-  );
+function ToolItems({
+  providerId,
+  disabled,
+  isEnabled,
+  toggleEnabled,
+}: {
+  providerId: string;
+  disabled: boolean;
+  isEnabled: (providerId: string, toolId: string) => boolean;
+  toggleEnabled: (providerId: string, toolId: string) => void;
+}) {
+  const tools = useTools(providerId);
+  const id = useId();
 
   return (
-    <div className="border flex flex-row gap-2 rounded-md p-2">
-      <div className="space-x-1 flex-1 content-center">
-        <LucideWrench className="inline-block" />
-        <span className="text-sm font-medium">{tool.displayName}</span>
-      </div>
-      <div className="flex flex-row gap-2">
-        <div className="flex flex-row gap-2 items-center">
-          <Switch
-            id={`settings-functions-tool-${tool.id}-enabled`}
-            checked={!config.disabled}
-            onCheckedChange={(checked) => {
-              setConfig({
-                ...config,
-                disabled: !checked,
-              });
-            }}
+    <>
+      {tools.map((tool) => (
+        <div key={tool.id} className="flex items-center gap-2">
+          <Checkbox
+            id={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
+            checked={isEnabled(
+              providerId,
+              tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
+            )}
+            onCheckedChange={() =>
+              toggleEnabled(
+                providerId,
+                tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
+              )
+            }
+            disabled={disabled}
           />
-          <Label htmlFor={`settings-functions-tool-${tool.id}-enabled`}>
-            Enabled
+          <Label
+            htmlFor={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
+          >
+            {tool.displayName}
           </Label>
         </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="p-0">
-              <LucideSettings className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="overflow-y-auto pb-4">
-            <SheetHeader className="sticky top-0 bg-background z-10">
-              <SheetTitle>Tool Settings</SheetTitle>
-              <SheetDescription>
-                Configure settings for tool {tool.displayName}.
-              </SheetDescription>
-              <SheetCloseIcon />
-            </SheetHeader>
-            <ToolConfigForm toolId={tool.id as ToolId} />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </div>
+      ))}
+    </>
+  );
+}
+
+function ToolProviderConfig({ provider }: { provider: IToolProviderMeta }) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <LucideSettings />
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Provider Configuration</SheetTitle>
+          <SheetDescription>
+            Configure the provider settings for {provider.displayName}.
+          </SheetDescription>
+          <SheetCloseIcon />
+        </SheetHeader>
+        <ToolProviderConfigForm provider={provider} />
+      </SheetContent>
+    </Sheet>
   );
 }
 
 export function ToolsSection() {
-  const tools = useToolRegistry();
+  const {
+    isProviderEnabled,
+    isToolEnabled,
+    toggleProviderEnabled,
+    toggleToolEnabled,
+  } = useProviderToolEnabled();
+  const providers = useToolProvidersMeta();
+
+  const id = useId();
 
   return (
     <SettingsSubSection title="Tools">
-      {tools.map((tool) => (
-        <ToolItem key={tool.id} tool={tool} />
+      {providers.map((provider) => (
+        <Card key={provider.id}>
+          <CardHeader>
+            <CardTitle>{provider.displayName}</CardTitle>
+            <CardDescription>{provider.description}</CardDescription>
+            <CardAction className="flex items-center gap-2">
+              <Tooltip open={provider.available ? false : undefined}>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id={`${id}-provider-${provider.id}-enabled`}
+                      checked={isProviderEnabled(provider.id)}
+                      onCheckedChange={() => toggleProviderEnabled(provider.id)}
+                      disabled={!provider.available}
+                    />
+                    <Label htmlFor={`${id}-provider-${provider.id}-enabled`}>
+                      Enabled
+                    </Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Cannot setup provider. Please check your provider settings.
+                </TooltipContent>
+              </Tooltip>
+              <ToolProviderConfig provider={provider} />
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <ToolItems
+              providerId={provider.id}
+              disabled={!provider.available || !isProviderEnabled(provider.id)}
+              isEnabled={isToolEnabled}
+              toggleEnabled={toggleToolEnabled}
+            />
+          </CardContent>
+        </Card>
       ))}
     </SettingsSubSection>
   );

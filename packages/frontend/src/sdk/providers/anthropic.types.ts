@@ -173,6 +173,26 @@ export interface IMessageResultThinkingSignatureDelta {
   };
 }
 
+export interface IMessageResultToolUseStart {
+  type: "content_block_start";
+  index: number;
+  content_block: {
+    type: "tool_use";
+    id: string;
+    name: string;
+    input: object;
+  };
+}
+
+export interface IMessageResultToolUseDelta {
+  type: "content_block_delta";
+  index: number;
+  delta: {
+    type: "input_json_delta";
+    partial_json: string;
+  };
+}
+
 export interface IMessageResultPing {
   type: "ping";
 }

@@ -37,11 +37,11 @@ export function SettingsSubSection({
     <div className="flex flex-col gap-4">
       {subsectionActions ? (
         <div className="flex flex-row justify-between">
-          <h3 className="text-lg font-medium">{title}</h3>
+          <h3 className="text-xl font-medium">{title}</h3>
           {subsectionActions}
         </div>
       ) : (
-        <h3 className="text-lg font-medium">{title}</h3>
+        <h3 className="text-xl font-medium">{title}</h3>
       )}
       {children}
     </div>

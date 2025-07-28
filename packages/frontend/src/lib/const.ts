@@ -55,7 +55,13 @@ export const SELECTED_MODEL = "selected_model";
 export const PER_MODEL_CONFIG_KEY = (provider: IProvider, model: string) =>
   `model-config-${provider}-${model}`;
 
-export const TOOL_CONFIG_KEY = (toolId: string) => `tool-config-${toolId}`;
+export const TOOL_PROVIDER_CONFIG_KEY = (providerId: string) =>
+  `tool-provider-config-${providerId}`;
+export const TOOL_PROVIDER_CONFIG_ANY_KEY = "tool-provider-config";
+export const TOOL_PROVIDER_ENABLED_KEY = "tool-provider-enabled";
+export const TOOL_PROVIDER_AVAILABILITY_KEY = "tool-provider-availability";
+export const TOOL_ENABLED_KEY = "tool-enabled";
+export const TOOL_PROVIDER_SEPARATOR = ":";
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
 export const SESSION_STORAGE_ID = (key: string) =>

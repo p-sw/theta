@@ -12,8 +12,8 @@ import type {
   IMessageResultThinking,
   IConfigSchema,
   IModelInfo,
-  IToolSchemaRegistry,
   SessionTurns,
+  IToolMetaJson,
 } from "@/sdk/shared";
 import {
   API,
@@ -253,13 +253,11 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     return messages;
   }
 
-  protected translateToolSchema(
-    schema: IToolSchemaRegistry
-  ): IClientToolSchema[] {
+  protected translateToolSchema(schema: IToolMetaJson[]): IClientToolSchema[] {
     return schema.map((tool) => ({
-      name: tool.name,
+      name: tool.id,
       description: tool.description,
-      input_schema: tool.parameters,
+      input_schema: tool.jsonSchema,
     }));
   }
 
@@ -278,7 +276,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     result: (
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) => Promise<void>,
-    setStop: (stop: SessionTurnsResponse["stop"]) => void
+    setStop: (stop: SessionTurnsResponse["stop"]) => void,
+    tools: IToolMetaJson[]
   ): Promise<void> {
     const messages = this.translateSession(session);
     const modelConfig = this.getModelConfig(model);
@@ -330,6 +329,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
           type: modelConfig.extendedThinking ? "enabled" : "disabled",
           budget_tokens: modelConfig.thinkingBudget,
         },
+        tools: this.translateToolSchema(tools),
       },
     });
 
@@ -355,21 +355,15 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        console.group("[AnthropicProvider] SSE Debug");
         const lines = buffer.split("\n");
-        console.debug("Buffer after split:", [...lines]);
         buffer = lines.pop() || "";
-        console.debug("Buffer after pop:", buffer);
 
         for (const line of lines) {
-          console.debug("Running line:", line);
           if (line.trim() && line.startsWith("data: ")) {
             const data = line.slice(6);
-            console.debug("DataString:", data);
 
             try {
               const event = JSON.parse(data) as IMessageResultData;
-              console.debug("Parsed event:", event);
               if (isErrorBody(event)) {
                 throw new ExpectedError(
                   response.status,

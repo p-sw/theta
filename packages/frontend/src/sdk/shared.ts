@@ -1,5 +1,5 @@
-import type z from "zod";
 import type { JSONSchema7 } from "json-schema";
+import type z from "zod";
 
 export type IProvider = "anthropic";
 export interface IProviderInfo {
@@ -31,7 +31,7 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
   protected abstract ensureSuccess(response: Response): Promise<void>;
   protected abstract translateSession(session: SessionTurns): ProviderSession[];
   protected abstract translateToolSchema(
-    schema: IToolSchemaRegistry
+    schema: IToolMetaJson[]
   ): ProviderToolSchema[];
   abstract message(
     session: SessionTurns,
@@ -39,7 +39,8 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     result: (
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) => Promise<void>, // prev -> new
-    setStop: (stop: SessionTurnsResponse["stop"]) => void
+    setStop: (stop: SessionTurnsResponse["stop"]) => void,
+    tools: IToolMetaJson[]
   ): Promise<void>;
   abstract getModels(): Promise<IModelInfo[]>;
   abstract getDefaultModelConfig(modelId: string): object;
@@ -93,41 +94,60 @@ export interface IConfigSchemaEnumGroup extends IConfigSchemaBase {
   type: "enumgroup";
   placeholder: string;
   items: {
-        label: string;
-        items: { name: string; value: string }[];
-      }[];
+    label: string;
+    items: { name: string; value: string }[];
+  }[];
 }
 
-export type IToolSchemaRegistry = IToolSchema[];
+export interface ITool extends IToolMeta {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  execute: (parameters: any) => Promise<string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ensureParameters(parameters: any): Promise<void>;
+}
 
-export interface ITool<T> {
+export interface IToolMeta {
   id: string;
   displayName: string;
   description: string;
-  schema: IToolSchema;
-  schemaZod: z.ZodSchema;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  execute: (parameters: any) => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ensureParameters(parameters: any): Promise<void>;
+  schema: z.ZodSchema; // use z.toJSONSchema to get JSON schema
+}
+
+export interface IToolMetaJson extends IToolMeta {
+  jsonSchema: JSONSchema7;
+}
+
+export interface IToolProviderMeta {
+  id: string;
+  displayName: string;
+  description: string;
+}
+
+export interface IToolProvider<T> extends IToolProviderMeta {
+  setup: (config: T) => void;
   getDefaultConfig(): T;
-  getConfigSchema(): [Record<string, IConfigSchema>, z.ZodSchema<T>];
+  getConfigSchema(): [Record<keyof T, IConfigSchema>, z.ZodSchema<T>];
+  tools: ITool[];
+  execute(toolId: string, parameters: unknown): Promise<string>;
 }
 
 export interface IToolRegistry {
-  get<T>(toolId: string): ITool<T> | undefined;
-  getAll<T>(): ITool<T>[];
-  getToolSchema(toolId: string): IToolSchema;
-  getEnabledTools(): IToolSchemaRegistry;
-  isToolEnabled(toolId: string): boolean;
-}
+  get(providerToolId: string): IToolMetaJson | undefined;
+  get(providerId: string, toolId: string): IToolMetaJson | undefined;
+  getAll(providerId: string): IToolMetaJson[];
+  getAll(): IToolMetaJson[];
+  getEnabledTools(): IToolMetaJson[];
+  getEnabledTools(providerId: string): IToolMetaJson[];
+  isToolEnabled(providerToolId: string): boolean;
+  isToolEnabled(providerId: string, toolId: string): boolean;
+  execute(providerToolId: string, parameters: unknown): Promise<string>;
 
-export interface IToolConfig<T> {
-  disabled: boolean;
-  config: T;
+  getProviders(): IToolProviderMeta[];
+  isProviderAvailable(providerId: string): boolean;
+  getProviderConfig(
+    providerId: string
+  ): [object, Record<string, IConfigSchema>, z.ZodSchema<object>];
 }
-
-export interface IToolWithConfig<T> extends ITool<T>, IToolConfig<T> {}
 
 export type IMessageRequest = IMessageRequestText;
 
