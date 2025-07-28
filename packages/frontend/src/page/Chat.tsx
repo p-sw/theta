@@ -6,7 +6,7 @@ import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
-import { use, useCallback, useEffect } from "react";
+import { useCallback, useContext, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 import {
@@ -34,7 +34,7 @@ export default function Chat() {
     setNewSession,
     isPermanentSession,
     setIsPermanentSession,
-  } = use(ChatContext);
+  } = useContext(ChatContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
   const { scrollContainerRef, triggerAutoScroll } =
     useAutoScroll<HTMLElement>();

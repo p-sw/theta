@@ -29,13 +29,11 @@ export interface DeleteSessionForm {
 export function DeleteSessionDialog({
   open,
   onOpenChange,
-  sessionId,
   sessionTitle,
   onDelete,
 }: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  sessionId?: string;
   sessionTitle: string;
   onDelete: () => void;
 }) {
@@ -58,7 +56,7 @@ export function DeleteSessionDialog({
 
   const onSubmit = (data: DeleteSessionForm) => {
     // Only delete if the confirmation matches
-    if (data.confirmTitle === sessionTitle && sessionId) {
+    if (data.confirmTitle === sessionTitle) {
       onDelete();
     }
   };

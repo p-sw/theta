@@ -97,8 +97,13 @@ export function useStorage<T>(
   );
 
   const updateFromStorage = useCallback(() => {
-    setValue(getParse(storage.getItem(key)!));
-  }, [key, getParse, storage]);
+    const item = storage.getItem(key);
+    if (!item) {
+      setValue(fallbackValue);
+    } else {
+      setValue(getParse(item));
+    }
+  }, [storage, key, fallbackValue, getParse]);
 
   const initKey = useCallback(() => {
     const item = storage.getItem(key);

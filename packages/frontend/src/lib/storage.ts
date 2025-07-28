@@ -131,13 +131,13 @@ class StorageWrapper implements Storage {
         delta: [this.getStorageEventDelta(key, null)],
       };
 
-      dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
-        detail,
-      });
       dispatchEvent<StorageChangeEventAllBody>(STORAGE_CHANGE_EVENT_ALL, {
         detail,
       });
       dispatchEvent<StorageChangeEventKeyBody>(STORAGE_CHANGE_EVENT_KEY, {
+        detail,
+      });
+      dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
         detail,
       });
     }
@@ -160,9 +160,6 @@ class StorageWrapper implements Storage {
       delta,
     };
 
-    dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
-      detail,
-    });
     dispatchEvent<StorageChangeEventAllBody>(STORAGE_CHANGE_EVENT_ALL, {
       detail,
     });
@@ -171,6 +168,9 @@ class StorageWrapper implements Storage {
         detail,
       });
     }
+    dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
+      detail,
+    });
   }
 }
 

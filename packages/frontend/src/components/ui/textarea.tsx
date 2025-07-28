@@ -52,7 +52,7 @@ function TextareaContainer({
 export { TextareaContainer };
 
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
-  const containerContext = React.use(TextareaContainerContext);
+  const containerContext = React.useContext(TextareaContainerContext);
 
   return (
     <textarea

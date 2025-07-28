@@ -14,8 +14,8 @@ import { ChatContext } from "@/page/context/Chat";
 import {
   type MouseEvent,
   type MouseEventHandler,
-  use,
   useCallback,
+  useContext,
   useState,
 } from "react";
 import { PATHS, SESSION_STORAGE_ID } from "@/lib/const";
@@ -65,7 +65,7 @@ export function PermanentSessionItem({
   });
 
   const { sessionId, setSessionId, setNewSession, setIsPermanentSession } =
-    use(ChatContext);
+    useContext(ChatContext);
   const [_, setPath] = usePath();
 
   const onOpen = useCallback(
@@ -151,7 +151,7 @@ export function TemporarySessionItem({
   onSave,
 }: WSessionItemProps) {
   const { sessionId, setSessionId, setNewSession, setIsPermanentSession } =
-    use(ChatContext);
+    useContext(ChatContext);
   const [session] = useStorage<TemporarySession>(
     sessionKey,
     {
@@ -243,7 +243,6 @@ export function TemporarySessionItem({
         open={deleteSessionDialogOpen}
         onOpenChange={setDeleteSessionDialogOpen}
         sessionTitle={session.title}
-        sessionId={session.id}
         onDelete={onDeleteAction}
       />
     </>

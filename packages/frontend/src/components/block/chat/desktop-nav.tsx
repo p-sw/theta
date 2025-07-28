@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import LucidePlus from "~icons/lucide/plus";
 import LucideSettings from "~icons/lucide/settings";
-import { use, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { ChatContext } from "@/page/context/Chat.tsx";
 import {
   NEW_SESSION_EVENT,
@@ -20,7 +20,7 @@ import { SaveSessionItem } from "@/components/block/dialogs/save-session";
 export function DesktopNav() {
   const permanentKeys = useSessionKeys({ sessionStorage: false });
   const temporaryKeys = useSessionKeys({ sessionStorage: true });
-  const { sessionId } = use(ChatContext);
+  const { sessionId } = useContext(ChatContext);
   const sessionKey = useMemo(() => SESSION_STORAGE_KEY(sessionId), [sessionId]);
 
   const [_, setPath] = usePath();
