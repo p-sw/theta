@@ -59,6 +59,14 @@ export function useStorage<T extends string>(
   }>,
   options?: IStorageOptions
 ): [T, (value: T | ((prev: T) => T)) => void];
+export function useStorage<T extends unknown[]>(
+  key: string,
+  fallbackValue: T,
+  parse?: Partial<{
+    get: (value: string) => T;
+    set: (value: T) => string;
+  }>
+): [T, (value: T | ((prev: T) => T)) => void];
 export function useStorage<T>(
   key: string,
   fallbackValue: T,
