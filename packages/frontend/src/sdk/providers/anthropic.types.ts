@@ -57,7 +57,28 @@ export interface IListModelsBody {
 /* IMessage */
 export interface IMessage {
   role: "user" | "assistant";
-  content: (IMessageText | IMessageThinking | IMessageRedactedThinking)[];
+  content: (
+    | IMessageText
+    | IMessageThinking
+    | IMessageRedactedThinking
+    | IMessageToolUse
+    | IMessageToolResult
+  )[];
+}
+
+export interface IMessageToolUse {
+  id: string;
+  input: object;
+  name: string;
+  type: "tool_use";
+  cache_control?: IMessageCacheControl | null;
+}
+
+export interface IMessageToolResult {
+  type: "tool_result";
+  tool_use_id: string;
+  content: string;
+  is_error: boolean;
 }
 
 // TODO: image, file, search operation, mcp, web search, code execution, server tool, container upload
@@ -140,6 +161,8 @@ export type IMessageResultData =
   | IMessageResultThinkingStart
   | IMessageResultThinkingDelta
   | IMessageResultThinkingSignatureDelta
+  | IMessageResultToolUseStart
+  | IMessageResultToolUseDelta
   | IMessageResultMessageDelta
   | IMessageResultMessageStart
   | IMessageResultMessageStop

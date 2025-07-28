@@ -3,6 +3,7 @@ import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
   IMessageRequest,
+  IMessageRequestToolResult,
   IMessageResult,
   IProvider,
   IProviderInfo,
@@ -72,14 +73,13 @@ export class AISDK {
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) {
       await updator(resultMessage);
-      console.debug("updateSession", [...resultMessage]);
       session.updatedAt = Date.now();
       saveSession();
     }
 
     switch (provider) {
       case "anthropic":
-        return this.anthropic?.message(
+        await this.anthropic?.message(
           session.turns.slice(
             0,
             -1
@@ -92,8 +92,49 @@ export class AISDK {
           },
           toolRegistry.getEnabledTools()
         );
+        break;
       default:
         throw new Error(`Provider ${provider} not supported`);
+    }
+
+    // tool use handling
+    if (resultTurn.stop?.type === "tool_use") {
+      const toolUses = resultTurn.message.filter(
+        (message) => message.type === "tool_use"
+      );
+      const toolUseResult: IMessageRequestToolResult[] = [];
+
+      await Promise.all(
+        toolUses.map(async (toolUse) => {
+          try {
+            const tool = await toolRegistry.execute(
+              toolUse.name,
+              JSON.parse(toolUse.input)
+            );
+            toolUseResult.push({
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: tool,
+              is_error: false,
+            });
+          } catch (e: unknown) {
+            toolUseResult.push({
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: (e as Error).message,
+              is_error: true,
+            });
+          }
+        })
+      );
+
+      await this.message(
+        sessionId,
+        isPermanentSession,
+        provider,
+        model,
+        toolUseResult
+      );
     }
   }
 

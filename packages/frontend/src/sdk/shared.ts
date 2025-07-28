@@ -149,18 +149,26 @@ export interface IToolRegistry {
   ): [object, Record<string, IConfigSchema>, z.ZodSchema<object>];
 }
 
-export type IMessageRequest = IMessageRequestText;
+export type IMessageRequest = IMessageRequestText | IMessageRequestToolResult;
 
 export interface IMessageRequestText {
   type: "text";
   text: string;
 }
 
+export interface IMessageRequestToolResult {
+  type: "tool_result";
+  tool_use_id: string;
+  content: string;
+  is_error: boolean;
+}
+
 export type IMessageResult =
   | IMessageResultText
   | IMessageResultStart
   | IMessageResultEnd
-  | IMessageResultThinking;
+  | IMessageResultThinking
+  | IMessageResultToolUse;
 
 export interface IMessageResultText {
   type: "text";
@@ -179,6 +187,13 @@ export interface IMessageResultStart {
 
 export interface IMessageResultEnd {
   type: "end";
+}
+
+export interface IMessageResultToolUse {
+  type: "tool_use";
+  id: string;
+  name: string;
+  input: string;
 }
 
 export interface IModelInfo {
@@ -203,7 +218,8 @@ export type SessionTurnsResponse = {
 
 export type SessionTurnsResponseStop =
   | SessionTurnsResponseStopMessage
-  | SessionTurnsResponseStopLog;
+  | SessionTurnsResponseStopLog
+  | SessionTurnsResponseStopToolUse;
 
 /**
  * Messages that are shown to the user
@@ -226,6 +242,10 @@ export interface SessionTurnsResponseStopMessage {
 export interface SessionTurnsResponseStopLog {
   type: "log";
   message: string;
+}
+
+export interface SessionTurnsResponseStopToolUse {
+  type: "tool_use";
 }
 
 export type SessionTurns = (SessionTurnsRequest | SessionTurnsResponse)[];

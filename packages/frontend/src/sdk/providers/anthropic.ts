@@ -14,6 +14,7 @@ import type {
   IModelInfo,
   SessionTurns,
   IToolMetaJson,
+  IMessageResultToolUse,
 } from "@/sdk/shared";
 import {
   API,
@@ -230,15 +231,31 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
           case "text":
             message.content.push({ type: "text", text: turnPartial.text });
             break;
-          case "start":
-          case "end":
-            break;
           case "thinking":
             message.content.push({
               type: "thinking",
               thinking: turnPartial.thinking,
               signature: turnPartial.signature,
             });
+            break;
+          case "tool_use":
+            message.content.push({
+              type: "tool_use",
+              id: turnPartial.id,
+              input: JSON.parse(turnPartial.input),
+              name: turnPartial.name,
+            });
+            break;
+          case "tool_result":
+            message.content.push({
+              type: "tool_result",
+              tool_use_id: turnPartial.tool_use_id,
+              content: turnPartial.content,
+              is_error: turnPartial.is_error,
+            });
+            break;
+          case "start":
+          case "end":
             break;
           default:
             console.warn(
@@ -405,10 +422,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                     break;
                   case "tool_use":
                     setStop({
-                      type: "message",
-                      reason: "Claude AI used a tool.",
-                      level: "info",
-                    }); // TODO: handle tool use with type: 'tool'
+                      type: "tool_use",
+                    });
                     break;
                   case "pause_turn":
                     setStop({
@@ -447,6 +462,13 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                       thinking: event.content_block.thinking,
                       signature: "",
                     });
+                  } else if (event.content_block.type === "tool_use") {
+                    prev.push({
+                      type: "tool_use",
+                      id: event.content_block.id,
+                      name: event.content_block.name,
+                      input: "",
+                    });
                   }
                 });
               } else if (event.type === "content_block_delta") {
@@ -462,6 +484,9 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                   } else if (event.delta.type === "signature_delta") {
                     (prev[actualIndex] as IMessageResultThinking).signature =
                       event.delta.signature;
+                  } else if (event.delta.type === "input_json_delta") {
+                    (prev[actualIndex] as IMessageResultToolUse).input +=
+                      event.delta.partial_json;
                   }
                 });
               } else if (event.type === "content_block_stop") {

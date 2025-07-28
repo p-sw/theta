@@ -9,7 +9,7 @@ import {
 import { dispatchEvent, useStorage } from "@/lib/utils";
 import type { IToolMetaJson, IToolProviderMeta } from "@/sdk/shared";
 import { toolRegistry } from "@/sdk/tools";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useToolProvidersMeta() {
   const [providers, setProviders] = useState<
@@ -137,5 +137,29 @@ export function useProviderToolEnabled() {
     isToolEnabled,
     toggleProviderEnabled,
     toggleToolEnabled,
+  };
+}
+
+export function useToolInformation(providerIdToolId: string): {
+  provider: IToolProviderMeta | undefined;
+  tool: IToolMetaJson | undefined;
+} {
+  const [providerId, toolId] = useMemo(
+    () => providerIdToolId.split(TOOL_PROVIDER_SEPARATOR),
+    [providerIdToolId]
+  );
+
+  const provider = useMemo(
+    () => toolRegistry.getProviders().find((p) => p.id === providerId),
+    [providerId]
+  );
+  const tool = useMemo(
+    () => toolRegistry.get(providerId, toolId),
+    [providerId, toolId]
+  );
+
+  return {
+    provider,
+    tool,
   };
 }
