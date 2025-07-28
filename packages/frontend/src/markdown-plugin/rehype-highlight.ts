@@ -5,7 +5,7 @@ import { common, createLowlight } from "lowlight";
 import { visit } from "unist-util-visit";
 
 export default function rehypeHighlight() {
-  let name = "hljs";
+  const name = "hljs";
   const prefix = name + "-";
   const lowlight = createLowlight(common);
 
