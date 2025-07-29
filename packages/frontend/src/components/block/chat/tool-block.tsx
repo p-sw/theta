@@ -3,11 +3,16 @@ import {
   Card,
   CardAction,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import LucideLoaderCircle from "~icons/lucide/loader-circle";
-import type { SessionTurnsTool } from "@/sdk/shared";
+import type {
+  SessionTurnsTool,
+  IToolProviderMeta,
+  IToolMetaJson,
+} from "@/sdk/shared";
 import { useToolInformation } from "@/lib/tools";
 import LucideMoveDiagonal from "~icons/lucide/move-diagonal";
 import LucideCheck from "~icons/lucide/check";
@@ -18,18 +23,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import LucideX from "~icons/lucide/x";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function prettyJson(json: string) {
   try {
@@ -53,7 +57,7 @@ export function ToolUseCard({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>
+        <CardTitle className="col-span-2 sm:col-span-1 flex items-start gap-1">
           {message.done ? (
             message.granted ? (
               message.isError ? (
@@ -67,12 +71,12 @@ export function ToolUseCard({
           ) : (
             <LucideLoaderCircle className="w-4 h-4 animate-spin inline-block mr-2" />
           )}
-          {tool?.displayName ?? "Unknown tool"}
+          <span>{tool?.displayName ?? "Unknown tool"}</span>
         </CardTitle>
         <CardDescription>
           {provider?.displayName ?? "Unknown provider"}
         </CardDescription>
-        <CardAction className="self-center flex gap-2 items-center">
+        <CardAction className="self-center gap-2 items-center hidden sm:flex">
           {message.done ? (
             message.granted ? (
               message.isError ? (
@@ -107,66 +111,141 @@ export function ToolUseCard({
               </Tooltip>
             </>
           )}
-          <AlertDialog>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertDialogTrigger asChild>
-                  <Button variant="secondary" size="icon" className="ml-4">
-                    <LucideMoveDiagonal className="w-4 h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent>Show details</TooltipContent>
-            </Tooltip>
-            <AlertDialogContent className="max-h-7/8 overflow-y-auto">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Tool execution details</AlertDialogTitle>
-                <AlertDialogDescription>
-                  AI requested the tool execution.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
-                <span className="font-semibold text-muted">Provider</span>
-                <span>{provider?.displayName ?? "Unknown provider"}</span>
-                <span className="font-semibold text-muted">Tool</span>
-                <span>{tool?.displayName ?? "Unknown tool"}</span>
-              </div>
-              <p className="font-bold text-sm">Request Data</p>
-              <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
-                <pre className="text-sm text-muted-foreground">
-                  {prettyJson(message.requestContent)}
-                </pre>
-              </code>
-              {message.done && (
-                <>
-                  <p className="font-bold text-sm">Response Data</p>
-                  <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
-                    <pre className="text-sm text-muted-foreground">
-                      {prettyJson(message.responseContent)}
-                    </pre>
-                  </code>
-                </>
-              )}
-              <AlertDialogFooter>
-                {!message.done && (
-                  <>
-                    <AlertDialogAction onClick={onGrant}>
-                      <LucideCheck className="w-4 h-4" /> Grant
-                    </AlertDialogAction>
-                    <AlertDialogAction variant="destructive" onClick={onReject}>
-                      <LucideCircleMinus className="w-4 h-4" /> Reject
-                    </AlertDialogAction>
-                  </>
-                )}
-                <AlertDialogCancel>
-                  <LucideX className="w-4 h-4" />
-                  Close
-                </AlertDialogCancel>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <DetailDialog
+            provider={provider}
+            tool={tool}
+            message={message}
+            onGrant={onGrant}
+            onReject={onReject}
+          >
+            <Button variant="secondary" size="icon" className="ml-4">
+              <LucideMoveDiagonal className="w-4 h-4" />
+            </Button>
+          </DetailDialog>
         </CardAction>
       </CardHeader>
+      <CardFooter className="grid grid-cols-2 grid-rows-2 gap-2 sm:hidden">
+        {message.done ? (
+          message.granted ? (
+            message.isError ? (
+              <p className="text-destructive text-sm inline-block col-span-2 text-center">
+                Execution failed
+              </p>
+            ) : (
+              <p className="text-green-500 text-sm inline-block col-span-2 text-center">
+                Done
+              </p>
+            )
+          ) : (
+            <p className="text-destructive text-sm inline-block col-span-2 text-center">
+              Execution rejected
+            </p>
+          )
+        ) : (
+          <>
+            <Button onClick={onGrant}>
+              <LucideCheck className="w-4 h-4" />
+              Grant
+            </Button>
+            <Button variant="destructive" onClick={onReject}>
+              <LucideCircleMinus className="w-4 h-4" />
+              Reject
+            </Button>
+          </>
+        )}
+
+        <DetailDialog
+          provider={provider}
+          tool={tool}
+          message={message}
+          onGrant={onGrant}
+          onReject={onReject}
+        >
+          <Button variant="secondary" className="col-span-2">
+            <LucideMoveDiagonal className="w-4 h-4" />
+            Show details
+          </Button>
+        </DetailDialog>
+      </CardFooter>
     </Card>
+  );
+}
+
+function DetailDialog({
+  provider,
+  tool,
+  message,
+  onGrant,
+  onReject,
+  children,
+}: {
+  message: SessionTurnsTool;
+  provider?: IToolProviderMeta;
+  tool?: IToolMetaJson;
+  onGrant: () => Promise<void>;
+  onReject: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Dialog>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>{children}</DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Show details</TooltipContent>
+      </Tooltip>
+      <DialogContent className="max-h-7/8 overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Tool execution details</DialogTitle>
+          <DialogDescription>
+            AI requested the tool execution.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
+          <span className="font-semibold text-muted-foreground">Provider</span>
+          <span>{provider?.displayName ?? "Unknown provider"}</span>
+          <span className="font-semibold text-muted-foreground">Tool</span>
+          <span>{tool?.displayName ?? "Unknown tool"}</span>
+        </div>
+        <p className="font-bold text-sm">Request Data</p>
+        <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
+          <pre className="text-sm text-muted-foreground">
+            {prettyJson(message.requestContent)}
+          </pre>
+        </code>
+        {message.done && (
+          <>
+            <p className="font-bold text-sm">Response Data</p>
+            <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
+              <pre className="text-sm text-muted-foreground">
+                {prettyJson(message.responseContent)}
+              </pre>
+            </code>
+          </>
+        )}
+        <DialogFooter>
+          {!message.done && (
+            <>
+              <DialogClose asChild>
+                <Button onClick={onGrant}>
+                  <LucideCheck className="w-4 h-4" /> Grant
+                </Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button variant="destructive" onClick={onReject}>
+                  <LucideCircleMinus className="w-4 h-4" /> Reject
+                </Button>
+              </DialogClose>
+            </>
+          )}
+          <DialogClose asChild>
+            <Button>
+              <LucideX className="w-4 h-4" />
+              Close
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
