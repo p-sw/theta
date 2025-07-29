@@ -3,11 +3,11 @@ import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
   IMessageRequest,
-  IMessageRequestToolResult,
   IMessageResult,
   IProvider,
   IProviderInfo,
   SessionTurnsResponse,
+  SessionTurnsToolInProgress,
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
@@ -102,48 +102,30 @@ export class AISDK {
       const toolUses = resultTurn.message.filter(
         (message) => message.type === "tool_use"
       );
-      const toolUseResult: IMessageRequestToolResult[] = [];
+      // const toolUseResult: IMessageRequestToolResult[] = [];
 
-      await Promise.all(
-        toolUses.map(async (toolUse) => {
-          try {
-            const tool = await toolRegistry.execute(
-              toolUse.name,
-              JSON.parse(toolUse.input)
-            );
-            toolUseResult.push({
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              content: tool,
-              is_error: false,
-            });
-          } catch (e: unknown) {
-            toolUseResult.push({
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              content: (e as Error).message,
-              is_error: true,
-            });
-          }
-        })
-      );
-
-      await this.message(
-        sessionId,
-        isPermanentSession,
-        provider,
-        model,
-        toolUseResult
-      );
+      toolUses.forEach((toolUse) => {
+        const toolTurn: SessionTurnsToolInProgress = {
+          type: "tool",
+          useId: toolUse.id,
+          toolName: toolUse.name,
+          granted: false,
+          requestContent: toolUse.input,
+          done: false,
+        };
+        session.turns.push(toolTurn);
+        console.debug("Adding tool to run: ", toolTurn);
+        saveSession();
+      });
     }
   }
 
-  getDefaultModelConfig(provider: IProvider, _modelId: string) {
+  getDefaultModelConfig(provider: IProvider, modelId: string) {
     if (!this[provider]) {
       throw new Error(`Provider ${provider} not supported`);
     }
 
-    return this[provider].getDefaultModelConfig();
+    return this[provider].getDefaultModelConfig(modelId);
   }
 
   getModelConfigSchema(provider: IProvider, modelId: string) {

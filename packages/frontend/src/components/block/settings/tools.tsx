@@ -28,7 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useId } from "react";
+import { Fragment, useId, type ComponentProps } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TOOL_PROVIDER_SEPARATOR } from "@/lib/const";
 import {
@@ -117,43 +117,57 @@ export function ToolsSection() {
 
   return (
     <SettingsSubSection title="Tools">
-      {providers.map((provider) => (
-        <Card key={provider.id}>
-          <CardHeader>
-            <CardTitle>{provider.displayName}</CardTitle>
-            <CardDescription>{provider.description}</CardDescription>
-            <CardAction className="flex items-center gap-2">
-              <Tooltip open={provider.available ? false : undefined}>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id={`${id}-provider-${provider.id}-enabled`}
-                      checked={isProviderEnabled(provider.id)}
-                      onCheckedChange={() => toggleProviderEnabled(provider.id)}
-                      disabled={!provider.available}
-                    />
-                    <Label htmlFor={`${id}-provider-${provider.id}-enabled`}>
-                      Enabled
-                    </Label>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Cannot setup provider. Please check your provider settings.
-                </TooltipContent>
-              </Tooltip>
-              <ToolProviderConfig provider={provider} />
-            </CardAction>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <ToolItems
-              providerId={provider.id}
-              disabled={!provider.available || !isProviderEnabled(provider.id)}
-              isEnabled={isToolEnabled}
-              toggleEnabled={toggleToolEnabled}
-            />
-          </CardContent>
-        </Card>
-      ))}
+      {providers.map((provider) => {
+        const TooltipTriggerDisabled = provider.available
+          ? (props: ComponentProps<typeof TooltipTrigger>) => (
+              <Fragment {...props} />
+            )
+          : (props: ComponentProps<typeof TooltipTrigger>) => (
+              <TooltipTrigger asChild {...props} />
+            );
+
+        return (
+          <Card key={provider.id}>
+            <CardHeader>
+              <CardTitle>{provider.displayName}</CardTitle>
+              <CardDescription>{provider.description}</CardDescription>
+              <CardAction className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTriggerDisabled>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id={`${id}-provider-${provider.id}-enabled`}
+                        checked={isProviderEnabled(provider.id)}
+                        onCheckedChange={() =>
+                          toggleProviderEnabled(provider.id)
+                        }
+                        disabled={!provider.available}
+                      />
+                      <Label htmlFor={`${id}-provider-${provider.id}-enabled`}>
+                        Enabled
+                      </Label>
+                    </div>
+                  </TooltipTriggerDisabled>
+                  <TooltipContent>
+                    Cannot setup provider. Please check your provider settings.
+                  </TooltipContent>
+                </Tooltip>
+                <ToolProviderConfig provider={provider} />
+              </CardAction>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <ToolItems
+                providerId={provider.id}
+                disabled={
+                  !provider.available || !isProviderEnabled(provider.id)
+                }
+                isEnabled={isToolEnabled}
+                toggleEnabled={toggleToolEnabled}
+              />
+            </CardContent>
+          </Card>
+        );
+      })}
     </SettingsSubSection>
   );
 }

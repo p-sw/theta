@@ -25,7 +25,9 @@ function App() {
           emptySessionId = SESSION_STORAGE_ID(key);
           break;
         }
-      } catch (e) {}
+      } catch {
+        // noop
+      }
     }
     return emptySessionId;
   });

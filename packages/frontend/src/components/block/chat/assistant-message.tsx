@@ -1,9 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type {
-  IMessageResult,
-  IMessageResultToolUse,
-  SessionTurnsResponseStop,
-} from "@/sdk/shared";
+import type { IMessageResult, SessionTurnsResponseStop } from "@/sdk/shared";
 import LucidAlertCircle from "~icons/lucide/alert-circle";
 import LucidInfo from "~icons/lucide/info";
 import Markdown from "react-markdown";
@@ -15,18 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import rehypeHighlight from "@/markdown-plugin/rehype-highlight";
 import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import LucideMaximize2 from "~icons/lucide/maximize-2";
-import LucideLoaderCircle from "~icons/lucide/loader-circle";
-import { Button } from "@/components/ui/button";
-import { useToolInformation } from "@/lib/tools";
 
 export function AssistantMessage({
   sessionId,
@@ -82,36 +66,11 @@ export function AssistantMessage({
               </Accordion>
             );
           }
-          if (message.type === "tool_use") {
-            return <ToolUseCard message={message} />;
-          }
+          // ignore tool_use type (handled by tool-block.tsx)
         })}
         <StopIndicator stop={stop} />
       </div>
     </div>
-  );
-}
-
-function ToolUseCard({ message }: { message: IMessageResultToolUse }) {
-  const { provider, tool } = useToolInformation(message.name);
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>
-          <LucideLoaderCircle className="w-4 h-4 animate-spin inline-block mr-2" />
-          {tool?.displayName ?? "Unknown tool"}
-        </CardTitle>
-        <CardDescription>
-          {provider?.displayName ?? "Unknown provider"}
-        </CardDescription>
-        <CardAction>
-          <Button variant="ghost" size="icon">
-            <LucideMaximize2 className="w-4 h-4" />
-          </Button>
-        </CardAction>
-      </CardHeader>
-    </Card>
   );
 }
 

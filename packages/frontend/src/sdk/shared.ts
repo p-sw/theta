@@ -42,7 +42,7 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[]
   ): Promise<void>;
-  abstract getModels(): Promise<IModelInfo[]>;
+  abstract getModels(modelId: string): Promise<IModelInfo[]>;
   abstract getDefaultModelConfig(modelId: string): object;
   abstract getModelConfigSchema(
     modelId: string
@@ -248,7 +248,35 @@ export interface SessionTurnsResponseStopToolUse {
   type: "tool_use";
 }
 
-export type SessionTurns = (SessionTurnsRequest | SessionTurnsResponse)[];
+export interface SessionTurnsToolBase {
+  type: "tool";
+  useId: string;
+  toolName: string;
+  granted: boolean;
+}
+
+export interface SessionTurnsToolInProgress extends SessionTurnsToolBase {
+  done: false;
+  requestContent: string;
+}
+
+export interface SessionTurnsToolDone extends SessionTurnsToolBase {
+  done: true;
+  requestContent: string;
+  responseContent: string;
+  isError: boolean;
+}
+
+export type SessionTurnsTool =
+  | SessionTurnsToolInProgress
+  | SessionTurnsToolDone;
+
+export type SessionTurns = (
+  | SessionTurnsRequest
+  | SessionTurnsResponse
+  | SessionTurnsTool
+)[];
+
 export interface ISessionBase {
   id: string;
   turns: SessionTurns;

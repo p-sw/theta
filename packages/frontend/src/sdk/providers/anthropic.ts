@@ -222,6 +222,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     const messages: IMessage[] = [];
 
     for (const turn of session) {
+      if (turn.type === "tool") continue;
+
       const message: IMessage = {
         role: turn.type === "request" ? "user" : "assistant",
         content: [],
@@ -342,10 +344,14 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
         messages,
         stream: true,
         system: systemPrompts,
-        thinking: {
-          type: modelConfig.extendedThinking ? "enabled" : "disabled",
-          budget_tokens: modelConfig.thinkingBudget,
-        },
+        ...(modelConfig.extendedThinking
+          ? {
+              thinking: {
+                type: "enabled",
+                budget_tokens: modelConfig.thinkingBudget,
+              },
+            }
+          : {}),
         tools: this.translateToolSchema(tools),
       },
     });
@@ -509,12 +515,17 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     }
   }
 
-  getDefaultModelConfig(): IModelConfig {
+  getDefaultModelConfig(modelId: string): IModelConfig {
+    const modelInfo = this.getModelInfo(modelId);
+    if (!modelInfo) {
+      throw new ExpectedError(404, "model_not_found", "Model not found");
+    }
+
     return {
       temperature: 1,
       maxOutput: 2048,
       stopSequences: [],
-      extendedThinking: true,
+      extendedThinking: modelInfo.extendedThinking,
       thinkingBudget: 1024,
     };
   }
@@ -524,16 +535,16 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
       PER_MODEL_CONFIG_KEY("anthropic", modelId)
     );
     if (!configString) {
-      return this.getDefaultModelConfig();
+      return this.getDefaultModelConfig(modelId);
     }
     try {
       return {
-        ...this.getDefaultModelConfig(),
+        ...this.getDefaultModelConfig(modelId),
         ...(JSON.parse(configString) as IModelConfig),
       };
     } catch (e) {
       console.error("JSON parse error:", e);
-      return this.getDefaultModelConfig();
+      return this.getDefaultModelConfig(modelId);
     }
   }
 
@@ -576,6 +587,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
           displayName: "Extended Thinking",
           description: "Whether to use thinking.",
           type: "boolean",
+          disabled: !modelInfo.extendedThinking,
         },
         thinkingBudget: {
           displayName: "Thinking Budget",
