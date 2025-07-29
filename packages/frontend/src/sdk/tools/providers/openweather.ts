@@ -418,7 +418,7 @@ class OpenWeatherOneWeather {
     lon: number;
     date: string;
   }): Promise<string> {
-    const url = new URL(`${this.API_BASE_URL}/onecall/daily`);
+    const url = new URL(`${this.API_BASE_URL}/onecall/day_summary`);
     url.searchParams.set("lat", lat.toString());
     url.searchParams.set("lon", lon.toString());
     url.searchParams.set("date", date);
