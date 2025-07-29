@@ -22,9 +22,9 @@ import {
 } from "@/lib/tools";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -131,29 +131,6 @@ export function ToolsSection() {
             <CardHeader>
               <CardTitle>{provider.displayName}</CardTitle>
               <CardDescription>{provider.description}</CardDescription>
-              <CardAction className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTriggerDisabled>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id={`${id}-provider-${provider.id}-enabled`}
-                        checked={isProviderEnabled(provider.id)}
-                        onCheckedChange={() =>
-                          toggleProviderEnabled(provider.id)
-                        }
-                        disabled={!provider.available}
-                      />
-                      <Label htmlFor={`${id}-provider-${provider.id}-enabled`}>
-                        Enabled
-                      </Label>
-                    </div>
-                  </TooltipTriggerDisabled>
-                  <TooltipContent>
-                    Cannot setup provider. Please check your provider settings.
-                  </TooltipContent>
-                </Tooltip>
-                <ToolProviderConfig provider={provider} />
-              </CardAction>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <ToolItems
@@ -165,6 +142,29 @@ export function ToolsSection() {
                 toggleEnabled={toggleToolEnabled}
               />
             </CardContent>
+            <CardFooter className="justify-between gap-4">
+              <Tooltip>
+                <TooltipTriggerDisabled>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id={`${id}-provider-${provider.id}-enabled`}
+                      checked={isProviderEnabled(provider.id)}
+                      onCheckedChange={() => toggleProviderEnabled(provider.id)}
+                      disabled={!provider.available}
+                    />
+                    <Label
+                      htmlFor={`${id}-provider-${provider.id}-enabled-mobile`}
+                    >
+                      Enabled
+                    </Label>
+                  </div>
+                </TooltipTriggerDisabled>
+                <TooltipContent>
+                  Cannot setup provider. Please check your provider settings.
+                </TooltipContent>
+              </Tooltip>
+              <ToolProviderConfig provider={provider} />
+            </CardFooter>
           </Card>
         );
       })}
