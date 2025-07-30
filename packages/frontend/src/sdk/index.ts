@@ -13,6 +13,8 @@ import type {
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { toolRegistry } from "@/sdk/tools";
 import { isToolWhitelisted } from "@/lib/tools";
+import { dispatchEvent } from "@/lib/utils";
+import { AUTO_GRANT_TOOL_EVENT, TOOL_PROVIDER_SEPARATOR } from "@/lib/const";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -107,7 +109,7 @@ export class AISDK {
 
       toolUses.forEach((toolUse) => {
         // Extract provider and tool IDs from the tool name
-        const [providerId, toolId] = toolUse.name.split("__");
+        const [providerId, toolId] = toolUse.name.split(TOOL_PROVIDER_SEPARATOR);
         const isWhitelisted = isToolWhitelisted(providerId, toolId);
         
         const toolTurn: SessionTurnsToolInProgress = {
@@ -127,9 +129,7 @@ export class AISDK {
           console.debug("Tool is whitelisted, auto-granting: ", toolUse.name);
           // We need to trigger the grant action after the turn is saved
           setTimeout(() => {
-            window.dispatchEvent(new CustomEvent("auto-grant-tool", { 
-              detail: { useId: toolUse.id } 
-            }));
+            dispatchEvent(AUTO_GRANT_TOOL_EVENT, { useId: toolUse.id });
           }, 100);
         }
       });

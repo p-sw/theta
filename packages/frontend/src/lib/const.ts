@@ -64,6 +64,10 @@ export const TOOL_ENABLED_KEY = "tool-enabled";
 export const TOOL_WHITELIST_KEY = "tool-whitelist";
 export const TOOL_PROVIDER_SEPARATOR = "__";
 
+export const AUTO_GRANT_TOOL_EVENT = "auto-grant-tool";
+export type AutoGrantToolEventBody = { useId: string };
+export type AutoGrantToolEvent = CustomEvent<AutoGrantToolEventBody>;
+
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
 export const SESSION_STORAGE_ID = (key: string) =>
   key.split("-").slice(1).join("-");

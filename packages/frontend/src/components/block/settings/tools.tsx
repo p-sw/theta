@@ -119,14 +119,17 @@ function ToolItems({
             {toolProviders.map((provider) => (
               <div key={provider.id} className="space-y-2">
                 <h4 className="text-sm font-medium">{provider.displayName}</h4>
-                {provider.tools.map((tool) => (
-                  <WhitelistToolToggle
-                    key={tool.id}
-                    providerId={provider.id}
-                    tool={tool}
-                    disabled={disabled}
-                  />
-                ))}
+                {provider.tools.map((tool) => {
+                  const isEnabled = useIsToolEnabled(provider.id, tool.id);
+                  return (
+                    <WhitelistToolToggle
+                      key={tool.id}
+                      providerId={provider.id}
+                      tool={tool}
+                      disabled={disabled || !isEnabled}
+                    />
+                  );
+                })}
               </div>
             ))}
           </AccordionContent>
@@ -169,10 +172,9 @@ function WhitelistToolToggle({
 }) {
   const isWhitelisted = useIsToolWhitelisted(providerId, tool.id);
   const toggleWhitelist = useToggleToolWhitelist();
-  const isEnabled = useIsToolEnabled(providerId, tool.id);
 
   const handleToggle = () => {
-    if (!disabled && isEnabled) {
+    if (!disabled) {
       toggleWhitelist(providerId, tool.id);
     }
   };
@@ -183,14 +185,14 @@ function WhitelistToolToggle({
         id={`whitelist-${providerId}-${tool.id}`}
         checked={isWhitelisted}
         onCheckedChange={handleToggle}
-        disabled={disabled || !isEnabled}
+        disabled={disabled}
       />
       <Label
         htmlFor={`whitelist-${providerId}-${tool.id}`}
-        className={!isEnabled ? "text-muted-foreground" : ""}
+        className={disabled ? "text-muted-foreground" : ""}
       >
         {tool.displayName}
-        {!isEnabled && (
+        {disabled && (
           <span className="text-xs text-muted-foreground ml-2">
             (Tool must be enabled first)
           </span>

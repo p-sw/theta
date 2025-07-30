@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { isToolWhitelisted } from "./tools";
-import { TOOL_WHITELIST_KEY } from "./const";
+import { TOOL_WHITELIST_KEY, TOOL_PROVIDER_SEPARATOR } from "./const";
 
 describe("Tool Whitelist", () => {
   beforeEach(() => {
@@ -13,7 +13,10 @@ describe("Tool Whitelist", () => {
   });
 
   test("should return true for whitelisted tool", () => {
-    const whitelist = ["provider1__tool1", "provider2__tool2"];
+    const whitelist = [
+      `provider1${TOOL_PROVIDER_SEPARATOR}tool1`, 
+      `provider2${TOOL_PROVIDER_SEPARATOR}tool2`
+    ];
     localStorage.setItem(TOOL_WHITELIST_KEY, JSON.stringify(whitelist));
     
     expect(isToolWhitelisted("provider1", "tool1")).toBe(true);

@@ -165,42 +165,11 @@ export function useToolInformation(providerIdToolId: string): {
   };
 }
 
-export const useToolIdInformation = (providerIdToolId: string) => {
-  const [providerId, toolId] = useMemo(
-    () => providerIdToolId.split(TOOL_PROVIDER_SEPARATOR),
-    [providerIdToolId]
-  );
-  const toolProviders = useToolProviders();
-  const provider = toolProviders.find((p) => p.id === providerId);
-  const tool = provider?.tools.find((t) => t.id === toolId);
-  return { provider, tool };
-};
+
 
 // Whitelist management functions
 export const useWhitelistedTools = () => {
-  const [whitelistedTools, setWhitelistedTools] = useState<string[]>([]);
-
-  useEffect(() => {
-    const updateWhitelistedTools = () => {
-      const whitelistString = localStorage.getItem(TOOL_WHITELIST_KEY);
-      if (whitelistString) {
-        try {
-          setWhitelistedTools(JSON.parse(whitelistString));
-        } catch {
-          setWhitelistedTools([]);
-        }
-      } else {
-        setWhitelistedTools([]);
-      }
-    };
-
-    updateWhitelistedTools();
-    window.addEventListener(TOOL_WHITELIST_KEY, updateWhitelistedTools);
-    return () => {
-      window.removeEventListener(TOOL_WHITELIST_KEY, updateWhitelistedTools);
-    };
-  }, []);
-
+  const whitelistedTools = useStorage<string[]>(TOOL_WHITELIST_KEY, []);
   return whitelistedTools;
 };
 

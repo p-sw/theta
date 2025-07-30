@@ -13,6 +13,8 @@ import {
   NEW_SESSION_EVENT,
   SAVE_SESSION_EVENT,
   SESSION_STORAGE_KEY,
+  AUTO_GRANT_TOOL_EVENT,
+  type AutoGrantToolEvent,
 } from "@/lib/const";
 import type {
   PermanentSession,
@@ -142,14 +144,14 @@ export default function Chat() {
 
   // Auto-grant whitelisted tools
   useEffect(() => {
-    const handleAutoGrant = async (event: CustomEvent) => {
+    const handleAutoGrant = async (event: AutoGrantToolEvent) => {
       const { useId } = event.detail;
       await onToolGrant(useId);
     };
     
-    window.addEventListener("auto-grant-tool", handleAutoGrant as EventListener);
+    window.addEventListener(AUTO_GRANT_TOOL_EVENT, handleAutoGrant as EventListener);
     return () => {
-      window.removeEventListener("auto-grant-tool", handleAutoGrant as EventListener);
+      window.removeEventListener(AUTO_GRANT_TOOL_EVENT, handleAutoGrant as EventListener);
     };
   }, [onToolGrant]);
 
