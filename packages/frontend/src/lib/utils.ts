@@ -80,13 +80,22 @@ export function useStorage<T>(
     () => (options?.temp ? sessionStorage : localStorage),
     [options?.temp]
   );
+  
   const getParse = useMemo(
     () =>
       parse?.get ?? typeof fallbackValue === "object"
-        ? (v: string) => JSON.parse(v) as T
+        ? (v: string) => {
+            try {
+              return JSON.parse(v) as T;
+            } catch (error) {
+              console.warn(`Failed to parse storage value for key "${key}":`, error);
+              return fallbackValue;
+            }
+          }
         : (v: string) => v as T,
-    [parse?.get, fallbackValue]
+    [parse?.get, fallbackValue, key]
   );
+  
   const setParse = useMemo(
     () =>
       parse?.set ??
@@ -106,11 +115,19 @@ export function useStorage<T>(
   }, [storage, key, fallbackValue, getParse]);
 
   const initKey = useCallback(() => {
-    const item = storage.getItem(key);
-    if (!item) {
-      storage.setItem(key, setParse(fallbackValue));
+    try {
+      const item = storage.getItem(key);
+      if (!item) {
+        const initialValue = setParse(fallbackValue);
+        storage.setItem(key, initialValue);
+        return fallbackValue;
+      } else {
+        return getParse(item);
+      }
+    } catch (error) {
+      console.warn(`Storage access failed for key "${key}":`, error);
+      return fallbackValue;
     }
-    return item ? getParse(item) : fallbackValue;
   }, [key, getParse, fallbackValue, storage, setParse]);
 
   const [value, setValue] = useState<T>(initKey);
@@ -122,7 +139,11 @@ export function useStorage<T>(
           ? (updator as (prev: T) => T)(value)
           : updator;
       setValue(modified);
-      storage.setItem(key, setParse(modified));
+      try {
+        storage.setItem(key, setParse(modified));
+      } catch (error) {
+        console.warn(`Failed to save to storage for key "${key}":`, error);
+      }
     },
     [key, setParse, storage, value]
   );
@@ -135,8 +156,7 @@ export function useStorage<T>(
     return () => {
       window.removeEventListener(STORAGE_CHANGE_EVENT(key), updateFromStorage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, initKey, updateFromStorage]);
 
   return [value, updateToStorage];
 }
