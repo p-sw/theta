@@ -12,6 +12,7 @@ import type {
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { toolRegistry } from "@/sdk/tools";
+import { isToolWhitelisted } from "@/lib/tools";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -105,6 +106,10 @@ export class AISDK {
       // const toolUseResult: IMessageRequestToolResult[] = [];
 
       toolUses.forEach((toolUse) => {
+        // Extract provider and tool IDs from the tool name
+        const [providerId, toolId] = toolUse.name.split("__");
+        const isWhitelisted = isToolWhitelisted(providerId, toolId);
+        
         const toolTurn: SessionTurnsToolInProgress = {
           type: "tool",
           useId: toolUse.id,
@@ -116,6 +121,17 @@ export class AISDK {
         session.turns.push(toolTurn);
         console.debug("Adding tool to run: ", toolTurn);
         saveSession();
+        
+        // Auto-grant if whitelisted
+        if (isWhitelisted) {
+          console.debug("Tool is whitelisted, auto-granting: ", toolUse.name);
+          // We need to trigger the grant action after the turn is saved
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("auto-grant-tool", { 
+              detail: { useId: toolUse.id } 
+            }));
+          }, 100);
+        }
       });
     }
   }

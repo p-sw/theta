@@ -140,6 +140,19 @@ export default function Chat() {
   useEventListener(NEW_SESSION_EVENT, handleNewSession);
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
 
+  // Auto-grant whitelisted tools
+  useEffect(() => {
+    const handleAutoGrant = async (event: CustomEvent) => {
+      const { useId } = event.detail;
+      await onToolGrant(useId);
+    };
+    
+    window.addEventListener("auto-grant-tool", handleAutoGrant as EventListener);
+    return () => {
+      window.removeEventListener("auto-grant-tool", handleAutoGrant as EventListener);
+    };
+  }, [onToolGrant]);
+
   const onToolGrant = useCallback(
     async (useId: string) => {
       const toolTurnIndex = session.turns.findIndex(

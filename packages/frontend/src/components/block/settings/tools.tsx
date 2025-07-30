@@ -19,6 +19,11 @@ import {
   useProviderToolEnabled,
   useToolProvidersMeta,
   useTools,
+  useIsToolEnabled,
+  useToggleTool,
+  useToolProviders,
+  useIsToolWhitelisted,
+  useToggleToolWhitelist,
 } from "@/lib/tools";
 import {
   Card,
@@ -44,6 +49,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import type { IToolMetaJson } from "@/sdk/shared";
 
 function ToolItems({
   providerId,
@@ -109,7 +115,21 @@ function ToolItems({
               </span>
             </p>
           </AccordionTrigger>
-          {/* TODO: Add whitelist tools */}
+          <AccordionContent className="space-y-4">
+            {toolProviders.map((provider) => (
+              <div key={provider.id} className="space-y-2">
+                <h4 className="text-sm font-medium">{provider.displayName}</h4>
+                {provider.tools.map((tool) => (
+                  <WhitelistToolToggle
+                    key={tool.id}
+                    providerId={provider.id}
+                    tool={tool}
+                    disabled={disabled}
+                  />
+                ))}
+              </div>
+            ))}
+          </AccordionContent>
         </AccordionItem>
       </Accordion>
     </>
@@ -135,6 +155,48 @@ function ToolProviderConfig({ provider }: { provider: IToolProviderMeta }) {
         <ToolProviderConfigForm provider={provider} />
       </SheetContent>
     </Sheet>
+  );
+}
+
+function WhitelistToolToggle({
+  providerId,
+  tool,
+  disabled,
+}: {
+  providerId: string;
+  tool: IToolMetaJson;
+  disabled: boolean;
+}) {
+  const isWhitelisted = useIsToolWhitelisted(providerId, tool.id);
+  const toggleWhitelist = useToggleToolWhitelist();
+  const isEnabled = useIsToolEnabled(providerId, tool.id);
+
+  const handleToggle = () => {
+    if (!disabled && isEnabled) {
+      toggleWhitelist(providerId, tool.id);
+    }
+  };
+
+  return (
+    <div className="flex items-center space-x-2">
+      <Switch
+        id={`whitelist-${providerId}-${tool.id}`}
+        checked={isWhitelisted}
+        onCheckedChange={handleToggle}
+        disabled={disabled || !isEnabled}
+      />
+      <Label
+        htmlFor={`whitelist-${providerId}-${tool.id}`}
+        className={!isEnabled ? "text-muted-foreground" : ""}
+      >
+        {tool.displayName}
+        {!isEnabled && (
+          <span className="text-xs text-muted-foreground ml-2">
+            (Tool must be enabled first)
+          </span>
+        )}
+      </Label>
+    </div>
   );
 }
 

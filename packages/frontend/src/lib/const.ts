@@ -61,6 +61,7 @@ export const TOOL_PROVIDER_CONFIG_ANY_KEY = "tool-provider-config";
 export const TOOL_PROVIDER_ENABLED_KEY = "tool-provider-enabled";
 export const TOOL_PROVIDER_AVAILABILITY_KEY = "tool-provider-availability";
 export const TOOL_ENABLED_KEY = "tool-enabled";
+export const TOOL_WHITELIST_KEY = "tool-whitelist";
 export const TOOL_PROVIDER_SEPARATOR = "__";
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;

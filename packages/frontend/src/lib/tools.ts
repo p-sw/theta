@@ -5,6 +5,7 @@ import {
   TOOL_PROVIDER_CONFIG_KEY,
   TOOL_PROVIDER_ENABLED_KEY,
   TOOL_PROVIDER_SEPARATOR,
+  TOOL_WHITELIST_KEY,
 } from "@/lib/const";
 import { dispatchEvent, useStorage } from "@/lib/utils";
 import type { IToolMetaJson, IToolProviderMeta } from "@/sdk/shared";
@@ -163,3 +164,90 @@ export function useToolInformation(providerIdToolId: string): {
     tool,
   };
 }
+
+export const useToolIdInformation = (providerIdToolId: string) => {
+  const [providerId, toolId] = useMemo(
+    () => providerIdToolId.split(TOOL_PROVIDER_SEPARATOR),
+    [providerIdToolId]
+  );
+  const toolProviders = useToolProviders();
+  const provider = toolProviders.find((p) => p.id === providerId);
+  const tool = provider?.tools.find((t) => t.id === toolId);
+  return { provider, tool };
+};
+
+// Whitelist management functions
+export const useWhitelistedTools = () => {
+  const [whitelistedTools, setWhitelistedTools] = useState<string[]>([]);
+
+  useEffect(() => {
+    const updateWhitelistedTools = () => {
+      const whitelistString = localStorage.getItem(TOOL_WHITELIST_KEY);
+      if (whitelistString) {
+        try {
+          setWhitelistedTools(JSON.parse(whitelistString));
+        } catch {
+          setWhitelistedTools([]);
+        }
+      } else {
+        setWhitelistedTools([]);
+      }
+    };
+
+    updateWhitelistedTools();
+    window.addEventListener(TOOL_WHITELIST_KEY, updateWhitelistedTools);
+    return () => {
+      window.removeEventListener(TOOL_WHITELIST_KEY, updateWhitelistedTools);
+    };
+  }, []);
+
+  return whitelistedTools;
+};
+
+export const useIsToolWhitelisted = (providerId: string, toolId: string) => {
+  const whitelistedTools = useWhitelistedTools();
+  return whitelistedTools.includes(
+    providerId + TOOL_PROVIDER_SEPARATOR + toolId
+  );
+};
+
+export const useToggleToolWhitelist = () => {
+  return useCallback((providerId: string, toolId: string) => {
+    const whitelistString = localStorage.getItem(TOOL_WHITELIST_KEY);
+    let whitelistedTools: string[] = [];
+    
+    if (whitelistString) {
+      try {
+        whitelistedTools = JSON.parse(whitelistString);
+      } catch {
+        whitelistedTools = [];
+      }
+    }
+
+    const toolKey = providerId + TOOL_PROVIDER_SEPARATOR + toolId;
+    const isWhitelisted = whitelistedTools.includes(toolKey);
+
+    if (isWhitelisted) {
+      whitelistedTools = whitelistedTools.filter((id) => id !== toolKey);
+    } else {
+      whitelistedTools.push(toolKey);
+    }
+
+    localStorage.setItem(TOOL_WHITELIST_KEY, JSON.stringify(whitelistedTools));
+    dispatchEvent(TOOL_WHITELIST_KEY, {});
+  }, []);
+};
+
+export const isToolWhitelisted = (providerId: string, toolId: string) => {
+  const whitelistString = localStorage.getItem(TOOL_WHITELIST_KEY);
+  if (!whitelistString) return false;
+  
+  try {
+    const whitelistedTools = JSON.parse(whitelistString);
+    return whitelistedTools.includes(
+      providerId + TOOL_PROVIDER_SEPARATOR + toolId
+    );
+  } catch {
+    return false;
+  }
+};
