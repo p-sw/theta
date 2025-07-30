@@ -38,6 +38,12 @@ import {
 } from "@/components/ui/tooltip";
 import type { IToolProviderMeta } from "@/sdk/shared";
 import { ToolProviderConfigForm } from "@/components/block/settings/tool-provider-config";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 function ToolItems({
   providerId,
@@ -55,29 +61,57 @@ function ToolItems({
 
   return (
     <>
-      {tools.map((tool) => (
-        <div key={tool.id} className="flex items-center gap-2">
-          <Checkbox
-            id={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
-            checked={isEnabled(
-              providerId,
-              tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
-            )}
-            onCheckedChange={() =>
-              toggleEnabled(
-                providerId,
-                tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
-              )
-            }
-            disabled={disabled}
-          />
-          <Label
-            htmlFor={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
-          >
-            {tool.displayName}
-          </Label>
-        </div>
-      ))}
+      <Accordion type="multiple" defaultValue={["functions"]}>
+        <AccordionItem value="functions">
+          <AccordionTrigger>
+            <p>
+              <span className="text-sm font-semibold block">
+                Enable Functions
+              </span>
+              <span className="text-xs text-muted-foreground block">
+                Enable functions to allow them to be used by AI.
+              </span>
+            </p>
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-2">
+            {tools.map((tool) => (
+              <div key={tool.id} className="flex items-center gap-2">
+                <Checkbox
+                  id={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
+                  checked={isEnabled(
+                    providerId,
+                    tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
+                  )}
+                  onCheckedChange={() =>
+                    toggleEnabled(
+                      providerId,
+                      tool.id.split(TOOL_PROVIDER_SEPARATOR)[1]
+                    )
+                  }
+                  disabled={disabled}
+                />
+                <Label
+                  htmlFor={`${id}-provider-${providerId}-tool-${tool.id}-enabled`}
+                >
+                  {tool.displayName}
+                </Label>
+              </div>
+            ))}
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="whitelist">
+          <AccordionTrigger>
+            <p>
+              <span className="text-sm font-semibold block">Whitelist</span>
+              <span className="text-xs text-muted-foreground block">
+                Whitelist tools to allow them to be used by AI without user
+                confirmation.
+              </span>
+            </p>
+          </AccordionTrigger>
+          {/* TODO: Add whitelist tools */}
+        </AccordionItem>
+      </Accordion>
     </>
   );
 }
