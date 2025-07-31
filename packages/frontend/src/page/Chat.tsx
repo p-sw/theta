@@ -141,6 +141,35 @@ export default function Chat() {
     });
   }, [setSession]);
 
+  const handleCheckout = useCallback((messageId: string) => {
+    // Find the index of the message to checkout
+    const messageIndex = session.turns.findIndex(
+      (turn) => turn.type === "request" && turn.messageId === messageId
+    );
+    
+    if (messageIndex === -1) return;
+    
+    const messageToCheckout = session.turns[messageIndex];
+    if (messageToCheckout.type !== "request") return;
+    
+    // Get the text content from the message
+    const textContent = messageToCheckout.message
+      .filter((msg) => msg.type === "text")
+      .map((msg) => msg.text)
+      .join("\n");
+    
+    // Set the form value to the message content
+    form.setValue("message", textContent);
+    
+    // Remove all turns after this message (including this message)
+    setSession((prev) => {
+      const newSession = { ...prev } as typeof prev;
+      newSession.turns = newSession.turns.slice(0, messageIndex);
+      newSession.updatedAt = Date.now();
+      return newSession;
+    });
+  }, [session.turns, form, setSession]);
+
   const handleNewSession = useCallback(() => {
     setIsPermanentSession(false);
     setNewSession();
@@ -310,6 +339,7 @@ export default function Chat() {
                   sessionId={sessionId}
                   messageId={message.messageId}
                   messages={displayableMessages}
+                  onCheckout={() => handleCheckout(message.messageId)}
                 />
               );
             } else if (message.type === "response") {
