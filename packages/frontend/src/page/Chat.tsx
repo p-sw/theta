@@ -182,7 +182,7 @@ export default function Chat() {
         );
         if (index === -1) return prev;
         const newSession = { ...prev } as typeof prev;
-        newSession.turns = newSession.turns.slice(0, index + 1);
+        newSession.turns = newSession.turns.slice(0, index);
         return newSession;
       });
     },

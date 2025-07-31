@@ -3,6 +3,7 @@ import type { IMessageRequest } from "@/sdk/shared";
 import Markdown from "react-markdown";
 import { dispatchEvent } from "@/lib/utils";
 import { CHECKOUT_MESSAGE_EVENT } from "@/lib/const";
+import { Button } from "@/components/ui/button";
 
 export function UserMessage({
   sessionId,
@@ -24,9 +25,23 @@ export function UserMessage({
       <div
         className="group relative flex flex-col items-end justify-start prose dark:prose-invert w-full max-w-full"
       >
-        {/* Checkout button */}
-        <button
-          type="button"
+
+        {/* Message body */}
+        {messages.map((message, index) => {
+          if (message.type === "text") {
+            return (
+              <Markdown key={`${sessionId}-${messageId}-${index}`}>
+                {message.text}
+              </Markdown>
+            );
+          }
+          return null;
+        })}
+
+        {/* Checkout button (appears below messages) */}
+        <Button
+          variant="link"
+          size="sm"
           onClick={() => {
             const content = messages
               .filter((msg) => msg.type === "text")
@@ -40,21 +55,10 @@ export function UserMessage({
               },
             });
           }}
-          className="absolute -top-2 -right-2 text-xs underline text-muted-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+          className="self-end text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
         >
           Checkout
-        </button>
-
-        {messages.map((message, index) => {
-          if (message.type === "text") {
-            return (
-              <Markdown key={`${sessionId}-${messageId}-${index}`}>
-                {message.text}
-              </Markdown>
-            );
-          }
-          return null;
-        })}
+        </Button>
       </div>
     </div>
   );
