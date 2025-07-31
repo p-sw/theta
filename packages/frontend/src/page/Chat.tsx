@@ -14,6 +14,7 @@ import {
   NEW_SESSION_EVENT,
   SAVE_SESSION_EVENT,
   SESSION_STORAGE_KEY,
+  CHECKOUT_MESSAGE_EVENT,
 } from "@/lib/const";
 import type {
   PermanentSession,
@@ -165,6 +166,30 @@ export default function Chat() {
   );
   useEventListener(NEW_SESSION_EVENT, handleNewSession);
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
+
+  const handleCheckoutMessage = useCallback(
+    (e: CustomEvent<{ sessionId: string; messageId: string; content: string }>) => {
+      const detail = e.detail;
+      if (detail.sessionId !== sessionId) return;
+
+      // Set textarea content to the selected message
+      form.setValue("message", detail.content);
+
+      // Remove turns AFTER the selected user message (keep the message itself)
+      setSession((prev) => {
+        const index = prev.turns.findIndex(
+          (t) => t.messageId === detail.messageId && t.type === "request"
+        );
+        if (index === -1) return prev;
+        const newSession = { ...prev } as typeof prev;
+        newSession.turns = newSession.turns.slice(0, index + 1);
+        return newSession;
+      });
+    },
+    [sessionId, form, setSession]
+  );
+
+  useEventListener(CHECKOUT_MESSAGE_EVENT, handleCheckoutMessage);
 
   const onToolGrant = useCallback(
     async (useId: string) => {

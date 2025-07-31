@@ -72,3 +72,5 @@ export const NEW_SESSION_EVENT = "new-session";
 export const SAVE_SESSION_EVENT = "save-session";
 
 export const SYSTEM_PROMPTS_KEY = "system-prompts";
+
+export const CHECKOUT_MESSAGE_EVENT = "checkout-message";

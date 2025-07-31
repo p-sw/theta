@@ -1,6 +1,8 @@
 import { Separator } from "@/components/ui/separator";
 import type { IMessageRequest } from "@/sdk/shared";
 import Markdown from "react-markdown";
+import { dispatchEvent } from "@/lib/utils";
+import { CHECKOUT_MESSAGE_EVENT } from "@/lib/const";
 
 export function UserMessage({
   sessionId,
@@ -18,7 +20,31 @@ export function UserMessage({
           <span className="text-sm text-muted-foreground">User</span>
         </div>
       </Separator>
-      <div className="flex flex-col items-end justify-start prose dark:prose-invert w-full max-w-full">
+      {/* message content with checkout button */}
+      <div
+        className="group relative flex flex-col items-end justify-start prose dark:prose-invert w-full max-w-full"
+      >
+        {/* Checkout button */}
+        <button
+          type="button"
+          onClick={() => {
+            const content = messages
+              .filter((msg) => msg.type === "text")
+              .map((msg) => (msg as { type: "text"; text: string }).text)
+              .join("\n\n");
+            dispatchEvent(CHECKOUT_MESSAGE_EVENT, {
+              detail: {
+                sessionId,
+                messageId,
+                content,
+              },
+            });
+          }}
+          className="absolute -top-2 -right-2 text-xs underline text-muted-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+        >
+          Checkout
+        </button>
+
         {messages.map((message, index) => {
           if (message.type === "text") {
             return (
@@ -27,6 +53,7 @@ export function UserMessage({
               </Markdown>
             );
           }
+          return null;
         })}
       </div>
     </div>
