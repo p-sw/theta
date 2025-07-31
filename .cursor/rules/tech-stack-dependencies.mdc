@@ -1,0 +1,243 @@
+---
+description: Complete technology stack analysis and dependency management guidelines for Project Theta
+globs:
+alwaysApply: false
+---
+
+# Technology Stack & Dependencies Guide
+
+## 🏗️ Core Architecture
+
+**Project Theta** is a modern **monorepo** built with cutting-edge technologies:
+
+### Package Manager & Runtime
+
+- **Bun** - Primary package manager and JavaScript runtime
+  - ✅ **Best Practice**: Using latest Bun provides superior performance over npm/yarn/pnpm
+  - ✅ **Advantage**: Native TypeScript support, faster installs, built-in bundler
+
+### Monorepo Structure
+
+- **Workspaces**: Root package.json manages `packages/*`
+- **TypeScript**: v5.8.3 (frontend) / v5+ (peer dependency)
+  - ✅ **Best Practice**: Using TypeScript 5.x provides latest language features
+  - ⚠️ **Note**: Frontend uses `~5.8.3` (patch-level updates only) for stability
+
+## 📦 Frontend Stack (packages/frontend/)
+
+### Core Framework
+
+```json
+{
+  "react": "^19.1.0",
+  "react-dom": "^19.1.0"
+}
+```
+
+- ✅ **Latest**: React 19 with new features (Server Components, concurrent features)
+- ⚠️ **Caution**: React 19 is cutting-edge; ensure ecosystem compatibility
+- 🎯 **Best Practice**: Monitor for breaking changes in third-party libraries
+
+### Build Tools
+
+```json
+{
+  "vite": "^7.0.4",
+  "@vitejs/plugin-react": "^4.6.0"
+}
+```
+
+- ✅ **Latest**: Vite 7 provides best-in-class dev experience
+- ✅ **Performance**: Lightning-fast HMR and optimized production builds
+
+### Styling & UI Framework
+
+```json
+{
+  "tailwindcss": "^4.1.11",
+  "@tailwindcss/vite": "^4.1.11",
+  "@tailwindcss/typography": "^0.5.16"
+}
+```
+
+- ✅ **Latest**: Tailwind CSS 4.x with native CSS integration
+- ✅ **Modern**: Using Vite plugin for optimal performance
+- 🎯 **Best Practice**: Typography plugin for markdown content styling
+
+### Component Library (Radix UI)
+
+```json
+{
+  "@radix-ui/react-*": "^1.x.x to ^2.x.x"
+}
+```
+
+- ✅ **Production Ready**: All components on stable v1+ or v2+
+- ✅ **Accessibility**: WAI-ARIA compliant components
+- ✅ **Headless**: Perfect for custom styling with Tailwind
+
+**Key Components in Use:**
+
+- Dialog, Dropdown Menu, Select, Popover, Tooltip
+- Accordion, Alert Dialog, Checkbox, Radio Group
+- Scroll Area, Separator, Slider, Switch
+
+### Form Management
+
+```json
+{
+  "react-hook-form": "^7.60.0",
+  "@hookform/resolvers": "^5.1.1",
+  "zod": "^4.0.14"
+}
+```
+
+- ✅ **Best Practice**: RHF + Zod for type-safe form validation
+- ✅ **Performance**: Minimal re-renders with uncontrolled components
+- ✅ **Latest**: Zod v4 provides enhanced TypeScript integration
+
+### Content & Markdown
+
+```json
+{
+  "react-markdown": "^10.1.0",
+  "lowlight": "^3.3.0",
+  "@catppuccin/highlightjs": "^1.0.1"
+}
+```
+
+- ✅ **Modern**: Latest react-markdown with plugin ecosystem
+- ✅ **Syntax Highlighting**: Lowlight for code block highlighting
+- 🎨 **Theme**: Catppuccin for beautiful code themes
+
+### State & Utilities
+
+```json
+{
+  "next-themes": "^0.4.6",
+  "hyperid": "^3.3.0",
+  "clsx": "^2.1.1",
+  "tailwind-merge": "^3.3.1"
+}
+```
+
+- ✅ **Theme Management**: next-themes for dark/light mode
+- ✅ **ID Generation**: hyperid for unique identifiers
+- ✅ **Class Management**: clsx + tailwind-merge for conditional styling
+
+## 🔧 Backend Stack (packages/backend/)
+
+### Web Framework
+
+```json
+{
+  "elysia": "latest",
+  "@elysiajs/cors": "^1.3.3"
+}
+```
+
+- ✅ **Modern**: Elysia - high-performance web framework for Bun
+- ✅ **Type Safety**: Full TypeScript integration
+- ✅ **Performance**: Built for Bun runtime optimization
+- ⚠️ **Note**: Using "latest" - consider pinning for production stability
+
+## 📋 Dependency Management Best Practices
+
+### Version Strategy
+
+1. **Major Dependencies**: Use caret ranges (`^x.y.z`) for flexibility
+
+   ```json
+   "react": "^19.1.0"  // ✅ Allows minor/patch updates
+   ```
+
+2. **TypeScript**: Use tilde for frontend stability
+
+   ```json
+   "typescript": "~5.8.3"  // ✅ Patch updates only
+   ```
+
+3. **Development Tools**: Pin to specific versions when needed
+   ```json
+   "@types/bun": "latest"  // ⚠️ Consider pinning for CI/CD
+   ```
+
+### Update Guidelines
+
+1. **React Ecosystem**: Monitor React 19 compatibility
+
+   - Test thoroughly with each minor update
+   - Watch for breaking changes in concurrent features
+
+2. **Tailwind CSS 4**:
+
+   - New architecture may affect custom plugins
+   - Monitor migration guides for breaking changes
+
+3. **Vite 7**:
+
+   - Generally stable, safe to update
+   - Check plugin compatibility
+
+4. **Elysia**:
+   - Pin version for production: `"elysia": "^x.y.z"`
+   - Test API contracts after updates
+
+### Security Practices
+
+1. **Audit Regularly**:
+
+   ```bash
+   bun audit
+   bun upgrade --latest
+   ```
+
+2. **Pin Production Dependencies**: Consider exact versions for critical deps
+3. **Monitor Advisories**: Subscribe to security alerts for key packages
+
+### Development Workflow
+
+1. **Install Commands**:
+
+   ```bash
+   # Root level (affects all workspaces)
+   bun add <package>
+
+   # Specific workspace
+   bun add <package> --workspace=@theta/frontend
+   ```
+
+2. **Update Strategy**:
+
+   ```bash
+   # Check outdated packages
+   bun outdated
+
+   # Update specific package
+   bun update <package>
+   ```
+
+## 🚀 Technology Advantages
+
+### Why This Stack?
+
+1. **Performance**: Bun + Vite + Elysia = Fastest possible dev/build experience
+2. **Type Safety**: Full TypeScript coverage across frontend/backend
+3. **Modern React**: Leveraging React 19 concurrent features
+4. **Component Library**: Radix UI provides accessible, headless components
+5. **Styling**: Tailwind CSS 4 with native CSS integration
+6. **Developer Experience**: Best-in-class tooling and HMR
+
+### Potential Risks
+
+1. **Cutting Edge**: React 19, Tailwind 4, Vite 7 are very recent
+2. **Ecosystem Lag**: Some libraries may not support React 19 yet
+3. **Stability**: "latest" versions can introduce unexpected breaking changes
+
+## 📖 Recommended Reading
+
+- [React 19 Release Notes](https://react.dev/blog/2024/04/25/react-19)
+- [Tailwind CSS v4.0 Alpha](https://tailwindcss.com/blog/tailwindcss-v4-alpha)
+- [Vite 7.0 Announcement](https://vitejs.dev/blog/announcing-vite7)
+- [Elysia Documentation](https://elysiajs.com)
+- [Bun Documentation](https://bun.sh/docs)

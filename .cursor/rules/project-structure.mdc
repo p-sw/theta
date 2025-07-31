@@ -1,0 +1,191 @@
+---
+description: Comprehensive guide to the project's directory structure and important files
+globs: "**/*"
+alwaysApply: true
+---
+
+# Project Structure Guide
+
+This is a **monorepo** project called `project-theta` that contains both frontend and backend applications, managed with Bun as the package manager.
+
+## 🏗️ Root Structure
+
+```
+project-theta/
+├── .cursor/rules/           # Cursor AI rules and configurations
+├── packages/               # Monorepo packages (frontend & backend)
+├── package.json            # Root package.json with workspace config
+├── bun.lock               # Bun lockfile for dependencies
+├── tsconfig.json          # Root TypeScript configuration
+└── README.md              # Project documentation
+```
+
+## 📦 Packages Structure
+
+### Frontend Package (`packages/frontend/`)
+
+**React + TypeScript + Vite application** with a sophisticated chat interface:
+
+```
+packages/frontend/
+├── src/
+│   ├── App.tsx                    # Main React application component
+│   ├── main.tsx                   # Vite entry point
+│   ├── index.css                  # Global styles
+│   ├── components/                # React components organized by type
+│   │   ├── ui/                    # Reusable UI components (shadcn/ui style)
+│   │   │   ├── button.tsx         # Button component
+│   │   │   ├── card.tsx           # Card component
+│   │   │   ├── dialog.tsx         # Dialog/modal component
+│   │   │   ├── form-factory.tsx   # Dynamic form generator
+│   │   │   └── ...                # 20+ UI components
+│   │   ├── block/                 # Feature-specific block components
+│   │   │   ├── chat/              # Chat-related components
+│   │   │   │   ├── assistant-message.tsx
+│   │   │   │   ├── user-message.tsx
+│   │   │   │   ├── model-selector.tsx
+│   │   │   │   ├── tool-block.tsx
+│   │   │   │   └── desktop-nav.tsx
+│   │   │   ├── settings/          # Settings panel components
+│   │   │   │   ├── providers.tsx  # AI provider configuration
+│   │   │   │   ├── tools.tsx      # Tool configuration
+│   │   │   │   ├── model-config.tsx
+│   │   │   │   ├── system-prompt.tsx
+│   │   │   │   └── appearance.tsx
+│   │   │   ├── session/           # Session management
+│   │   │   │   └── session-item.tsx
+│   │   │   ├── dialogs/           # Modal dialogs
+│   │   │   │   ├── save-session.tsx
+│   │   │   │   └── delete-session.tsx
+│   │   │   └── menu.tsx           # Main navigation menu
+│   │   └── layout/                # Layout components
+│   │       └── settings.tsx       # Settings layout
+│   ├── page/                      # Page-level components
+│   │   ├── Chat.tsx               # Main chat page (10KB - core chat logic)
+│   │   ├── Sessions.tsx           # Sessions management page
+│   │   ├── Setting.tsx            # Settings page
+│   │   └── context/               # React context providers
+│   │       └── Chat.tsx           # Chat context provider
+│   ├── lib/                       # Utility libraries and hooks
+│   │   ├── utils.ts               # General utility functions
+│   │   ├── const.ts               # Application constants
+│   │   ├── tools.ts               # Tool definitions and management
+│   │   ├── storage.ts             # LocalStorage abstraction
+│   │   ├── storage-hooks.ts       # React hooks for storage
+│   │   ├── proxy.ts               # API proxy utilities
+│   │   └── use-auto-scroll.ts     # Auto-scroll hook for chat
+│   ├── sdk/                       # SDK for AI providers and tools
+│   │   ├── index.ts               # Main SDK exports
+│   │   ├── shared.ts              # Shared SDK utilities (7KB)
+│   │   ├── providers/             # AI provider implementations
+│   │   │   ├── anthropic.ts       # Anthropic Claude integration (18KB)
+│   │   │   └── anthropic.types.ts # TypeScript types for Anthropic
+│   │   └── tools/                 # Tool system implementation
+│   │       ├── index.ts           # Tool definitions (8.9KB)
+│   │       ├── errors.ts          # Tool error handling
+│   │       └── providers/         # Tool provider implementations
+│   │           ├── openweather.ts # OpenWeather API tool (17KB)
+│   │           └── openweather.types.ts
+│   └── markdown-plugin/           # Custom markdown processing
+│       └── rehype-highlight.ts    # Syntax highlighting plugin
+├── public/                        # Static assets (currently empty)
+├── icon-pack/                     # SVG icons
+│   └── ai-provider/               # AI provider logos
+│       └── anthropic.svg          # Anthropic logo
+├── components.json                # shadcn/ui configuration
+├── package.json                   # Frontend dependencies
+├── vite.config.ts                 # Vite build configuration
+└── tsconfig.*.json               # TypeScript configurations
+```
+
+### Backend Package (`packages/backend/`)
+
+**Node.js + TypeScript backend application:**
+
+```
+packages/backend/
+├── src/
+│   └── index.ts                   # Main backend entry point (1.8KB)
+├── package.json                   # Backend dependencies
+├── tsconfig.json                  # Backend TypeScript config
+└── README.md                      # Backend documentation
+```
+
+## 🎯 Key Files and Their Purposes
+
+### Core Application Files
+
+- **`packages/frontend/src/page/Chat.tsx`** (10KB) - Main chat interface logic
+- **`packages/frontend/src/sdk/providers/anthropic.ts`** (18KB) - Anthropic Claude integration
+- **`packages/frontend/src/sdk/tools/index.ts`** (8.9KB) - Tool system implementation
+- **`packages/frontend/src/components/ui/form-factory.tsx`** (9.8KB) - Dynamic form generation
+
+### Configuration Files
+
+- **`package.json`** (root) - Workspace configuration for monorepo
+- **`vite.config.ts`** - Frontend build configuration
+- **`components.json`** - shadcn/ui component configuration
+- **`tsconfig.json`** - TypeScript configuration inheritance
+
+### Tool and Provider System
+
+- **`packages/frontend/src/sdk/tools/providers/openweather.ts`** (17KB) - Weather API integration
+- **`packages/frontend/src/components/block/settings/providers.tsx`** (9.4KB) - Provider configuration UI
+
+## 🧩 Architecture Patterns
+
+### Component Organization
+
+1. **UI Components** (`components/ui/`) - Reusable, atomic components following shadcn/ui patterns
+2. **Block Components** (`components/block/`) - Feature-specific components organized by domain
+3. **Page Components** (`page/`) - Top-level page containers
+4. **Layout Components** (`components/layout/`) - Layout and structure components
+
+### State Management
+
+- React Context for global state (`page/context/`)
+- Local storage abstraction (`lib/storage.ts`, `lib/storage-hooks.ts`)
+- Custom hooks for specific functionality (`lib/use-auto-scroll.ts`)
+
+### SDK Architecture
+
+- Provider-agnostic AI interface (`sdk/index.ts`, `sdk/shared.ts`)
+- Pluggable AI providers (`sdk/providers/`)
+- Extensible tool system (`sdk/tools/`)
+
+## 📋 Development Guidelines
+
+### File Naming Conventions
+
+- Use **kebab-case** for directories
+- Use **PascalCase** for React components (`Component.tsx`)
+- Use **camelCase** for utilities and hooks (`utils.ts`, `useHook.ts`)
+- Use **lowercase** for configuration files (`package.json`, `vite.config.ts`)
+
+### Directory Placement Rules
+
+- Place reusable UI components in `components/ui/`
+- Place feature-specific components in `components/block/{feature}/`
+- Place utilities and helpers in `lib/`
+- Place provider integrations in `sdk/providers/`
+- Place tool implementations in `sdk/tools/providers/`
+
+### Import Patterns
+
+- Use relative imports within the same feature directory
+- Use absolute imports from `src/` for cross-feature dependencies
+- Group imports: external libraries, internal utilities, components
+
+### Component Size Guidelines
+
+- Keep components under 200 lines when possible
+- Extract large components into smaller, focused components
+- Large files (>5KB) should be well-documented and have clear responsibilities
+
+## 🔧 Build Tools and Package Management
+
+- **Package Manager**: Bun (preferred over npm/yarn/pnpm)
+- **Frontend Build**: Vite + TypeScript + React
+- **Backend Runtime**: Node.js + TypeScript
+- **Monorepo**: Workspace-based with root package.json
+- **UI Framework**: shadcn/ui components with Tailwind CSS

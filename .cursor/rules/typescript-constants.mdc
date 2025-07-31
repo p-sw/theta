@@ -1,0 +1,282 @@
+---
+description: TypeScript constants and types organization patterns for Project Theta
+globs: "**/lib/const.ts"
+alwaysApply: false
+---
+
+# TypeScript Constants File Organization
+
+Guidelines for organizing constants, types, and utility functions in `const.ts` files.
+
+## File Structure and Organization
+
+### 1. Section Organization with Block Comments
+
+Use block comments to group related constants and types:
+
+```typescript
+/*
+ * STORAGE CHANGE EVENTS
+ */
+// Event-related constants and types here
+
+/*
+ * GLOBAL CONSTANTS
+ */
+// Application constants here
+```
+
+### 2. Import Organization
+
+Place imports at the top, importing only necessary types:
+
+```typescript
+import type { IProvider } from "@/sdk/shared";
+```
+
+## Naming Conventions
+
+### 1. Constants
+
+Use `UPPER_CASE` for all exported constants:
+
+```typescript
+// ✅ Good
+export const STORAGE_CHANGE_EVENT_ALL = "storage";
+export const API_KEY = "api_key";
+export const THEME = "theme";
+
+// ❌ Bad
+export const storageChangeEventAll = "storage";
+export const apiKey = "api_key";
+```
+
+### 2. Types and Interfaces
+
+Use `PascalCase` with `I` prefix for interfaces, plain `PascalCase` for type aliases:
+
+```typescript
+// ✅ Good - Interface
+export interface IStorageChangeEventDelta {
+  type: "new" | "removed" | "changed" | "same";
+  key: string;
+}
+
+// ✅ Good - Type alias
+export type ITheme = "light" | "dark";
+export type StorageChangeEvent = CustomEvent<StorageChangeEventBody>;
+
+// ❌ Bad
+export interface storageChangeEventDelta {}
+export type theme = "light" | "dark";
+```
+
+### 3. Function Parameters
+
+Use `camelCase` for function parameters:
+
+```typescript
+// ✅ Good
+export const PER_MODEL_CONFIG_KEY = (provider: IProvider, model: string) =>
+  `model-config-${provider}-${model}`;
+
+// ❌ Bad
+export const PER_MODEL_CONFIG_KEY = (Provider: IProvider, Model: string) =>
+  `model-config-${Provider}-${Model}`;
+```
+
+## Constant Patterns
+
+### 1. Simple String Constants
+
+Export simple string constants for keys and identifiers:
+
+```typescript
+export const THEME = "theme";
+export const API_KEY = "api_key";
+export const MODELS = "models";
+```
+
+### 2. Object Constants
+
+Group related values in object constants:
+
+```typescript
+export const PATHS = {
+  CHAT: "/",
+  SETTINGS: "/settings",
+  SESSIONS: "/sessions",
+};
+```
+
+### 3. Key Generation Functions
+
+Create functions for dynamic key generation:
+
+```typescript
+// Function that generates keys based on parameters
+export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
+export const TOOL_PROVIDER_CONFIG_KEY = (providerId: string) =>
+  `tool-provider-config-${providerId}`;
+
+// Related utility functions
+export const SESSION_STORAGE_ID = (key: string) =>
+  key.split("-").slice(1).join("-");
+```
+
+## Event System Patterns
+
+### 1. Event Name Constants
+
+Define event constants with consistent naming:
+
+```typescript
+export const NEW_SESSION_EVENT = "new-session";
+export const SAVE_SESSION_EVENT = "save-session";
+export const STORAGE_CHANGE_EVENT_ALL = "storage";
+```
+
+### 2. Event Function Patterns
+
+Use functions for parameterized event names:
+
+```typescript
+export const STORAGE_CHANGE_EVENT = (key: string) => `storage-change-${key}`;
+```
+
+### 3. Event Type Definitions
+
+Define event body types and event types together:
+
+```typescript
+// Event body type
+export type StorageChangeEventBody = IStorageChangeEventStorage;
+
+// Event type extending CustomEvent
+export type StorageChangeEvent = CustomEvent<StorageChangeEventBody>;
+```
+
+## Type Definition Patterns
+
+### 1. Interface Structure
+
+Structure interfaces with clear property types:
+
+```typescript
+export interface IStorageChangeEventDelta {
+  type: "new" | "removed" | "changed" | "same"; // Union type
+  key: string;
+  previousValue: string | null; // Nullable type
+  newValue: string | null;
+}
+```
+
+### 2. Generic Type Usage
+
+Use generic types for reusable patterns:
+
+```typescript
+export type StorageChangeEvent = CustomEvent<StorageChangeEventBody>;
+```
+
+### 3. Union Types
+
+Define union types for constrained values:
+
+```typescript
+export type ITheme = "light" | "dark";
+```
+
+### 4. Record Types
+
+Use Record type for key-value mappings:
+
+```typescript
+export type IApiKey = Record<IProvider, string | null>;
+```
+
+## Documentation Patterns
+
+### 1. Inline Comments
+
+Add clarifying comments for complex constants:
+
+```typescript
+// fired when any storage key is set/removed - to fire a storage event for current tab
+export const STORAGE_CHANGE_EVENT_ALL = "storage";
+
+// fired when storage key list changes (key added/removed)
+export const STORAGE_CHANGE_EVENT_KEY = "storage-change-key";
+```
+
+### 2. Section Comments
+
+Use block comments to separate logical sections:
+
+```typescript
+/*
+ * STORAGE CHANGE EVENTS
+ */
+// All storage-related constants here
+
+/*
+ * GLOBAL CONSTANTS
+ */
+// All application-wide constants here
+```
+
+## Export Patterns
+
+### 1. Export Everything
+
+Export all constants, types, and functions for use across the application:
+
+```typescript
+export const CONSTANT_NAME = "value";
+export type TypeName = string;
+export interface IInterfaceName {}
+export const functionName = (param: string) => `result-${param}`;
+```
+
+### 2. Related Exports
+
+Group related exports together:
+
+```typescript
+// Event constant and its types together
+export const STORAGE_CHANGE_EVENT_ALL = "storage";
+export type StorageChangeEventAllBody = IStorageChangeEventStorage;
+export type StorageChangeEventAll = CustomEvent<StorageChangeEventAllBody>;
+```
+
+## Anti-Patterns to Avoid
+
+```typescript
+// ❌ Don't use lowercase for constants
+export const apiKey = "api_key";
+
+// ❌ Don't mix naming conventions
+export const some_CONSTANT = "value";
+
+// ❌ Don't forget to export types
+type InternalType = string; // Should be exported
+
+// ❌ Don't create overly complex nested objects
+export const COMPLEX_CONFIG = {
+  level1: {
+    level2: {
+      level3: "too nested",
+    },
+  },
+};
+
+// ❌ Don't use magic strings without constants
+const eventName = "storage-change"; // Should be a constant
+```
+
+## File Size and Organization
+
+- Keep constants files focused and under 100 lines when possible
+- If the file grows large, consider splitting into multiple const files by domain
+- Group related constants and types together
+- Use clear section comments to organize different areas of functionality
