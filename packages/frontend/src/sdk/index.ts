@@ -123,8 +123,41 @@ export class AISDK {
       storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
     ) as TemporarySession;
 
-    function saveSession() {
+    // Saving the whole session (which grows over time) to storage on *every*
+    // streamed token is expensive – the JSON.stringify call allocates a big
+    // string and the subsequent custom Storage event causes a React render.
+    // When a long answer is streamed these calls can fire hundreds of times
+    // per second which results in visible lag / stuttering.
+
+    // To keep the UI responsive we rate-limit the writes so we only hit
+    // localStorage at most once every 150 ms.  The very last call is always
+    // flushed to make sure nothing is lost.
+
+    let lastSave = 0;
+    let pendingFlush: number | null = null;
+
+    function flushSession() {
+      pendingFlush && cancelAnimationFrame(pendingFlush);
+      pendingFlush = null;
+      lastSave = performance.now();
       storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
+    }
+
+    function saveSession(throttle = true) {
+      if (!throttle) {
+        flushSession();
+        return;
+      }
+
+      const now = performance.now();
+      // If the last save was long enough ago – save immediately.
+      if (now - lastSave > 150) {
+        flushSession();
+      } else if (pendingFlush === null) {
+        // Otherwise schedule a write on the next animation frame so we never
+        // block the main thread for too long during rapid streaming.
+        pendingFlush = requestAnimationFrame(flushSession);
+      }
     }
 
     session.turns.push({
@@ -132,7 +165,7 @@ export class AISDK {
       messageId: hyperidInstance(),
       message: requestMessage,
     });
-    saveSession();
+    saveSession(false /* no throttle – first write */);
 
     const resultMessage: IMessageResult[] = [];
     const resultTurn: SessionTurnsResponse = {
@@ -141,7 +174,7 @@ export class AISDK {
       message: resultMessage,
     };
     session.turns.push(resultTurn);
-    saveSession();
+    saveSession(false /* no throttle – second write */);
 
     // Setup abort controller for this message stream
     const abortController = new AbortController();
@@ -153,6 +186,7 @@ export class AISDK {
     ) {
       await updator(resultMessage);
       session.updatedAt = Date.now();
+      // This path is hit by *every* streamed chunk – throttle it.
       saveSession();
     }
 
@@ -230,6 +264,10 @@ export class AISDK {
     if (this.currentAbortController === abortController) {
       this.currentAbortController = null;
     }
+
+    // Make sure any pending throttled save is flushed when the stream ends so
+    // we don't lose the tail of the response.
+    flushSession();
   }
 
   getDefaultModelConfig(provider: IProvider, modelId: string) {
