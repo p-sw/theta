@@ -14,14 +14,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useApiKey, useModels } from "@/lib/storage-hooks";
-import { AiSdk } from "@/sdk";
 import type { IModelInfo } from "@/sdk/shared";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import Anthropic from "~icons/ai-provider/anthropic";
 import LucideSettings from "~icons/lucide/settings";
-import LucideRotateCw from "~icons/lucide/rotate-cw";
 import LucideSave from "~icons/lucide/save";
 import LucideTrash from "~icons/lucide/trash";
 import LucideX from "~icons/lucide/x";
@@ -38,17 +35,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ModelConfigForm } from "@/components/block/settings/model-config";
 import { SystemPromptSection } from "@/components/block/settings/system-prompt";
-
-function ModelItemSkeleton() {
-  return (
-    <div className="flex flex-row justify-between rounded-md h-10 items-center px-2">
-      <div className="flex flex-row gap-2 w-full items-center">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <Skeleton className="h-6 w-50" />
-      </div>
-    </div>
-  );
-}
 
 function ModelItem({
   model,
@@ -133,62 +119,12 @@ function ModelItem({
 }
 
 function ModelSection() {
-  const [refetch, setRefetch] = useState(false);
-  const [apiKey] = useApiKey();
   const [models, setModels] = useModels();
-  const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (Object.values(apiKey).every((v) => v === null)) return;
-    if (models.length > 0 && !refetch) return;
-    setRefetch(false);
-    startTransition(async () => {
-      const models = await AiSdk.getAvailableModels();
-      setModels((p) => {
-        // only add missing models, ignore existing models
-        const newModels = [...p];
-        models.forEach((model) => {
-          const index = newModels.findIndex((m) => m.id === model.id);
-          if (index === -1) {
-            newModels.push(model);
-          }
-        });
-        return newModels;
-      });
-    });
-  }, [models, refetch, setModels, apiKey]);
 
   return (
-    <SettingsSubSection
-      title="Models"
-      subsectionActions={
-        <Button
-          onClick={() => setRefetch(true)}
-          disabled={
-            isPending ||
-            refetch ||
-            Object.values(apiKey).every((v) => v === null)
-          }
-        >
-          <LucideRotateCw />
-          Refetch
-        </Button>
-      }
-    >
+    <SettingsSubSection title="Models">
       <div className="flex flex-col border overflow-y-scroll h-50 rounded-md">
-        {isPending ? (
-          <>
-            <ModelItemSkeleton />
-            <Separator />
-            <ModelItemSkeleton />
-            <Separator />
-            <ModelItemSkeleton />
-            <Separator />
-            <ModelItemSkeleton />
-            <Separator />
-            <ModelItemSkeleton />
-          </>
-        ) : models.length > 0 ? (
+        {models.length > 0 ? (
           models.map((model) => (
             <div key={model.id}>
               <ModelItem

@@ -3,6 +3,7 @@ import {
   SESSION_STORAGE_KEY,
   TOOL_WHITELISTED_KEY,
   STORAGE_CHANGE_EVENT,
+  MODELS,
   type IApiKey,
 } from "@/lib/const";
 import { hyperidInstance } from "@/lib/utils";
@@ -44,7 +45,7 @@ export class AISDK {
    * If a provider already exists its API key is updated, otherwise a new
    * instance is created. Providers are set to null when their key is removed.
    */
-  private initProviders() {
+  private async initProviders() {
     const apiKey: IApiKey = JSON.parse(localStorage.getItem(API_KEY) ?? "{}");
 
     // Anthropic
@@ -56,6 +57,22 @@ export class AISDK {
       }
     } else {
       this.anthropic = null;
+    }
+
+    // Refresh models list after provider updates
+    await this.refreshModels();
+  }
+
+  private async refreshModels() {
+    try {
+      const models = await this.getAvailableModels();
+      const prev = localStorage.getItem(MODELS);
+      const next = JSON.stringify(models);
+      if (prev !== next) {
+        localStorage.setItem(MODELS, next);
+      }
+    } catch (err) {
+      console.error("Failed to refresh models list", err);
     }
   }
 
