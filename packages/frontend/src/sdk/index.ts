@@ -1,4 +1,9 @@
-import { API_KEY, SESSION_STORAGE_KEY, type IApiKey } from "@/lib/const";
+import {
+  API_KEY,
+  SESSION_STORAGE_KEY,
+  TOOL_WHITELISTED_KEY,
+  type IApiKey,
+} from "@/lib/const";
 import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
@@ -104,17 +109,35 @@ export class AISDK {
       );
       // const toolUseResult: IMessageRequestToolResult[] = [];
 
+      // Check whitelisted tools
+      let whitelistedTools: string[] = [];
+      try {
+        const whitelistedData = localStorage.getItem(TOOL_WHITELISTED_KEY);
+        if (whitelistedData) {
+          whitelistedTools = JSON.parse(whitelistedData) as string[];
+        }
+      } catch (e) {
+        console.error("Error parsing whitelisted tools:", e);
+      }
+
       toolUses.forEach((toolUse) => {
+        const isWhitelisted = whitelistedTools.includes(toolUse.name);
         const toolTurn: SessionTurnsToolInProgress = {
           type: "tool",
           useId: toolUse.id,
           toolName: toolUse.name,
-          granted: false,
+          granted: isWhitelisted, // Auto-grant if whitelisted
           requestContent: toolUse.input,
           done: false,
         };
         session.turns.push(toolTurn);
         console.debug("Adding tool to run: ", toolTurn);
+        if (isWhitelisted) {
+          console.debug(
+            "Tool is whitelisted and will auto-execute:",
+            toolUse.name
+          );
+        }
         saveSession();
       });
     }

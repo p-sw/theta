@@ -50,11 +50,15 @@ function ToolItems({
   disabled,
   isEnabled,
   toggleEnabled,
+  isWhitelisted,
+  toggleWhitelisted,
 }: {
   providerId: string;
   disabled: boolean;
   isEnabled: (providerId: string, toolId: string) => boolean;
   toggleEnabled: (providerId: string, toolId: string) => void;
+  isWhitelisted: (providerId: string, toolId: string) => boolean;
+  toggleWhitelisted: (providerId: string, toolId: string) => void;
 }) {
   const tools = useTools(providerId);
   const id = useId();
@@ -109,7 +113,35 @@ function ToolItems({
               </span>
             </p>
           </AccordionTrigger>
-          {/* TODO: Add whitelist tools */}
+          <AccordionContent className="flex flex-col gap-2">
+            {tools.map((tool) => {
+              const toolId = tool.id.split(TOOL_PROVIDER_SEPARATOR)[1];
+              const enabled = isEnabled(providerId, toolId);
+              const whitelisted = isWhitelisted(providerId, toolId);
+
+              return (
+                <div key={tool.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${id}-provider-${providerId}-tool-${tool.id}-whitelisted`}
+                    checked={whitelisted}
+                    onCheckedChange={() =>
+                      toggleWhitelisted(providerId, toolId)
+                    }
+                    disabled={disabled || !enabled}
+                  />
+                  <Label
+                    htmlFor={`${id}-provider-${providerId}-tool-${tool.id}-whitelisted`}
+                    className={!enabled ? "text-muted-foreground" : ""}
+                  >
+                    {tool.displayName}
+                    {!enabled && (
+                      <span className="text-xs ml-2">(Enable tool first)</span>
+                    )}
+                  </Label>
+                </div>
+              );
+            })}
+          </AccordionContent>
         </AccordionItem>
       </Accordion>
     </>
@@ -142,8 +174,10 @@ export function ToolsSection() {
   const {
     isProviderEnabled,
     isToolEnabled,
+    isToolWhitelisted,
     toggleProviderEnabled,
     toggleToolEnabled,
+    toggleToolWhitelisted,
   } = useProviderToolEnabled();
   const providers = useToolProvidersMeta();
 
@@ -174,6 +208,8 @@ export function ToolsSection() {
                 }
                 isEnabled={isToolEnabled}
                 toggleEnabled={toggleToolEnabled}
+                isWhitelisted={isToolWhitelisted}
+                toggleWhitelisted={toggleToolWhitelisted}
               />
             </CardContent>
             <CardFooter className="justify-between gap-4">

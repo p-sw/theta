@@ -1,5 +1,6 @@
 import {
   TOOL_ENABLED_KEY,
+  TOOL_WHITELISTED_KEY,
   TOOL_PROVIDER_AVAILABILITY_KEY,
   TOOL_PROVIDER_CONFIG_ANY_KEY,
   TOOL_PROVIDER_CONFIG_KEY,
@@ -87,6 +88,10 @@ export function useProviderToolEnabled() {
     TOOL_ENABLED_KEY,
     []
   );
+  const [whitelistedTools, setWhitelistedTools] = useStorage<string[]>(
+    TOOL_WHITELISTED_KEY,
+    []
+  );
 
   const isProviderEnabled = useCallback(
     (providerId: string) => {
@@ -102,6 +107,15 @@ export function useProviderToolEnabled() {
       );
     },
     [enabledTools]
+  );
+
+  const isToolWhitelisted = useCallback(
+    (providerId: string, toolId: string) => {
+      return whitelistedTools.includes(
+        providerId + TOOL_PROVIDER_SEPARATOR + toolId
+      );
+    },
+    [whitelistedTools]
   );
 
   const toggleProviderEnabled = useCallback(
@@ -132,12 +146,34 @@ export function useProviderToolEnabled() {
     [setEnabledTools]
   );
 
+  const toggleToolWhitelisted = useCallback(
+    (providerId: string, toolId: string) => {
+      setWhitelistedTools((prev) => {
+        const toolKey = providerId + TOOL_PROVIDER_SEPARATOR + toolId;
+        if (prev.includes(toolKey)) {
+          return prev.filter((id) => id !== toolKey);
+        } else {
+          return [...prev, toolKey];
+        }
+      });
+    },
+    [setWhitelistedTools]
+  );
+
   return {
     isProviderEnabled,
     isToolEnabled,
+    isToolWhitelisted,
     toggleProviderEnabled,
     toggleToolEnabled,
+    toggleToolWhitelisted,
   };
+}
+
+export function useIsToolWhitelisted(providerIdToolId: string): boolean {
+  const [whitelistedTools] = useStorage<string[]>(TOOL_WHITELISTED_KEY, []);
+
+  return whitelistedTools.includes(providerIdToolId);
 }
 
 export function useToolInformation(providerIdToolId: string): {

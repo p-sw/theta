@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -13,7 +14,7 @@ import type {
   IToolProviderMeta,
   IToolMetaJson,
 } from "@/sdk/shared";
-import { useToolInformation } from "@/lib/tools";
+import { useToolInformation, useIsToolWhitelisted } from "@/lib/tools";
 import LucideMoveDiagonal from "~icons/lucide/move-diagonal";
 import LucideCheck from "~icons/lucide/check";
 import LucideCircleMinus from "~icons/lucide/circle-minus";
@@ -53,11 +54,12 @@ export function ToolUseCard({
   onReject: () => void;
 }) {
   const { provider, tool } = useToolInformation(message.toolName);
+  const isWhitelisted = useIsToolWhitelisted(message.toolName);
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="col-span-2 sm:col-span-1 flex items-start gap-1">
+        <CardTitle className="col-span-2 sm:col-span-1 flex items-center gap-1">
           {message.done ? (
             message.granted ? (
               message.isError ? (
@@ -72,6 +74,11 @@ export function ToolUseCard({
             <LucideLoaderCircle className="w-4 h-4 animate-spin inline-block mr-2" />
           )}
           <span>{tool?.displayName ?? "Unknown tool"}</span>
+          {isWhitelisted && (
+            <Badge variant="secondary" className="ml-2">
+              Whitelisted
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           {provider?.displayName ?? "Unknown provider"}
@@ -91,6 +98,10 @@ export function ToolUseCard({
                 Execution rejected
               </p>
             )
+          ) : message.granted ? (
+            <p className="text-muted-foreground text-sm inline-block">
+              Executing...
+            </p>
           ) : (
             <>
               <Tooltip>
@@ -141,6 +152,10 @@ export function ToolUseCard({
               Execution rejected
             </p>
           )
+        ) : message.granted ? (
+          <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
+            Executing...
+          </p>
         ) : (
           <>
             <Button onClick={onGrant}>
@@ -224,7 +239,7 @@ function DetailDialog({
           </>
         )}
         <DialogFooter>
-          {!message.done && (
+          {!message.done && !message.granted && (
             <>
               <DialogClose asChild>
                 <Button onClick={onGrant}>
@@ -237,6 +252,11 @@ function DetailDialog({
                 </Button>
               </DialogClose>
             </>
+          )}
+          {!message.done && message.granted && (
+            <p className="text-muted-foreground text-sm">
+              Tool is executing...
+            </p>
           )}
           <DialogClose asChild>
             <Button>

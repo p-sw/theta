@@ -149,6 +149,19 @@ export default function Chat() {
       const turn = session.turns[toolTurnIndex] as SessionTurnsTool;
       if (turn.done) return;
 
+      // Only set to pending state if not already granted (for manual grants)
+      if (!turn.granted) {
+        setSession((prev) => {
+          const newSession = { ...prev };
+          newSession.turns[toolTurnIndex] = {
+            ...turn,
+            granted: true,
+            done: false,
+          };
+          return newSession;
+        });
+      }
+
       try {
         const toolResult = await toolRegistry.execute(
           turn.toolName,
@@ -204,6 +217,30 @@ export default function Chat() {
     },
     [setSession]
   );
+
+  // Auto-execute tools that are granted but not done yet
+  useEffect(() => {
+    const toolTurns = session.turns.filter(
+      (turn): turn is SessionTurnsTool => turn.type === "tool"
+    );
+
+    const executeGrantedTools = async () => {
+      for (const toolTurn of toolTurns) {
+        // Execute tools that are granted but not done yet
+        // This includes whitelisted tools (auto-granted) and manually granted tools
+        if (!toolTurn.done && toolTurn.granted) {
+          console.log("Executing granted tool:", toolTurn.toolName);
+          // Small delay to ensure the UI has rendered
+          setTimeout(() => {
+            onToolGrant(toolTurn.useId);
+          }, 100);
+          break; // Execute one at a time to avoid race conditions
+        }
+      }
+    };
+
+    executeGrantedTools();
+  }, [session.turns, onToolGrant]);
 
   // Trigger auto-scroll when session turns change (new messages)
   useEffect(() => {
