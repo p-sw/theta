@@ -100,6 +100,8 @@ export function PermanentSessionItem({
       const anotherSessionKeyTemp = anotherSessionKey ?? sessionKeysTemp[0];
       if (!anotherSessionKeyTemp) {
         // if no session, create one
+        // when creating, it should be a temp session
+        setIsPermanentSession(false);
         setNewSession();
       } else {
         if (!anotherSessionKey) {
