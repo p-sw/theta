@@ -25,6 +25,14 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
   protected abstract readonly API_BASE_URL: string;
   protected apiKey!: string;
 
+  /**
+   * Update the API key for the provider instance at runtime.
+   * This enables hot-swapping credentials when the user edits them in settings.
+   */
+  public setApiKey(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
   protected abstract buildAPIRequest(
     method: RequestInit["method"]
   ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };

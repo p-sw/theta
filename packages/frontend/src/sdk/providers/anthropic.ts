@@ -177,7 +177,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
 
   constructor(apiKey: string) {
     super();
-    this.apiKey = apiKey;
+    // Delegate API-key assignment to the common helper defined in API base.
+    this.setApiKey(apiKey);
   }
 
   protected buildAPIRequest(

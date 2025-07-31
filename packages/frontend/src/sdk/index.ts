@@ -2,6 +2,7 @@ import {
   API_KEY,
   SESSION_STORAGE_KEY,
   TOOL_WHITELISTED_KEY,
+  STORAGE_CHANGE_EVENT,
   type IApiKey,
 } from "@/lib/const";
 import { hyperidInstance } from "@/lib/utils";
@@ -29,10 +30,32 @@ export class AISDK {
   anthropic: AnthropicProvider | null = null;
 
   constructor() {
+    // Initialise providers from the current content of localStorage.
+    this.initProviders();
+
+    // Re-initialise providers whenever the API key changes in storage.
+    window.addEventListener(STORAGE_CHANGE_EVENT(API_KEY), () => {
+      this.initProviders();
+    });
+  }
+
+  /**
+   * (Re)initialise provider instances based on the latest API key values.
+   * If a provider already exists its API key is updated, otherwise a new
+   * instance is created. Providers are set to null when their key is removed.
+   */
+  private initProviders() {
     const apiKey: IApiKey = JSON.parse(localStorage.getItem(API_KEY) ?? "{}");
 
+    // Anthropic
     if (apiKey.anthropic) {
-      this.anthropic = new AnthropicProvider(apiKey.anthropic);
+      if (this.anthropic) {
+        this.anthropic.setApiKey(apiKey.anthropic);
+      } else {
+        this.anthropic = new AnthropicProvider(apiKey.anthropic);
+      }
+    } else {
+      this.anthropic = null;
     }
   }
 
