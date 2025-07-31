@@ -48,7 +48,8 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) => Promise<void>, // prev -> new
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
-    tools: IToolMetaJson[]
+    tools: IToolMetaJson[],
+    signal?: AbortSignal
   ): Promise<void>;
   abstract getModels(modelId: string): Promise<IModelInfo[]>;
   abstract getDefaultModelConfig(modelId: string): object;

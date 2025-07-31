@@ -30,6 +30,8 @@ export const providerRegistry: Record<IProvider, IProviderInfo> = {
 
 export class AISDK {
   anthropic: AnthropicProvider | null = null;
+  /** Holds the abort controller for the currently streaming request (if any) */
+  public currentAbortController: AbortController | null = null;
 
   constructor() {
     // Initialise providers from the current content of localStorage.
@@ -97,6 +99,12 @@ export class AISDK {
     }
   }
 
+  async abortCurrent() {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+    }
+  }
+
   async getAvailableModels() {
     const anthropicModels = (await this.anthropic?.getModels()) ?? [];
 
@@ -109,7 +117,7 @@ export class AISDK {
     provider: IProvider,
     model: string,
     requestMessage: IMessageRequest[]
-  ) {
+  ): Promise<void> {
     const storage = isPermanentSession ? localStorage : sessionStorage;
     const session = JSON.parse(
       storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
@@ -135,6 +143,11 @@ export class AISDK {
     session.turns.push(resultTurn);
     saveSession();
 
+    // Setup abort controller for this message stream
+    const abortController = new AbortController();
+    // track the currently running stream so it can be aborted later
+    this.currentAbortController = abortController;
+
     async function updateSession(
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) {
@@ -143,24 +156,34 @@ export class AISDK {
       saveSession();
     }
 
-    switch (provider) {
-      case "anthropic":
-        await this.anthropic?.message(
-          session.turns.slice(
-            0,
-            -1
-          ) /* removes just inserted empty response buffer */,
-          model,
-          updateSession,
-          (stop) => {
-            resultTurn.stop = stop;
-            saveSession();
-          },
-          toolRegistry.getEnabledTools()
-        );
-        break;
-      default:
-        throw new Error(`Provider ${provider} not supported`);
+    try {
+      switch (provider) {
+        case "anthropic":
+          await this.anthropic?.message(
+            session.turns.slice(
+              0,
+              -1
+            ) /* removes just inserted empty response buffer */,
+            model,
+            updateSession,
+            (stop) => {
+              resultTurn.stop = stop;
+              saveSession();
+            },
+            toolRegistry.getEnabledTools(),
+            abortController.signal
+          );
+
+          break;
+        default:
+          throw new Error(`Provider ${provider} not supported`);
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        // Aborted by user
+      } else {
+        throw e;
+      }
     }
 
     // tool use handling
@@ -201,6 +224,11 @@ export class AISDK {
         }
         saveSession();
       });
+    }
+
+    // Clear the abort controller reference when streaming is finished or aborted
+    if (this.currentAbortController === abortController) {
+      this.currentAbortController = null;
     }
   }
 

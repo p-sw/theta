@@ -23,7 +23,10 @@ export class ServerSideHttpError extends Error {
 
 export async function proxyfetch(
   url: string | URL,
-  options: Omit<RequestInit, "body"> & { body?: Record<string, unknown> }
+  options: Omit<RequestInit, "body"> & {
+    body?: Record<string, unknown>;
+    signal?: AbortSignal;
+  }
 ): Promise<Response> {
   try {
     const requestUrl = new URL(import.meta.env.VITE_BACKEND_URL);
@@ -39,6 +42,7 @@ export async function proxyfetch(
         headers: options.headers,
         data: options.body,
       }),
+      signal: options.signal,
     });
 
     if (!response.ok) {

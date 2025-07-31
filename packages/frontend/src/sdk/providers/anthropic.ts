@@ -297,7 +297,8 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
-    tools: IToolMetaJson[]
+    tools: IToolMetaJson[],
+    signal?: AbortSignal
   ): Promise<void> {
     const messages = this.translateSession(session);
     const modelConfig = this.getModelConfig(model);
@@ -355,6 +356,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
           : {}),
         tools: this.translateToolSchema(tools),
       },
+      signal,
     });
 
     await this.ensureSuccess(response);

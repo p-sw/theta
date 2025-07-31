@@ -6,9 +6,10 @@ import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
+import LucidePause from "~icons/lucide/pause";
 import {
   NEW_SESSION_EVENT,
   SAVE_SESSION_EVENT,
@@ -63,6 +64,8 @@ export default function Chat() {
     }
   );
 
+  const [isStreaming, setIsStreaming] = useState(false);
+
   const form = useForm({
     defaultValues: {
       message: "",
@@ -71,15 +74,17 @@ export default function Chat() {
 
   const handleSubmit = useCallback(
     (data: { message: string }) => {
-      if (!modelId || !provider || data.message.trim() === "") return;
+      if (!modelId || !provider || data.message.trim() === "" || isStreaming)
+        return;
       form.reset();
+      setIsStreaming(true);
       AiSdk.message(sessionId, isPermanentSession, provider!, modelId!, [
         { type: "text", text: data.message },
       ]).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
       });
     },
-    [sessionId, isPermanentSession, provider, modelId, form]
+    [modelId, provider, isStreaming, form, sessionId, isPermanentSession]
   );
 
   useEffect(() => {
@@ -114,6 +119,27 @@ export default function Chat() {
       });
     }
   }, [session.turns, sessionId, isPermanentSession, provider, modelId]);
+
+  const handlePause = useCallback(() => {
+    AiSdk.abortCurrent();
+    setIsStreaming(false);
+    setSession((prev) => {
+      const newSession = { ...prev } as typeof prev;
+      newSession.turns = newSession.turns.map((turn) => {
+        if (turn.type === "tool" && !turn.done) {
+          return {
+            ...turn,
+            done: true,
+            granted: false,
+            isError: true,
+            responseContent: "User rejected tool use",
+          } as SessionTurnsTool;
+        }
+        return turn;
+      });
+      return newSession;
+    });
+  }, [setSession]);
 
   const handleNewSession = useCallback(() => {
     setIsPermanentSession(false);
@@ -218,6 +244,23 @@ export default function Chat() {
     [setSession]
   );
 
+  // Update streaming state based on session turns
+  useEffect(() => {
+    if (!isStreaming) return;
+    const hasPendingTool = session.turns.some(
+      (t): t is SessionTurnsTool => t.type === "tool" && !t.done
+    );
+    const lastAssistant = [...session.turns]
+      .reverse()
+      .find((t): t is SessionTurnsResponse => t.type === "response");
+    const assistantStillStreaming = lastAssistant ? !lastAssistant.stop : false;
+    const assistantUsingTool = lastAssistant?.stop?.type === "tool_use";
+
+    setIsStreaming(
+      hasPendingTool || assistantStillStreaming || assistantUsingTool
+    );
+  }, [session.turns, isStreaming]);
+
   // Auto-execute tools that are granted but not done yet
   useEffect(() => {
     const toolTurns = session.turns.filter(
@@ -316,22 +359,35 @@ export default function Chat() {
                 <FormMessage />
               </FormItem>
               <div className="flex flex-row-reverse justify-between">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="submit"
-                      size="icon"
-                      disabled={
-                        !modelId || !provider || !form.watch("message").trim()
-                      }
-                    >
-                      <LucideSend className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Send</p>
-                  </TooltipContent>
-                </Tooltip>
+                {isStreaming ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" size="icon" onClick={handlePause}>
+                        <LucidePause className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Pause</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="submit"
+                        size="icon"
+                        disabled={
+                          !modelId || !provider || !form.watch("message").trim()
+                        }
+                      >
+                        <LucideSend className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Send</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
                 <ModelSelector
                   provider={provider}
                   modelId={modelId}
