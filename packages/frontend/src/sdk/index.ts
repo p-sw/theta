@@ -11,6 +11,7 @@ import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
   IMessageRequest,
   IMessageResult,
+  IModelInfo,
   IProvider,
   IProviderInfo,
   SessionTurnsResponse,
@@ -65,10 +66,30 @@ export class AISDK {
 
   private async refreshModels() {
     try {
-      const models = await this.getAvailableModels();
-      const prev = localStorage.getItem(MODELS);
-      const next = JSON.stringify(models);
-      if (prev !== next) {
+      const fetchedModels = await this.getAvailableModels();
+
+      // Parse previously stored models (if any)
+      let prevModels: IModelInfo[] = [];
+      const prevRaw = localStorage.getItem(MODELS);
+      if (prevRaw) {
+        try {
+          prevModels = JSON.parse(prevRaw) as IModelInfo[];
+        } catch {
+          // Malformed json – ignore and treat as empty
+        }
+      }
+
+      // Merge: keep existing flags (e.g. disabled) for models that still exist
+      const mergedModels: IModelInfo[] = fetchedModels.map((model) => {
+        const prev = prevModels.find(
+          (m) => m.id === model.id && m.provider === model.provider
+        );
+        return prev ?? model;
+      });
+
+      const next = JSON.stringify(mergedModels);
+
+      if (prevRaw !== next) {
         localStorage.setItem(MODELS, next);
       }
     } catch (err) {
