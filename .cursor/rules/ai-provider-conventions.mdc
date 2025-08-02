@@ -1,0 +1,248 @@
+---
+description: Conventions and patterns for implementing AI providers (e.g., Anthropic) under packages/frontend/src/sdk/providers
+globs: packages/frontend/src/sdk/providers/**/*
+alwaysApply: false
+---
+
+# AI Provider Implementation Conventions
+
+This rule captures the recurring architecture, naming, and implementation patterns observed in the _Anthropic_ provider found in
+`packages/frontend/src/sdk/providers/anthropic.ts` and `anthropic.types.ts`. Follow these guidelines when **adding a new provider** or **updating an existing one**.
+
+> **Scope** – Applies to every file that implements a provider (OpenAI, Anthropic, etc.) and their accompanying `*.types.ts` files.
+
+---
+
+## 1. File & Naming Structure
+
+| Purpose                                  | Path pattern                                              |
+| ---------------------------------------- | --------------------------------------------------------- |
+| Provider implementation (business logic) | `packages/frontend/src/sdk/providers/<provider>.ts`       |
+| Provider-specific type aliases           | `packages/frontend/src/sdk/providers/<provider>.types.ts` |
+| Shared type aliases                      | `packages/frontend/src/sdk/shared.ts`                     |
+
+- Use **kebab-case** for provider folder names (already enforced by repo rules).
+- The provider’s default export **must** be a named `class` not a function.
+
+```typescript
+// GOOD – matches pattern
+export class OpenAIProvider extends API<IMessage, IClientToolSchema> {
+  /* … */
+}
+```
+
+---
+
+## 2. Model Registry Constant
+
+Every provider keeps an **in-file constant** `XxxModelRegistry` that describes all supported models.
+
+```typescript
+const AnthropicModelRegistry = [
+  {
+    id: "claude-3-haiku-20240307", // string – unique model id sent to remote API
+    displayName: "Claude Haiku 3", // user-friendly label shown in UI
+    extendedThinking: false, // feature flag used by provider logic
+    contextWindow: 200000, // maximum input tokens
+    maxOutput: 4096, // hard cap for output tokens
+    pricing: {
+      baseInput: 0.25,
+      output: 1.25, // $ / 1M tokens (USD)
+      mCacheWrite: 0.3,
+      hCacheWrite: 0.5, // additional cache tiers
+      cacheHitRefresh: 0.03,
+    },
+  },
+  // …more models
+] as const;
+```
+
+**Rules**
+
+1. Name: `<ProviderName>ModelRegistry`.
+2. `id` is the **exact** identifier expected by the remote API.
+3. Keep **pricing** numbers in _USD per 1M tokens_ (camelCase keys).
+4. Sort entries by **release chronology**, newest last.
+5. Mark experimental or disabled models with a boolean `disabled: true` when needed (optional key).
+6. Do **not** export the constant; keep it file-private.
+
+---
+
+## 3. Provider Class Skeleton
+
+Every provider **extends** the shared `API<IMessage, IClientToolSchema>` base and must expose the following public surface:
+
+| Method                                                     | Responsibility                                                 | Return / Side-effects           |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------- |
+| `constructor(apiKey)`                                      | store key via `setApiKey`                                      | –                               |
+| `getModels()`                                              | Convert registry → `{ provider, id, displayName, disabled }[]` | `Promise<IModelInfo[]>`         |
+| `message(session, model, result, setStop, tools, signal?)` | _Streaming_ chat completion logic                              | `Promise<void>`                 |
+| `getModelConfigSchema(modelId)`                            | UI-editable config meta + zod validator                        | tuple `[schemaMeta, zodSchema]` |
+| `getDefaultModelConfig(modelId)`                           | fallback config when no localStorage entry                     | `IModelConfig`                  |
+| `getModelInfo(modelId)`                                    | fetch entry from registry                                      | model object or `undefined`     |
+
+Internal helper overrides **must** include:
+
+- `protected API_BASE_URL` – root URL without trailing slash.
+- `protected buildAPIRequest(method)` – attaches headers & HTTP method.
+- `protected ensureSuccess(response)` – maps HTTP error → `ExpectedError` or `ServerSideHttpError`.
+- `protected translateSession(session)` – Project-wide canonical → provider-specific message array.
+- `protected translateToolSchema(schema)` – Tool JSON → provider shape.
+
+A skeletal template:
+
+```typescript
+export class XxxProvider extends API<IMessage, IClientToolSchema> {
+  protected readonly API_BASE_URL = "https://api.xxx.ai/v1";
+
+  constructor(apiKey: string) {
+    super();
+    this.setApiKey(apiKey);
+  }
+
+  protected buildAPIRequest(method: RequestInit["method"]) {
+    return {
+      method,
+      headers: {
+        "x-api-key": this.apiKey,
+        "content-type": "application/json",
+      },
+    } as const;
+  }
+
+  // …other overrides
+}
+```
+
+---
+
+## 4. Local Storage Keys
+
+Providers reference **global constants** imported from `@/lib/const` to persist UI preferences:
+
+- `PER_MODEL_CONFIG_KEY(provider, modelId)` – stores user overrides.
+- `SYSTEM_PROMPTS_KEY` – stores optional system prompt list.
+
+Never hardcode storage keys; always call the helper.
+
+---
+
+## 5. Streaming Response Handling
+
+- Responses are **SSE/NDJSON** style (`data: {…}\n`).
+- Use a `TextDecoder` + `reader.read()` loop; maintain `buffer` to assemble full lines.
+- Guard unknown `event.type` by throwing `UnexpectedMessageTypeError` subclass.
+- Maintain a `contentBlockMap` to correlate provider indices → project indices.
+- Emit `result(updater)` mutations with minimal diffing **inside** the streaming loop.
+- Map provider-specific stop reasons to UI-level `setStop({ type, … })` calls.
+
+```typescript
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  buffer += decoder.decode(value, { stream: true });
+  for (const line of buffer.split("\n")) {
+    if (!line.startsWith("data: ")) continue;
+    const event = JSON.parse(line.slice(6));
+    // switch (event.type) { … }
+  }
+}
+```
+
+---
+
+## 6. Model Configuration Schema (Zod)
+
+`getModelConfigSchema` **must** return:
+
+1. **UI-metadata** – a record describing each editable field (displayName, min, max, disabled…)
+2. **Validator** – a `z.ZodSchema<IModelConfig>` enforcing runtime constraints.
+
+### Validation Patterns
+
+- Basic numeric bounds via `.min()` / `.max()`.
+- Cross-field constraint via `.refine()`.
+
+```typescript
+z.object({
+  temperature: z.number().min(0).max(1),
+  thinkingBudget: z.number().min(512),
+  // …
+}).refine(
+  (data) =>
+    data.extendedThinking ? data.thinkingBudget < data.maxOutput : true,
+  {
+    message: "Thinking budget must be less than maxOutput.",
+    path: ["thinkingBudget"],
+  }
+);
+```
+
+---
+
+## 7. Error Handling Strategy
+
+| Scenario                       | Throw                                                     |
+| ------------------------------ | --------------------------------------------------------- |
+| Non-2xx HTTP w/ JSON body      | `ExpectedError(status, error.type, "[Prov] msg")`         |
+| Non-2xx HTTP non-JSON          | `ServerSideHttpError(status, statusText)`                 |
+| Unknown `event.type` in stream | `<Provider>UnexpectedMessageTypeError` (extends Error)    |
+| Missing reader on Response     | `ExpectedError(status, "common_http_error", "No reader")` |
+
+The error message **must** be prefixed with `[ProviderName]` for easier debugging.
+
+---
+
+## 8. Translate Helpers
+
+### `translateSession`
+
+- Skip `turn.type === "tool"`.
+- Map internal `"request" | "response"` → provider roles (`"user" | "assistant"`).
+- Switch per `turnPartial.type` to build provider-specific blocks (text, thinking, tool_use, tool_result).
+
+### `translateToolSchema`
+
+- Input: array of **ToolMetaJson** (internal shape).
+- Output: array of provider tool schema objects `{ name, description, input_schema }`.
+- Keep key names **exactly** as provider API expects.
+
+---
+
+## 9. Pricing Data
+
+- All monetary figures are **numbers (USD)** no currency symbols.
+- Use 2–3 decimal digits maximum; avoid trailing zeros when integer.
+- Keys for cache tiers: `mCacheWrite`, `hCacheWrite`, `cacheHitRefresh` (camelCase, leading duration letter).
+
+---
+
+## 10. Extending / Adding a New Provider
+
+1. Copy `anthropic.ts` → `<provider>.ts` and prune irrelevant logic.
+2. Rename internal error class to `<ProviderName>UnexpectedMessageTypeError`.
+3. Update `API_BASE_URL`.
+4. Replace model registry entries.
+5. Verify stop-reason mapping; each provider may have different enum values.
+6. Add a corresponding `<provider>.types.ts` – _only_ provider-specific types. Re-use shared ones from `sdk/shared.ts` whenever possible.
+7. Add unit tests or at least mock integration tests if regression suite exists.
+
+---
+
+## 11. Quick Checklist Before Commit
+
+- [ ] Filenames follow pattern and are placed under `sdk/providers/`.
+- [ ] There is exactly one `ModelRegistry` constant and it is **file-local**.
+- [ ] Provider class overrides all required `protected`/`public` methods.
+- [ ] `ensureSuccess` properly parses provider error JSON.
+- [ ] Streaming loop covers **all** documented `event.type` variants.
+- [ ] `getModelConfigSchema` returns UI-metadata **and** a Zod schema.
+- [ ] No hard-coded localStorage keys or magic strings.
+- [ ] New provider referenced in UI config panels if applicable.
+
+---
+
+### Further Reading
+
+- `packages/frontend/src/sdk/shared.ts` – shared abstractions (`API`, error helpers).
+- Existing providers under `sdk/providers/` – real-world examples.
