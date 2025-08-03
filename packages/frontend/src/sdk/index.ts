@@ -9,6 +9,7 @@ import {
 import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import type {
+  API,
   IMessageRequest,
   IMessageResult,
   IModelInfo,
@@ -137,7 +138,9 @@ export class AISDK {
     let pendingFlush: number | null = null;
 
     function flushSession() {
-      pendingFlush && cancelAnimationFrame(pendingFlush);
+      if (pendingFlush) {
+        cancelAnimationFrame(pendingFlush);
+      }
       pendingFlush = null;
       lastSave = performance.now();
       storage.setItem(SESSION_STORAGE_KEY(sessionId), JSON.stringify(session));
@@ -191,27 +194,28 @@ export class AISDK {
     }
 
     try {
+      let providerInstance: API<unknown, unknown> | null = null;
       switch (provider) {
         case "anthropic":
-          await this.anthropic?.message(
-            session.turns.slice(
-              0,
-              -1
-            ) /* removes just inserted empty response buffer */,
-            model,
-            updateSession,
-            (stop) => {
-              resultTurn.stop = stop;
-              saveSession();
-            },
-            toolRegistry.getEnabledTools(),
-            abortController.signal
-          );
-
+          providerInstance = this.anthropic;
           break;
         default:
           throw new Error(`Provider ${provider} not supported`);
       }
+      if (!providerInstance) {
+        throw new Error(`Provider ${provider} not supported`);
+      }
+      await providerInstance.message(
+        session.turns.slice(0, -1),
+        model,
+        updateSession,
+        (stop) => {
+          resultTurn.stop = stop;
+          saveSession();
+        },
+        toolRegistry.getEnabledTools(),
+        abortController.signal
+      );
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         // Aborted by user
