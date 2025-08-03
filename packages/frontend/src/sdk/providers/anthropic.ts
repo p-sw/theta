@@ -1,12 +1,12 @@
 import { PER_MODEL_CONFIG_KEY, SYSTEM_PROMPTS_KEY } from "@/lib/const";
 import { proxyfetch, ServerSideHttpError } from "@/lib/proxy";
 import type {
-  IClientToolSchema,
-  IErrorBody,
-  IMessage,
-  IMessageResultData,
-  IMessageResultMessageDelta,
-  IModelConfig,
+  IAnthropicToolSchema,
+  IAnthropicErrorBody,
+  IAnthropicMessage,
+  IAnthropicMessageResultData,
+  IAnthropicMessageResultMessageDelta,
+  IAnthropicModelConfig,
 } from "@/sdk/providers/anthropic.types";
 import type {
   IMessageResultThinking,
@@ -149,7 +149,7 @@ export class AnthropicUnexpectedMessageTypeError extends Error {
   }
 }
 
-function isErrorBody(body: unknown): body is IErrorBody {
+function isErrorBody(body: unknown): body is IAnthropicErrorBody {
   if (typeof body !== "object" || body === null) {
     return false;
   }
@@ -172,7 +172,10 @@ function isErrorBody(body: unknown): body is IErrorBody {
   return true;
 }
 
-export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
+export class AnthropicProvider extends API<
+  IAnthropicMessage,
+  IAnthropicToolSchema
+> {
   protected readonly API_BASE_URL = "https://api.anthropic.com/v1";
 
   constructor(apiKey: string) {
@@ -197,7 +200,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
   protected async ensureSuccess(response: Response): Promise<void> {
     if (!response.ok) {
       const text = await response.text();
-      let errorBody: IErrorBody;
+      let errorBody: IAnthropicErrorBody;
       try {
         errorBody = JSON.parse(text);
       } catch {
@@ -219,13 +222,13 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     }
   }
 
-  protected translateSession(session: SessionTurns): IMessage[] {
-    const messages: IMessage[] = [];
+  protected translateSession(session: SessionTurns): IAnthropicMessage[] {
+    const messages: IAnthropicMessage[] = [];
 
     for (const turn of session) {
       if (turn.type === "tool") continue;
 
-      const message: IMessage = {
+      const message: IAnthropicMessage = {
         role: turn.type === "request" ? "user" : "assistant",
         content: [],
       };
@@ -273,7 +276,9 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     return messages;
   }
 
-  protected translateToolSchema(schema: IToolMetaJson[]): IClientToolSchema[] {
+  protected translateToolSchema(
+    schema: IToolMetaJson[]
+  ): IAnthropicToolSchema[] {
     return schema.map((tool) => ({
       name: tool.id,
       description: tool.description,
@@ -389,7 +394,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
             const data = line.slice(6);
 
             try {
-              const event = JSON.parse(data) as IMessageResultData;
+              const event = JSON.parse(data) as IAnthropicMessageResultData;
               if (isErrorBody(event)) {
                 throw new ExpectedError(
                   response.status,
@@ -423,7 +428,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
                     setStop({
                       type: "message",
                       reason: `The response reached the stop sequence: ${
-                        (event as IMessageResultMessageDelta).delta
+                        (event as IAnthropicMessageResultMessageDelta).delta
                           .stop_sequence
                       }`,
                       level: "subtext",
@@ -518,7 +523,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     }
   }
 
-  getDefaultModelConfig(modelId: string): IModelConfig {
+  getDefaultModelConfig(modelId: string): IAnthropicModelConfig {
     const modelInfo = this.getModelInfo(modelId);
     if (!modelInfo) {
       throw new ExpectedError(404, "model_not_found", "Model not found");
@@ -533,7 +538,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     };
   }
 
-  protected getModelConfig(modelId: string): IModelConfig {
+  protected getModelConfig(modelId: string): IAnthropicModelConfig {
     const configString = localStorage.getItem(
       PER_MODEL_CONFIG_KEY("anthropic", modelId)
     );
@@ -543,7 +548,7 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
     try {
       return {
         ...this.getDefaultModelConfig(modelId),
-        ...(JSON.parse(configString) as IModelConfig),
+        ...(JSON.parse(configString) as IAnthropicModelConfig),
       };
     } catch (e) {
       console.error("JSON parse error:", e);
@@ -553,7 +558,10 @@ export class AnthropicProvider extends API<IMessage, IClientToolSchema> {
 
   getModelConfigSchema(
     modelId: string
-  ): [Record<keyof IModelConfig, IConfigSchema>, z.ZodSchema<IModelConfig>] {
+  ): [
+    Record<keyof IAnthropicModelConfig, IConfigSchema>,
+    z.ZodSchema<IAnthropicModelConfig>
+  ] {
     const modelInfo = this.getModelInfo(modelId);
     if (!modelInfo) {
       throw new ExpectedError(404, "model_not_found", "Model not found");
