@@ -34,6 +34,7 @@ const app = new Elysia()
           },
           body: method === "GET" ? undefined : JSON.stringify(data),
         });
+        response.headers.append("X-Theta-Proxied", "true");
 
         // Return the response directly with all original headers and body
         return new Response(response.body, {
@@ -55,7 +56,6 @@ const app = new Elysia()
             status: 500,
             headers: {
               "Content-Type": "application/json",
-              "X-Theta-Proxy-Error": "true",
             },
           }
         );

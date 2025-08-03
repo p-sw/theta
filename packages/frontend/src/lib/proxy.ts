@@ -46,12 +46,14 @@ export async function proxyfetch(
     });
 
     if (!response.ok) {
+      if (response.headers.get("X-Theta-Proxied") === "true") {
+        // Provider-side error
+        // just returning is enough
+        return response;
+      }
+
       const contentType = response.headers.get("content-type");
-      if (
-        contentType &&
-        contentType.includes("application/json") &&
-        response.headers.get("X-Theta-Proxy-Error") === "true"
-      ) {
+      if (contentType && contentType.includes("application/json")) {
         // proxy-side error
         try {
           const errorData = await response.json();
@@ -63,8 +65,6 @@ export async function proxyfetch(
           throw e;
         }
       }
-      // It's other error, including provider-side error
-      // just returning is enough
     }
 
     return response;
