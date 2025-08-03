@@ -17,6 +17,13 @@ export class ExpectedError extends Error {
   }
 }
 
+export class SessionTranslationError extends Error {
+  constructor() {
+    super("Cannot translate session to provider format.");
+    this.name = "SessionTranslationError";
+  }
+}
+
 export interface ISystemPrompt {
   systemPrompts: string[];
 }
@@ -187,7 +194,8 @@ export interface IMessageResultText {
 export interface IMessageResultThinking {
   type: "thinking";
   thinking: string;
-  signature: string;
+  signature?: string; // anthropic only
+  openai_id?: string; // openai only
 }
 
 export interface IMessageResultStart {
@@ -286,15 +294,26 @@ export type SessionTurns = (
   | SessionTurnsTool
 )[];
 
-export interface ISessionBase {
+export type ISessionBase = {
   id: string;
   turns: SessionTurns;
   createdAt: number;
   updatedAt: number;
-}
-export interface PermanentSession extends ISessionBase {
+} & ISessionProviderModel;
+
+export type ISessionProviderModel =
+  | {
+      provider: IProvider;
+      model: string;
+    }
+  | {
+      provider?: undefined;
+      model?: undefined;
+    };
+
+export type PermanentSession = ISessionBase & {
   title: string;
-}
-export interface TemporarySession extends ISessionBase {
+};
+export type TemporarySession = ISessionBase & {
   title: string;
-}
+};

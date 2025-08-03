@@ -19,6 +19,7 @@ import type {
 import {
   API,
   ExpectedError,
+  SessionTranslationError,
   type IMessageResult,
   type IMessageResultText,
   type SessionTurnsResponse,
@@ -238,6 +239,9 @@ export class AnthropicProvider extends API<
             message.content.push({ type: "text", text: turnPartial.text });
             break;
           case "thinking":
+            if (!turnPartial.signature) {
+              throw new SessionTranslationError();
+            }
             message.content.push({
               type: "thinking",
               thinking: turnPartial.thinking,

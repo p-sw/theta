@@ -15,6 +15,7 @@ import type {
   IModelInfo,
   IProvider,
   IProviderInfo,
+  ISessionProviderModel,
   SessionTurnsResponse,
   SessionTurnsToolInProgress,
   TemporarySession,
@@ -124,6 +125,13 @@ export class AISDK {
       storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
     ) as TemporarySession;
 
+    const sessionProviderModel: ISessionProviderModel = {
+      provider: session.provider ?? provider,
+      model: session.model ?? model,
+    };
+    session.provider = sessionProviderModel.provider;
+    session.model = sessionProviderModel.model;
+
     // Saving the whole session (which grows over time) to storage on *every*
     // streamed token is expensive – the JSON.stringify call allocates a big
     // string and the subsequent custom Storage event causes a React render.
@@ -195,19 +203,19 @@ export class AISDK {
 
     try {
       let providerInstance: API<unknown, unknown> | null = null;
-      switch (provider) {
+      switch (sessionProviderModel.provider) {
         case "anthropic":
           providerInstance = this.anthropic;
           break;
-        default:
-          throw new Error(`Provider ${provider} not supported`);
       }
-      if (!providerInstance) {
-        throw new Error(`Provider ${provider} not supported`);
+      if (providerInstance === null) {
+        throw new Error(
+          `Provider ${sessionProviderModel.provider} not supported`
+        );
       }
       await providerInstance.message(
         session.turns.slice(0, -1),
-        model,
+        sessionProviderModel.model,
         updateSession,
         (stop) => {
           resultTurn.stop = stop;

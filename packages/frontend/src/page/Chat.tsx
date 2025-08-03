@@ -415,11 +415,13 @@ export default function Chat() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                <ModelSelector
-                  provider={provider}
-                  modelId={modelId}
-                  setModelId={setModelId}
-                />
+                {!session.provider && (
+                  <ModelSelector
+                    provider={provider}
+                    modelId={modelId}
+                    setModelId={setModelId}
+                  />
+                )}
               </div>
             </TextareaContainer>
           </form>
