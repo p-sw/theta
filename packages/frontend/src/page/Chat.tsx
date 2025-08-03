@@ -168,7 +168,9 @@ export default function Chat() {
   useEventListener(SAVE_SESSION_EVENT, handleSaveSession);
 
   const handleCheckoutMessage = useCallback(
-    (e: CustomEvent<{ sessionId: string; messageId: string; content: string }>) => {
+    (
+      e: CustomEvent<{ sessionId: string; messageId: string; content: string }>
+    ) => {
       const detail = e.detail;
       if (detail.sessionId !== sessionId) return;
 
@@ -178,7 +180,7 @@ export default function Chat() {
       // Remove turns AFTER the selected user message (keep the message itself)
       setSession((prev) => {
         const index = prev.turns.findIndex(
-          (t) => t.messageId === detail.messageId && t.type === "request"
+          (t) => t.type === "request" && t.messageId === detail.messageId
         );
         if (index === -1) return prev;
         const newSession = { ...prev } as typeof prev;
