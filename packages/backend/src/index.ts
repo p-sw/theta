@@ -29,12 +29,11 @@ const app = new Elysia()
         const response = await fetch(url, {
           method,
           headers: {
-            "Content-Type": "application/json",
             ...headers,
           },
           body: method === "GET" ? undefined : JSON.stringify(data),
         });
-        response.headers.append("X-Theta-Proxied", "true");
+        response.headers.append("x-theta-proxied", "true");
 
         // Return the response directly with all original headers and body
         return new Response(response.body, {

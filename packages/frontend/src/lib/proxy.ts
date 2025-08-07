@@ -46,7 +46,7 @@ export async function proxyfetch(
     });
 
     if (!response.ok) {
-      if (response.headers.get("X-Theta-Proxied") === "true") {
+      if (response.headers.get("x-theta-proxied") === "true") {
         // Provider-side error
         // just returning is enough
         return response;
