@@ -19,7 +19,6 @@ import type {
 import {
   API,
   ExpectedError,
-  SessionTranslationError,
   type IMessageResult,
   type IMessageResultText,
   type SessionTurnsResponse,
