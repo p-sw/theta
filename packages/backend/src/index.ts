@@ -64,7 +64,7 @@ const app = new Elysia()
       body: ProxyRequestSchema,
     }
   )
-  .listen(3000);
+  .listen({ idleTimeout: 180, port: 3000 });
 
 console.log(
   `🦊 Elysia proxy server is running at ${app.server?.hostname}:${app.server?.port}`

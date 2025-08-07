@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ModelConfigForm } from "@/components/block/settings/model-config";
 import { SystemPromptSection } from "@/components/block/settings/system-prompt";
+import OpenAI from "~icons/ai-provider/openai";
 
 function ModelItem({
   model,
@@ -48,7 +49,10 @@ function ModelItem({
   return (
     <div className="flex flex-row justify-between rounded-md h-10 items-center px-2">
       <div className="flex flex-row gap-2 w-full items-center">
-        <Anthropic className="h-6 w-6" />
+        {model.provider === "anthropic" && <Anthropic className="h-6 w-6" />}
+        {model.provider === "openai" && (
+          <OpenAI className="h-6 w-6 fill-black dark:fill-white" />
+        )}
         <p className="text-sm">{model.displayName}</p>
       </div>
       <div className="flex flex-row gap-2 items-center">
@@ -177,7 +181,12 @@ function ProviderProvider({
   return (
     <div key={provider} className="border flex flex-col gap-2 rounded-md p-2">
       <div className="space-x-1">
-        <Anthropic className="h-4 w-4 inline-block" />
+        {provider === "anthropic" && (
+          <Anthropic className="h-4 w-4 inline-block" />
+        )}
+        {provider === "openai" && (
+          <OpenAI className="h-4 w-4 inline-block fill-black dark:fill-white" />
+        )}
         <span className="text-sm font-medium">
           {provider[0].toUpperCase() + provider.slice(1)}
         </span>

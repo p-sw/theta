@@ -239,6 +239,7 @@ export class AnthropicProvider extends API<
             message.content.push({ type: "text", text: turnPartial.text });
             break;
           case "thinking":
+            /*
             if (!turnPartial.signature) {
               throw new SessionTranslationError();
             }
@@ -247,6 +248,8 @@ export class AnthropicProvider extends API<
               thinking: turnPartial.thinking,
               signature: turnPartial.signature,
             });
+            */
+            // skipping thinking - for supporting multiple providers
             break;
           case "tool_use":
             message.content.push({
@@ -266,6 +269,7 @@ export class AnthropicProvider extends API<
             break;
           case "start":
           case "end":
+          case "refusal": // ignore, refusal is not thrown on Anthropic
             break;
           default:
             console.warn(

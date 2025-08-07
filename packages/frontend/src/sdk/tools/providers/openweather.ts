@@ -300,8 +300,8 @@ class OpenWeatherGeocoding {
     }
 
     const data = await response.json();
-    return data
-      .map(
+    return JSON.stringify(
+      data.map(
         (item: {
           name: string;
           lat: number;
@@ -316,7 +316,7 @@ class OpenWeatherGeocoding {
           ...(item.state ? { state: item.state } : {}),
         })
       )
-      .toString();
+    );
   }
 
   async coordinatesByZipPostCode({

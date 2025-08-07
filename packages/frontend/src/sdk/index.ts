@@ -8,6 +8,7 @@ import {
 } from "@/lib/const";
 import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
+import { OpenAIProvider } from "@/sdk/providers/openai";
 import type {
   API,
   IMessageRequest,
@@ -15,7 +16,6 @@ import type {
   IModelInfo,
   IProvider,
   IProviderInfo,
-  ISessionProviderModel,
   SessionTurnsResponse,
   SessionTurnsToolInProgress,
   TemporarySession,
@@ -28,10 +28,15 @@ export const providerRegistry: Record<IProvider, IProviderInfo> = {
     id: "anthropic",
     displayName: "Anthropic",
   },
+  openai: {
+    id: "openai",
+    displayName: "OpenAI",
+  },
 };
 
 export class AISDK {
   anthropic: AnthropicProvider | null = null;
+  openai: OpenAIProvider | null = null;
   /** Holds the abort controller for the currently streaming request (if any) */
   public currentAbortController: AbortController | null = null;
 
@@ -62,6 +67,17 @@ export class AISDK {
       }
     } else {
       this.anthropic = null;
+    }
+
+    // OpenAI
+    if (apiKey.openai) {
+      if (this.openai) {
+        this.openai.setApiKey(apiKey.openai);
+      } else {
+        this.openai = new OpenAIProvider(apiKey.openai);
+      }
+    } else {
+      this.openai = null;
     }
 
     // Refresh models list after provider updates
@@ -109,8 +125,9 @@ export class AISDK {
 
   async getAvailableModels() {
     const anthropicModels = (await this.anthropic?.getModels()) ?? [];
+    const openaiModels = (await this.openai?.getModels()) ?? [];
 
-    return [...anthropicModels];
+    return [...anthropicModels, ...openaiModels];
   }
 
   async message(
@@ -124,13 +141,6 @@ export class AISDK {
     const session = JSON.parse(
       storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
     ) as TemporarySession;
-
-    const sessionProviderModel: ISessionProviderModel = {
-      provider: session.provider ?? provider,
-      model: session.model ?? model,
-    };
-    session.provider = sessionProviderModel.provider;
-    session.model = sessionProviderModel.model;
 
     // Saving the whole session (which grows over time) to storage on *every*
     // streamed token is expensive – the JSON.stringify call allocates a big
@@ -203,21 +213,23 @@ export class AISDK {
 
     try {
       let providerInstance: API<unknown, unknown> | null = null;
-      switch (sessionProviderModel.provider) {
+      switch (provider) {
         case "anthropic":
           providerInstance = this.anthropic;
           break;
+        case "openai":
+          providerInstance = this.openai;
+          break;
       }
       if (providerInstance === null) {
-        throw new Error(
-          `Provider ${sessionProviderModel.provider} not supported`
-        );
+        throw new Error(`Provider ${provider} not supported`);
       }
       await providerInstance.message(
         session.turns.slice(0, -1),
-        sessionProviderModel.model,
+        model,
         updateSession,
         (stop) => {
+          if (resultTurn.stop !== undefined) return;
           resultTurn.stop = stop;
           saveSession();
         },

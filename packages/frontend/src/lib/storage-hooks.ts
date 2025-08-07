@@ -33,6 +33,7 @@ export function useModels() {
 export function useApiKey() {
   return useStorage<IApiKey>(API_KEY, {
     anthropic: null,
+    openai: null,
   });
 }
 

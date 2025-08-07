@@ -1,7 +1,7 @@
 import type { JSONSchema7 } from "json-schema";
 import type z from "zod";
 
-export type IProvider = "anthropic";
+export type IProvider = "anthropic" | "openai";
 export interface IProviderInfo {
   id: IProvider;
   displayName: string;
@@ -18,8 +18,12 @@ export class ExpectedError extends Error {
 }
 
 export class SessionTranslationError extends Error {
-  constructor() {
-    super("Cannot translate session to provider format.");
+  constructor(message?: string) {
+    super(
+      `Cannot translate session to provider format.${
+        message ? `\n${message}` : ""
+      }`
+    );
     this.name = "SessionTranslationError";
   }
 }
@@ -184,18 +188,20 @@ export type IMessageResult =
   | IMessageResultStart
   | IMessageResultEnd
   | IMessageResultThinking
-  | IMessageResultToolUse;
+  | IMessageResultToolUse
+  | IMessageRefusal;
 
 export interface IMessageResultText {
   type: "text";
   text: string;
+  openai_id?: string; // provider-specific
 }
 
 export interface IMessageResultThinking {
   type: "thinking";
   thinking: string;
-  signature?: string; // anthropic only
-  openai_id?: string; // openai only
+  signature?: string; // provider-specific
+  openai_id?: string; // provider-specific
 }
 
 export interface IMessageResultStart {
@@ -211,6 +217,12 @@ export interface IMessageResultToolUse {
   id: string;
   name: string;
   input: string;
+}
+
+export interface IMessageRefusal {
+  type: "refusal";
+  refusal: string;
+  openai_id?: string; // provider-specific
 }
 
 export interface IModelInfo {
@@ -299,17 +311,7 @@ export type ISessionBase = {
   turns: SessionTurns;
   createdAt: number;
   updatedAt: number;
-} & ISessionProviderModel;
-
-export type ISessionProviderModel =
-  | {
-      provider: IProvider;
-      model: string;
-    }
-  | {
-      provider?: undefined;
-      model?: undefined;
-    };
+};
 
 export type PermanentSession = ISessionBase & {
   title: string;
