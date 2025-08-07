@@ -36,6 +36,7 @@ import {
 import { ModelConfigForm } from "@/components/block/settings/model-config";
 import { SystemPromptSection } from "@/components/block/settings/system-prompt";
 import OpenAI from "~icons/ai-provider/openai";
+import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 
 function ModelItem({
   model,
@@ -127,41 +128,47 @@ function ModelSection() {
 
   return (
     <SettingsSubSection title="Models">
-      <div className="flex flex-col border overflow-y-scroll h-50 rounded-md">
-        {models.length > 0 ? (
-          models.map((model) => (
-            <div key={model.id}>
-              <ModelItem
-                model={model}
-                onDisableToggle={() => {
-                  setModels((p) => {
-                    const newModels = [...p];
-                    const index = newModels.findIndex((m) => m.id === model.id);
-                    newModels[index] = {
-                      ...model,
-                      disabled: !model.disabled,
-                    };
-                    return newModels;
-                  });
-                }}
-                onDelete={() => {
-                  setModels((p) => {
-                    const newModels = [...p];
-                    const index = newModels.findIndex((m) => m.id === model.id);
-                    newModels.splice(index, 1);
-                    return newModels;
-                  });
-                }}
-              />
-              <Separator />
-            </div>
-          ))
-        ) : (
-          <p className="text-sm text-muted-foreground w-full h-full text-center content-center">
-            No models available.
-          </p>
-        )}
-      </div>
+      <ScrollArea className="flex flex-col border pr-2 h-50 rounded-md">
+        <ScrollAreaViewport>
+          {models.length > 0 ? (
+            models.map((model) => (
+              <div key={model.id}>
+                <ModelItem
+                  model={model}
+                  onDisableToggle={() => {
+                    setModels((p) => {
+                      const newModels = [...p];
+                      const index = newModels.findIndex(
+                        (m) => m.id === model.id
+                      );
+                      newModels[index] = {
+                        ...model,
+                        disabled: !model.disabled,
+                      };
+                      return newModels;
+                    });
+                  }}
+                  onDelete={() => {
+                    setModels((p) => {
+                      const newModels = [...p];
+                      const index = newModels.findIndex(
+                        (m) => m.id === model.id
+                      );
+                      newModels.splice(index, 1);
+                      return newModels;
+                    });
+                  }}
+                />
+                <Separator />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground w-full h-full text-center content-center">
+              No models available.
+            </p>
+          )}
+        </ScrollAreaViewport>
+      </ScrollArea>
     </SettingsSubSection>
   );
 }

@@ -36,6 +36,7 @@ import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
 import { toolRegistry } from "@/sdk/tools";
+import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 
 export default function Chat() {
   const {
@@ -46,7 +47,7 @@ export default function Chat() {
   } = useContext(ChatContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
   const { scrollContainerRef, triggerAutoScroll } =
-    useAutoScroll<HTMLElement>();
+    useAutoScroll<HTMLDivElement>();
 
   const [session, setSession] = useStorage<
     typeof isPermanentSession extends true ? PermanentSession : TemporarySession
@@ -320,54 +321,55 @@ export default function Chat() {
   return (
     <div className="w-full h-svhfull flex flex-row">
       <DesktopNav />
-      <main className="h-svhfull flex flex-col w-full max-w-4xl mx-auto">
-        <section
-          ref={scrollContainerRef}
-          className="h-full overflow-y-auto p-8 flex flex-col gap-16"
-        >
-          {session.turns.map((message) => {
-            if (message.type === "request") {
-              const displayableMessages = message.message.filter(
-                (message) => message.type === "text"
-              );
-              if (displayableMessages.length === 0) return null;
-              return (
-                <UserMessage
-                  key={`${sessionId}-${message.messageId}`}
-                  sessionId={sessionId}
-                  messageId={message.messageId}
-                  messages={displayableMessages}
-                />
-              );
-            } else if (message.type === "response") {
-              return (
-                <AssistantMessage
-                  key={`${sessionId}-${message.messageId}`}
-                  sessionId={sessionId}
-                  messageId={message.messageId}
-                  messages={message.message}
-                  stop={message.stop}
-                />
-              );
-            } else if (message.type === "tool") {
-              return (
-                <ToolUseCard
-                  key={`${sessionId}-${message.useId}`}
-                  message={message}
-                  onGrant={() => onToolGrant(message.useId)}
-                  onReject={() => onToolReject(message.useId)}
-                />
-              );
-            }
-          })}
-        </section>
+      <main className="h-svhfull grid grid-rows-[1fr_auto] w-full max-w-4xl mx-auto">
+        <ScrollArea className="h-full overflow-y-auto">
+          <ScrollAreaViewport ref={scrollContainerRef}>
+            <div className="h-full p-8 flex flex-col gap-16">
+              {session.turns.map((message) => {
+                if (message.type === "request") {
+                  const displayableMessages = message.message.filter(
+                    (message) => message.type === "text"
+                  );
+                  if (displayableMessages.length === 0) return null;
+                  return (
+                    <UserMessage
+                      key={`${sessionId}-${message.messageId}`}
+                      sessionId={sessionId}
+                      messageId={message.messageId}
+                      messages={displayableMessages}
+                    />
+                  );
+                } else if (message.type === "response") {
+                  return (
+                    <AssistantMessage
+                      key={`${sessionId}-${message.messageId}`}
+                      sessionId={sessionId}
+                      messageId={message.messageId}
+                      messages={message.message}
+                      stop={message.stop}
+                    />
+                  );
+                } else if (message.type === "tool") {
+                  return (
+                    <ToolUseCard
+                      key={`${sessionId}-${message.useId}`}
+                      message={message}
+                      onGrant={() => onToolGrant(message.useId)}
+                      onReject={() => onToolReject(message.useId)}
+                    />
+                  );
+                }
+              })}
+            </div>
+          </ScrollAreaViewport>
+        </ScrollArea>
         <Form {...form}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               form.handleSubmit(handleSubmit)(e);
             }}
-            className="relative p-4 h-2/5"
+            className="relative p-4 h-2/5 h-full grow"
           >
             <TextareaContainer className="flex flex-col gap-1 h-full">
               <FormItem className="w-full h-full">

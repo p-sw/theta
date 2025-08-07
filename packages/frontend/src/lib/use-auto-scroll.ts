@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+
+const BOTTOM_THRESHOLD = 30;
 
 /**
  * Custom hook that provides auto-scroll functionality for chat interfaces.
@@ -6,11 +8,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export function useAutoScroll<T extends HTMLElement>() {
   const scrollContainerRef = useRef<T>(null);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-
-  // Threshold in pixels to determine if user is "near" the bottom
-  const BOTTOM_THRESHOLD = 100;
+  const isNearBottom = useRef(true);
 
   // Check if user is near the bottom of the scroll container
   const checkIfNearBottom = () => {
@@ -41,24 +39,13 @@ export function useAutoScroll<T extends HTMLElement>() {
     container.scrollTop = container.scrollHeight;
   };
 
-  // Handle scroll events to track user position
   const handleScroll = () => {
-    const nearBottom = checkIfNearBottom();
-    setIsNearBottom(nearBottom);
-
-    // Enable auto-scroll when user scrolls to bottom
-    if (nearBottom && !shouldAutoScroll) {
-      setShouldAutoScroll(true);
-    }
-    // Disable auto-scroll when user scrolls up
-    else if (!nearBottom && shouldAutoScroll) {
-      setShouldAutoScroll(false);
-    }
+    isNearBottom.current = checkIfNearBottom();
   };
 
   // Auto-scroll effect that triggers when content changes
   const triggerAutoScroll = () => {
-    if (shouldAutoScroll && isNearBottom) {
+    if (isNearBottom.current) {
       // Use requestAnimationFrame to ensure DOM has updated
       requestAnimationFrame(() => {
         scrollToBottom();
@@ -77,7 +64,7 @@ export function useAutoScroll<T extends HTMLElement>() {
       container.removeEventListener("scroll", handleScroll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldAutoScroll]);
+  }, []);
 
   // Initial scroll to bottom on mount
   useEffect(() => {
@@ -86,8 +73,7 @@ export function useAutoScroll<T extends HTMLElement>() {
 
   return {
     scrollContainerRef,
-    isNearBottom,
-    shouldAutoScroll,
+    isNearBottom: isNearBottom.current,
     scrollToBottom,
     scrollToBottomInstant,
     triggerAutoScroll,
