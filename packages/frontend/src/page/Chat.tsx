@@ -321,7 +321,7 @@ export default function Chat() {
   return (
     <div className="w-full h-svhfull flex flex-row">
       <DesktopNav />
-      <main className="h-svhfull grid grid-rows-[1fr_auto] w-full max-w-4xl mx-auto">
+      <main className="h-svhfull grid grid-rows-[3fr_1fr] w-full max-w-4xl mx-auto">
         <ScrollArea className="h-full overflow-y-auto">
           <ScrollAreaViewport ref={scrollContainerRef}>
             <div className="h-full p-8 flex flex-col gap-16">
@@ -369,7 +369,7 @@ export default function Chat() {
               e.preventDefault();
               form.handleSubmit(handleSubmit)(e);
             }}
-            className="relative p-4 h-2/5 h-full grow"
+            className="relative p-4 h-full"
           >
             <TextareaContainer className="flex flex-col gap-1 h-full">
               <FormItem className="w-full h-full">
