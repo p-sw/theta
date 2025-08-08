@@ -60,6 +60,7 @@ export default function Chat() {
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      typing: "",
     },
     undefined,
     {
@@ -72,9 +73,33 @@ export default function Chat() {
 
   const form = useForm({
     defaultValues: {
-      message: "",
+      message: session.typing ?? "",
+    },
+    resetOptions: {
+      keepDefaultValues: true,
     },
   });
+
+  // when session changes, reset form
+  useEffect(() => {
+    form.reset({
+      message: session.typing ?? "",
+    });
+  }, [session.typing, form.reset]);
+
+  useEffect(() => {
+    const callback = form.subscribe({
+      formState: {
+        values: true,
+      },
+      callback: ({ values }) => {
+        setSession((prev) => ({ ...prev, typing: values.message }));
+      },
+    });
+    return () => {
+      callback();
+    };
+  }, [form.subscribe, setSession]);
 
   const handleSubmit = useCallback(
     (data: { message: string }) => {

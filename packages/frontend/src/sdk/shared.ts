@@ -312,6 +312,7 @@ export type ISessionBase = {
   turns: SessionTurns;
   createdAt: number;
   updatedAt: number;
+  typing: string;
 };
 
 export type PermanentSession = ISessionBase & {
