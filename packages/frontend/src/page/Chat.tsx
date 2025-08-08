@@ -68,6 +68,7 @@ export default function Chat() {
   );
 
   const [isStreaming, setIsStreaming] = useState(false);
+  const [autoContinue, setAutoContinue] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -81,11 +82,13 @@ export default function Chat() {
         return;
       form.reset();
       setIsStreaming(true);
+      setAutoContinue(true);
       AiSdk.message(sessionId, isPermanentSession, provider!, modelId!, [
         { type: "text", text: data.message },
       ]).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
         setIsStreaming(false);
+        setAutoContinue(false);
 
         const sessionRef = JSON.parse(
           (isPermanentSession ? localStorage : sessionStorage).getItem(
@@ -123,7 +126,11 @@ export default function Chat() {
       (turn): turn is SessionTurnsTool =>
         turn.type === "tool" && lastAssistantToolUseId.includes(turn.useId)
     );
-    if (usedTools.length > 0 && usedTools.every((tool) => tool.done)) {
+    if (
+      autoContinue &&
+      usedTools.length > 0 &&
+      usedTools.every((tool) => tool.done)
+    ) {
       AiSdk.message(
         sessionId,
         isPermanentSession,
@@ -137,6 +144,16 @@ export default function Chat() {
         }))
       ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        setIsStreaming(false);
+        setAutoContinue(false);
+        setSession((prev) => {
+          const newSession = { ...prev };
+          const lastTurn = newSession.turns.at(-1);
+          if (lastTurn?.type === "response" && lastTurn.message.length === 0) {
+            newSession.turns.pop(); // remove unfinished response
+          }
+          return newSession;
+        });
       });
     }
   }, [session.turns, sessionId, isPermanentSession, provider, modelId]);
