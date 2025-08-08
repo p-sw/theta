@@ -7,6 +7,25 @@
 
 Modern AI chat application monorepo with a React + TypeScript frontend and a Bun + Elysia proxy backend.
 
+## Key Features
+
+- Chat interface with session management
+- Pluggable AI provider system
+- Pluggable function call system (close to mcp, but not implemented yet)
+- **Client-first system**
+- **Mobile-first design**
+- Super easy to self-host
+
+### Supported AI Providers
+
+- Anthropic
+- OpenAI
+
+### Supported Built-in Tools
+
+- Openweather API
+- Google Calendar API
+
 ## Overview
 
 Project Theta is a monorepo managed with Bun workspaces:
@@ -20,14 +39,6 @@ project-theta/
 ├── bun.lock
 └── tsconfig.json
 ```
-
-### Key Features
-
-- Chat interface with session management
-- Pluggable AI providers (OpenAI, Anthropic)
-- Tooling system (e.g., OpenWeather) with dynamic form UI
-- Streaming responses, thinking/reasoning traces, and tool-call blocks
-- Backend proxy to securely call third‑party APIs from the browser
 
 ## Requirements
 
