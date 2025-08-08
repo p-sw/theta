@@ -62,7 +62,7 @@ export function ToolUseCard({
   const isWhitelisted = useIsToolWhitelisted(message.toolName);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full mb-8">
       <CardHeader>
         <CardTitle className="col-span-2 sm:col-span-1 flex items-center gap-1">
           {message.done ? (

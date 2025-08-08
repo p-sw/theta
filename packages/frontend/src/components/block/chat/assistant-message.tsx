@@ -24,7 +24,7 @@ export function AssistantMessage({
   stop?: SessionTurnsResponseStop;
 }) {
   return (
-    <div className="flex flex-col items-start gap-2 w-full">
+    <div className="flex flex-col items-start gap-2 w-full mb-8">
       <Separator className="relative mb-2">
         <div className="bg-background dark:bg-background rounded-md px-2 absolute left-4 inset-y-0 flex flex-row justify-end items-center gap-1">
           <span className="text-sm text-muted-foreground">Assistant</span>

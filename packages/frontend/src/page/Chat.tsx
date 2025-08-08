@@ -6,7 +6,7 @@ import { useEventListener, useStorage } from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import LucideSend from "~icons/lucide/send";
 import LucidePause from "~icons/lucide/pause";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/const";
 import type {
   PermanentSession,
+  SessionTurnsRequest,
   SessionTurnsResponse,
   SessionTurnsTool,
   TemporarySession,
@@ -294,6 +295,7 @@ export default function Chat() {
     const toolTurns = session.turns.filter(
       (turn): turn is SessionTurnsTool => turn.type === "tool"
     );
+    if (toolTurns.length === 0) return;
 
     const executeGrantedTools = async () => {
       for (const toolTurn of toolTurns) {
@@ -318,25 +320,69 @@ export default function Chat() {
     triggerAutoScroll();
   }, [session.turns.length, triggerAutoScroll]);
 
+  const displaySession = useMemo<
+    (SessionTurnsRequest | SessionTurnsResponse | SessionTurnsTool[])[]
+  >(() => {
+    const turns: (
+      | SessionTurnsRequest
+      | SessionTurnsResponse
+      | SessionTurnsTool[]
+    )[] = [];
+
+    for (const turn of session.turns) {
+      if (turn.type === "request") {
+        const displayableMessages = turn.message.filter(
+          (message) => message.type === "text" && message.text.trim().length > 0
+        );
+        if (displayableMessages.length === 0) continue;
+        turns.push({
+          ...turn,
+          message: displayableMessages,
+        });
+      } else if (turn.type === "response") {
+        const displayableMessages = turn.message.filter(
+          (message) =>
+            (message.type === "text" && message.text.trim().length > 0) ||
+            (message.type === "thinking" && message.thinking.trim().length > 0)
+        );
+        if (displayableMessages.length === 0) continue;
+        turns.push({
+          ...turn,
+          message: displayableMessages,
+        });
+      } else if (turn.type === "tool") {
+        if (Array.isArray(turns.at(-1)))
+          (turns.at(-1) as SessionTurnsTool[]).push(turn);
+        else turns.push([turn]);
+      }
+    }
+    return turns;
+  }, [session.turns]);
+
   return (
     <div className="w-full h-svhfull flex flex-row">
       <DesktopNav />
       <main className="h-svhfull grid grid-rows-[3fr_1fr] w-full max-w-4xl mx-auto">
         <ScrollArea className="h-full overflow-y-auto">
           <ScrollAreaViewport ref={scrollContainerRef}>
-            <div className="h-full p-8 flex flex-col gap-16">
-              {session.turns.map((message) => {
-                if (message.type === "request") {
-                  const displayableMessages = message.message.filter(
-                    (message) => message.type === "text"
-                  );
-                  if (displayableMessages.length === 0) return null;
+            <div className="h-full p-8 flex flex-col">
+              {displaySession.map((message) => {
+                if (Array.isArray(message)) {
+                  return message.map((tool) => (
+                    <ToolUseCard
+                      key={`${sessionId}-${tool.useId}`}
+                      message={tool}
+                      onGrant={() => onToolGrant(tool.useId)}
+                      onReject={() => onToolReject(tool.useId)}
+                    />
+                  ));
+                } else if (message.type === "request") {
                   return (
                     <UserMessage
                       key={`${sessionId}-${message.messageId}`}
                       sessionId={sessionId}
                       messageId={message.messageId}
-                      messages={displayableMessages}
+                      messages={message.message}
                     />
                   );
                 } else if (message.type === "response") {
@@ -347,15 +393,6 @@ export default function Chat() {
                       messageId={message.messageId}
                       messages={message.message}
                       stop={message.stop}
-                    />
-                  );
-                } else if (message.type === "tool") {
-                  return (
-                    <ToolUseCard
-                      key={`${sessionId}-${message.useId}`}
-                      message={message}
-                      onGrant={() => onToolGrant(message.useId)}
-                      onReject={() => onToolReject(message.useId)}
                     />
                   );
                 }
