@@ -217,6 +217,7 @@ export interface IMessageResultToolUse {
   id: string;
   name: string;
   input: string;
+  openai_id?: string; // provider-specific
 }
 
 export interface IMessageRefusal {

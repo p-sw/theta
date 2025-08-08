@@ -5,6 +5,7 @@ import type {
   IOpenAIFunctionToolCallOutput,
   IOpenAIInput,
   IOpenAIInputMessage,
+  IOpenAIItemReference,
   IOpenAIModelConfig,
   IOpenAIOutputMessage,
   IOpenAIReasoning,
@@ -247,6 +248,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
         const message: IOpenAIOutputMessage[] = [];
         const reasoning: Record<string, IOpenAIReasoning> = {};
         const toolUses: IOpenAIFunctionToolCall[] = [];
+
         for (const turnPartial of turn.message) {
           switch (turnPartial.type) {
             case "start":
@@ -270,11 +272,10 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                   },
                 ],
                 status: "completed",
-                id: turnPartial.openai_id,
+                id: turnPartial.openai_id, // msg_xxxx
               });
               break;
             case "thinking":
-              /*
               if (!turnPartial.openai_id) {
                 throw new SessionTranslationError(
                   `Thinking ID is missing in ${JSON.stringify(turnPartial)}`
@@ -295,9 +296,6 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                   text: turnPartial.thinking,
                 });
               }
-              */
-              // somehow throwing error on provider-side, but not that important for now
-              // missing some required fields in reasoning interface???
               break;
             case "tool_use":
               toolUses.push({
@@ -305,6 +303,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                 name: turnPartial.name,
                 call_id: turnPartial.id,
                 arguments: turnPartial.input,
+                id: turnPartial.openai_id,
               });
               break;
             case "refusal":
@@ -540,6 +539,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                 const item = payload.item;
                 if (item.type === "function_call") {
                   const callId = item.call_id;
+                  const openaiId = item.id;
                   const name = item.name;
                   await result(async (prev) => {
                     toolCallIndexByCallId[callId] = prev.length;
@@ -550,6 +550,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                       id: callId,
                       name,
                       input: "",
+                      openai_id: openaiId,
                     });
                   });
                 } else if (item.type === "reasoning") {

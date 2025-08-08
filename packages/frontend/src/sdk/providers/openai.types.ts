@@ -10,7 +10,8 @@ export interface IOpenAIModelConfig {
 export type IOpenAIInput =
   | IOpenAIInputMessage
   | IOpenAIOutputItem
-  | IOpenAIFunctionToolCallOutput;
+  | IOpenAIFunctionToolCallOutput
+  | IOpenAIItemReference;
 
 export type IOpenAIOutputItem =
   | IOpenAIOutputMessage
@@ -22,6 +23,11 @@ export type IOpenAIAnnotation =
   | IOpenAIURLCitation
   | IOpenAIContainerFileCitation
   | IOpenAIFilePath;
+
+export interface IOpenAIItemReference {
+  id: string;
+  type: "item_reference";
+}
 
 type Status = "in_progress" | "completed" | "incomplete";
 
