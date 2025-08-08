@@ -44,7 +44,7 @@ function App() {
           setIsPermanentSession,
         }}
       >
-        <Toaster />
+        <Toaster expand richColors />
         <Menu />
         {path === PATHS.CHAT && <Chat />}
         {path === PATHS.SETTINGS && <Setting />}
