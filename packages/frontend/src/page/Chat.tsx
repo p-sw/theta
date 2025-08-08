@@ -400,7 +400,7 @@ export default function Chat() {
         <ScrollArea className="h-full overflow-y-auto">
           <ScrollAreaViewport ref={scrollContainerRef}>
             <div className="h-full p-8 flex flex-col">
-              {displaySession.map((message) => {
+              {displaySession.map((message, index) => {
                 if (Array.isArray(message)) {
                   return message.map((tool) => (
                     <ToolUseCard
@@ -427,6 +427,7 @@ export default function Chat() {
                       messageId={message.messageId}
                       messages={message.message}
                       stop={message.stop}
+                      isLastMessage={index === displaySession.length - 1}
                     />
                   );
                 }

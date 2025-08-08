@@ -18,11 +18,13 @@ export function AssistantMessage({
   messageId,
   messages,
   stop,
+  isLastMessage,
 }: {
   sessionId: string;
   messageId: string;
   messages: IMessageResult[];
   stop?: SessionTurnsResponseStop;
+  isLastMessage: boolean;
 }) {
   return (
     <div className="flex flex-col items-start gap-2 w-full mb-8">
@@ -32,7 +34,7 @@ export function AssistantMessage({
         </div>
       </Separator>
       <div className="flex flex-col items-start justify-start gap-4 w-full">
-        {messages.length === 0 && (
+        {messages.length === 0 && isLastMessage && (
           <LucideLoaderCircle className="w-4 h-4 animate-spin" />
         )}
         {messages.map((message, index) => {
