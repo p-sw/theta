@@ -363,7 +363,6 @@ export default function Chat() {
             (message.type === "text" && message.text.trim().length > 0) ||
             (message.type === "thinking" && message.thinking.trim().length > 0)
         );
-        if (displayableMessages.length === 0) continue;
         turns.push({
           ...turn,
           message: displayableMessages,

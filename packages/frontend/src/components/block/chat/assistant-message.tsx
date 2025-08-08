@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import rehypeHighlight from "@/markdown-plugin/rehype-highlight";
 import { Separator } from "@/components/ui/separator";
+import LucideLoaderCircle from "~icons/lucide/loader-circle";
 
 export function AssistantMessage({
   sessionId,
@@ -31,6 +32,9 @@ export function AssistantMessage({
         </div>
       </Separator>
       <div className="flex flex-col items-start justify-start gap-4 w-full">
+        {messages.length === 0 && (
+          <LucideLoaderCircle className="w-4 h-4 animate-spin" />
+        )}
         {messages.map((message, index) => {
           if (message.type === "text") {
             return (
