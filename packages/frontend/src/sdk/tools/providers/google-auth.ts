@@ -66,6 +66,7 @@ function scopesSatisfied(existing: string, requested: string[]): boolean {
 
 class GoogleAuthManager {
   private config: GoogleAuthConfig | null = null;
+  // Keep no persistent client to avoid shared callback issues; we create per request
 
   setup(config: GoogleAuthConfig) {
     this.config = config;
@@ -87,52 +88,81 @@ class GoogleAuthManager {
       return existing.accessToken;
     }
 
-    // Use GIS token client for implicit OAuth
-    const scopeString = Array.from(
-      new Set([...(existing?.scope.split(" ") ?? []), ...scopes])
-    ).join(" ");
-
-    const accessToken = await new Promise<string>((resolve, reject) => {
-      const googleAny = (window as unknown as { google?: any }).google;
-      if (!googleAny?.accounts?.oauth2) {
-        reject(new Error("Google Identity Services not available"));
-        return;
-      }
-      const client = googleAny.accounts.oauth2.initTokenClient({
-        client_id: this.config!.clientId,
-        scope: scopeString,
-        include_granted_scopes: true,
-        callback: (resp: {
-          access_token?: string;
-          error?: string;
-          error_description?: string;
-        }) => {
-          if (resp.error || !resp.access_token) {
-            reject(
-              new Error(
-                resp.error_description ||
-                  resp.error ||
-                  "Failed to obtain Google access token"
-              )
-            );
-            return;
-          }
-          resolve(resp.access_token);
-        },
+    // Helper to request a token (silent or interactive)
+    const requestToken = async (
+      scope: string,
+      prompt?: "none" | "consent" | ""
+    ): Promise<string> => {
+      return await new Promise<string>((resolve, reject) => {
+        const googleAny = (window as unknown as { google?: any }).google;
+        if (!googleAny?.accounts?.oauth2) {
+          reject(new Error("Google Identity Services not available"));
+          return;
+        }
+        const client = googleAny.accounts.oauth2.initTokenClient({
+          client_id: this.config!.clientId,
+          scope,
+          include_granted_scopes: true,
+          callback: (resp: {
+            access_token?: string;
+            error?: string;
+            error_description?: string;
+          }) => {
+            if (resp.error || !resp.access_token) {
+              reject(
+                new Error(
+                  resp.error_description ||
+                    resp.error ||
+                    "Failed to obtain Google access token"
+                )
+              );
+              return;
+            }
+            resolve(resp.access_token);
+          },
+        });
+        client.requestAccessToken({ prompt });
       });
-      client.requestAccessToken();
-    });
-
-    const tokenInfo = await this.fetchTokenInfo(accessToken);
-    const token: TokenResponse = {
-      accessToken,
-      expiresAt: Date.now() + tokenInfo.expires_in * 1000,
-      scope: tokenInfo.scope,
     };
-    setStoredToken(token);
-    // dispatch via localStorage wrapper already triggers events, but additionally fire a custom event for listeners if needed
-    dispatchEvent(GOOGLE_AUTH_STATE_KEY, { detail: token });
-    return token.accessToken;
+
+    // 1) If we have an existing token but it's expired, try silent refresh with the already granted scopes first
+    if (existing && isExpired(existing)) {
+      try {
+        const refreshedAccessToken = await requestToken(existing.scope, "none");
+        const info = await this.fetchTokenInfo(refreshedAccessToken);
+        const refreshedToken: TokenResponse = {
+          accessToken: refreshedAccessToken,
+          expiresAt: Date.now() + info.expires_in * 1000,
+          scope: info.scope,
+        };
+        setStoredToken(refreshedToken);
+        dispatchEvent(GOOGLE_AUTH_STATE_KEY, { detail: refreshedToken });
+        if (scopesSatisfied(refreshedToken.scope, scopes)) {
+          return refreshedToken.accessToken;
+        }
+        // If still missing scopes, fall through to incremental consent
+      } catch {
+        // Silent refresh failed; fall back to interactive below
+      }
+    }
+
+    // 2) If missing scopes or no token, request interactively with combined scopes (incremental consent)
+    const combinedScope = Array.from(
+      new Set([...(existing?.scope.split(" ") ?? []), ...scopes])
+    )
+      .filter(Boolean)
+      .join(" ");
+
+    const interactiveAccessToken = await requestToken(combinedScope, "consent");
+    const interactiveInfo = await this.fetchTokenInfo(interactiveAccessToken);
+    const newToken: TokenResponse = {
+      accessToken: interactiveAccessToken,
+      expiresAt: Date.now() + interactiveInfo.expires_in * 1000,
+      scope: interactiveInfo.scope,
+    };
+    setStoredToken(newToken);
+    dispatchEvent(GOOGLE_AUTH_STATE_KEY, { detail: newToken });
+    return newToken.accessToken;
   }
 
   private async fetchTokenInfo(
