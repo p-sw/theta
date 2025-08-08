@@ -35,6 +35,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  ScrollArea,
+  ScrollAreaViewport,
+  ScrollBar,
+} from "@/components/ui/scroll-area";
 
 function prettyJson(json: string) {
   try {
@@ -209,35 +214,46 @@ function DetailDialog({
         </TooltipTrigger>
         <TooltipContent>Show details</TooltipContent>
       </Tooltip>
-      <DialogContent className="max-h-7/8 overflow-y-auto">
+      <DialogContent className="max-h-7/8 grid-cols-1">
         <DialogHeader>
           <DialogTitle>Tool execution details</DialogTitle>
           <DialogDescription>
             AI requested the tool execution.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
-          <span className="font-semibold text-muted-foreground">Provider</span>
-          <span>{provider?.displayName ?? "Unknown provider"}</span>
-          <span className="font-semibold text-muted-foreground">Tool</span>
-          <span>{tool?.displayName ?? "Unknown tool"}</span>
-        </div>
-        <p className="font-bold text-sm">Request Data</p>
-        <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
-          <pre className="text-sm text-muted-foreground">
-            {prettyJson(message.requestContent)}
-          </pre>
-        </code>
-        {message.done && (
-          <>
-            <p className="font-bold text-sm">Response Data</p>
-            <code className="block bg-muted p-2 rounded-md col-span-1 overflow-x-auto">
-              <pre className="text-sm text-muted-foreground">
-                {prettyJson(message.responseContent)}
-              </pre>
-            </code>
-          </>
-        )}
+        <ScrollArea className="col-span-1 max-h-96 overflow-hidden">
+          <ScrollAreaViewport className="snap-y snap-mandatory w-full h-full">
+            <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
+                <span className="font-semibold text-muted-foreground">
+                  Provider
+                </span>
+                <span>{provider?.displayName ?? "Unknown provider"}</span>
+                <span className="font-semibold text-muted-foreground">
+                  Tool
+                </span>
+                <span>{tool?.displayName ?? "Unknown tool"}</span>
+              </div>
+              <p className="font-bold text-sm">Request Data</p>
+              <code className="block bg-muted p-2 rounded-md w-fit">
+                <pre className="text-sm text-muted-foreground w-fit">
+                  {prettyJson(message.requestContent)}
+                </pre>
+              </code>
+              {message.done && (
+                <>
+                  <p className="font-bold text-sm">Response Data</p>
+                  <code className="block bg-muted p-2 rounded-md w-fit">
+                    <pre className="text-sm text-muted-foreground w-fit">
+                      {prettyJson(message.responseContent)}
+                    </pre>
+                  </code>
+                </>
+              )}
+            </div>
+          </ScrollAreaViewport>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
         <DialogFooter>
           {!message.done && !message.granted && (
             <>
