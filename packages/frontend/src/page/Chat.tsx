@@ -251,38 +251,6 @@ export default function Chat() {
           return newSession;
         });
       }
-
-      try {
-        const toolResult = await toolRegistry.execute(
-          turn.toolName,
-          JSON.parse(turn.requestContent)
-        );
-        setSession((prev) => {
-          const newSession = { ...prev };
-          newSession.turns[toolTurnIndex] = {
-            ...turn,
-            done: true,
-            granted: true,
-            isError: false,
-            responseContent: toolResult,
-          };
-          return newSession;
-        });
-      } catch (e) {
-        setSession((prev) => {
-          const newSession = { ...prev };
-          newSession.turns[toolTurnIndex] = {
-            ...turn,
-            done: true,
-            granted: true,
-            isError: true,
-            responseContent:
-              (e as Error).message ?? "Unexpected error while executing tool",
-          };
-          return newSession;
-        });
-        return;
-      }
     },
     [session.turns, setSession]
   );
@@ -336,12 +304,46 @@ export default function Chat() {
       for (const toolTurn of toolTurns) {
         // Execute tools that are granted but not done yet
         // This includes whitelisted tools (auto-granted) and manually granted tools
+        const toolTurnIndex = session.turns.findIndex(
+          (turn) => turn.type === "tool" && turn.useId === toolTurn.useId
+        );
+        if (toolTurnIndex === -1) continue;
+
         if (!toolTurn.done && toolTurn.granted) {
           console.log("Executing granted tool:", toolTurn.toolName);
           // Small delay to ensure the UI has rendered
-          setTimeout(() => {
-            onToolGrant(toolTurn.useId);
-          }, 100);
+          try {
+            const toolResult = await toolRegistry.execute(
+              toolTurn.toolName,
+              JSON.parse(toolTurn.requestContent)
+            );
+            setSession((prev) => {
+              const newSession = { ...prev };
+              newSession.turns[toolTurnIndex] = {
+                ...toolTurn,
+                done: true,
+                granted: true,
+                isError: false,
+                responseContent: toolResult,
+              };
+              return newSession;
+            });
+          } catch (e) {
+            setSession((prev) => {
+              const newSession = { ...prev };
+              newSession.turns[toolTurnIndex] = {
+                ...toolTurn,
+                done: true,
+                granted: true,
+                isError: true,
+                responseContent:
+                  (e as Error).message ??
+                  "Unexpected error while executing tool",
+              };
+              return newSession;
+            });
+            return;
+          }
           break; // Execute one at a time to avoid race conditions
         }
       }
