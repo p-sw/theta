@@ -235,16 +235,16 @@ function DetailDialog({
                 <span>{tool?.displayName ?? "Unknown tool"}</span>
               </div>
               <p className="font-bold text-sm">Request Data</p>
-              <code className="block bg-muted p-2 rounded-md w-fit">
-                <pre className="text-sm text-muted-foreground w-fit">
+              <code className="block bg-muted p-2 rounded-md min-w-full w-fit">
+                <pre className="text-sm text-muted-foreground min-w-full w-fit">
                   {prettyJson(message.requestContent)}
                 </pre>
               </code>
               {message.done && (
                 <>
                   <p className="font-bold text-sm">Response Data</p>
-                  <code className="block bg-muted p-2 rounded-md w-fit">
-                    <pre className="text-sm text-muted-foreground w-fit">
+                  <code className="block bg-muted p-2 rounded-md min-w-full w-fit">
+                    <pre className="text-sm text-muted-foreground min-w-full w-fit">
                       {prettyJson(message.responseContent)}
                     </pre>
                   </code>
