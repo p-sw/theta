@@ -85,6 +85,24 @@ export default function Chat() {
         { type: "text", text: data.message },
       ]).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        setIsStreaming(false);
+
+        const sessionRef = JSON.parse(
+          (isPermanentSession ? localStorage : sessionStorage).getItem(
+            SESSION_STORAGE_KEY(sessionId)
+          ) ?? "{}"
+        ) as TemporarySession;
+        const lastTurn = sessionRef.turns.at(-1);
+        if (lastTurn?.type === "response" && lastTurn.message.length === 0) {
+          form.setValue("message", data.message);
+          sessionRef.turns.pop();
+          sessionRef.turns.pop();
+
+          (isPermanentSession ? localStorage : sessionStorage).setItem(
+            SESSION_STORAGE_KEY(sessionId),
+            JSON.stringify(sessionRef)
+          );
+        }
       });
     },
     [modelId, provider, isStreaming, form, sessionId, isPermanentSession]
