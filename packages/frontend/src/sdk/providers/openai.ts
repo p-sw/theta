@@ -5,7 +5,6 @@ import type {
   IOpenAIFunctionToolCallOutput,
   IOpenAIInput,
   IOpenAIInputMessage,
-  IOpenAIItemReference,
   IOpenAIModelConfig,
   IOpenAIOutputMessage,
   IOpenAIReasoning,
