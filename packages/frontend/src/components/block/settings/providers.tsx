@@ -20,32 +20,18 @@ import { useRef, useState } from "react";
 import Anthropic from "~icons/ai-provider/anthropic";
 import LucideSettings from "~icons/lucide/settings";
 import LucideSave from "~icons/lucide/save";
-import LucideTrash from "~icons/lucide/trash";
-import LucideX from "~icons/lucide/x";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { ModelConfigForm } from "@/components/block/settings/model-config";
 import { SystemPromptSection } from "@/components/block/settings/system-prompt";
 import OpenAI from "~icons/ai-provider/openai";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 
 function ModelItem({
   model,
   onDisableToggle,
-  onDelete,
 }: {
   model: IModelInfo;
   onDisableToggle: () => void;
-  onDelete: () => void;
 }) {
   return (
     <div className="flex flex-row justify-between rounded-md h-10 items-center px-2">
@@ -57,6 +43,7 @@ function ModelItem({
         <p className="text-sm">{model.displayName}</p>
       </div>
       <div className="flex flex-row gap-2 items-center">
+        <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="secondary" className="size-8">
@@ -72,50 +59,6 @@ function ModelItem({
               <SheetCloseIcon />
             </SheetHeader>
             <ModelConfigForm provider={model.provider} modelId={model.id} />
-            <div className="flex flex-col gap-2 px-4 pt-6">
-              <h3 className="text-sm font-medium">Actions</h3>
-              <div className="flex flex-row gap-2 w-full">
-                <Button
-                  variant={model.disabled ? "outline" : "default"}
-                  onClick={() => onDisableToggle()}
-                  className="flex-1"
-                >
-                  {model.disabled ? "Enable" : "Disable"} model
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="shrink-0"
-                    >
-                      <LucideTrash />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete model</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this model?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>
-                        <LucideX />
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={onDelete}
-                        variant="destructive"
-                      >
-                        <LucideTrash />
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
           </SheetContent>
         </Sheet>
       </div>
@@ -145,16 +88,6 @@ function ModelSection() {
                         ...model,
                         disabled: !model.disabled,
                       };
-                      return newModels;
-                    });
-                  }}
-                  onDelete={() => {
-                    setModels((p) => {
-                      const newModels = [...p];
-                      const index = newModels.findIndex(
-                        (m) => m.id === model.id
-                      );
-                      newModels.splice(index, 1);
                       return newModels;
                     });
                   }}
