@@ -132,7 +132,3 @@ Scripts (run inside `packages/frontend`):
 
 - Frontend cannot reach backend: verify `VITE_BACKEND_URL` and that the backend is listening on `localhost:3000`.
 - CORS issues: the backend enables CORS via `@elysiajs/cors`; ensure you are calling through `/proxy` from the frontend.
-
-## License
-
-Proprietary – for internal use.
