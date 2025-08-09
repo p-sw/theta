@@ -183,6 +183,7 @@ export default function Chat() {
   const handlePause = useCallback(() => {
     AiSdk.abortCurrent();
     setIsStreaming(false);
+    setAutoContinue(false);
     setSession((prev) => {
       const newSession = { ...prev } as typeof prev;
       newSession.turns = newSession.turns.map((turn) => {
