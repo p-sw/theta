@@ -62,6 +62,7 @@ export function PermanentSessionItem({
     turns: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    typing: "",
   });
 
   const { sessionId, setSessionId, setNewSession, setIsPermanentSession } =
@@ -162,6 +163,7 @@ export function TemporarySessionItem({
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      typing: "",
     },
     undefined,
     { temp: true }
