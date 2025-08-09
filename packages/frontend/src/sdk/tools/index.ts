@@ -8,6 +8,7 @@ import type {
 } from "@/sdk/shared";
 import { OpenWeatherProvider } from "@/sdk/tools/providers/openweather";
 import { GoogleCalendarProvider } from "@/sdk/tools/providers/google-calendar";
+import { GoogleDocsProvider } from "@/sdk/tools/providers/google-docs";
 import { localStorage } from "@/lib/storage";
 import {
   TOOL_ENABLED_KEY,
@@ -32,6 +33,8 @@ export class ToolRegistry implements IToolRegistry {
   constructor() {
     this.registerProvider(new OpenWeatherProvider() as never);
     this.registerProvider(new GoogleCalendarProvider() as never);
+    // Register Google Docs provider
+    this.registerProvider(new GoogleDocsProvider() as never);
     this.initProviders();
   }
 
