@@ -269,7 +269,7 @@ export class AISDK {
           useId: toolUse.id,
           toolName: toolUse.name,
           granted: isWhitelisted, // Auto-grant if whitelisted
-          requestContent: toolUse.input,
+          requestContent: toolUse.input !== "" ? toolUse.input : "{}",
           done: false,
         };
         session.turns.push(toolTurn);
