@@ -20,6 +20,7 @@ import { ToolRegistryError } from "@/sdk/tools/errors";
 import { z } from "zod";
 import type { JSONSchema7 } from "json-schema";
 import { dispatchEvent } from "@/lib/utils";
+import { GoogleGmailProvider } from "@/sdk/tools/providers/google-gmail";
 
 export class ToolRegistry implements IToolRegistry {
   private providers: Record<string, IToolProvider<Record<string, unknown>>> =
@@ -32,6 +33,7 @@ export class ToolRegistry implements IToolRegistry {
   constructor() {
     this.registerProvider(new OpenWeatherProvider() as never);
     this.registerProvider(new GoogleCalendarProvider() as never);
+    this.registerProvider(new GoogleGmailProvider() as never);
     this.initProviders();
   }
 
