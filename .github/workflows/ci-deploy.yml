@@ -1,0 +1,156 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  frontend:
+    name: Frontend build and deploy
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build with Vite
+        working-directory: frontend
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers (wrangler)
+        if: github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          # Deploy static assets directory built by Vite to a Worker
+          command: deploy --assets dist --name ${{ vars.CF_WORKER_NAME }}
+
+  backend:
+    name: Backend build and deploy
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install backend deps (if any)
+        working-directory: backend
+        run: |
+          if [ -f bun.lockb ]; then bun install --frozen-lockfile; else echo "No bun.lockb"; fi
+
+      - name: Build backend binary
+        working-directory: backend
+        env:
+          BACKEND_ENTRYPOINT: ${{ vars.BACKEND_ENTRYPOINT }}
+          BACKEND_OUTFILE: backend-app
+        run: |
+          if [ -z "${BACKEND_ENTRYPOINT}" ]; then
+            echo "ERROR: Define repository variable BACKEND_ENTRYPOINT (path relative to backend/, e.g. src/index.ts)" >&2
+            exit 1
+          fi
+          mkdir -p dist
+          bun build "${BACKEND_ENTRYPOINT}" --compile --outfile "dist/${BACKEND_OUTFILE}"
+          ls -lah dist
+
+      - name: Create remote directories
+        if: github.event_name == 'push'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            mkdir -p "${{ vars.REMOTE_APP_DIR }}/deploy"
+
+      - name: Copy backend binary to server
+        if: github.event_name == 'push'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "backend/dist/backend-app"
+          target: "${{ vars.REMOTE_APP_DIR }}"
+          overwrite: true
+          strip_components: 2
+
+      - name: Copy deploy script to server
+        if: github.event_name == 'push'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "deploy/backend_deploy.sh"
+          target: "${{ vars.REMOTE_APP_DIR }}/deploy"
+          overwrite: true
+          strip_components: 0
+
+      - name: Run remote deploy script
+        if: github.event_name == 'push'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            sudo chmod +x "${{ vars.REMOTE_APP_DIR }}/deploy/backend_deploy.sh"
+            sudo "${{ vars.REMOTE_APP_DIR }}/deploy/backend_deploy.sh" \
+              --domain "${{ vars.BACKEND_DOMAIN }}" \
+              --service "${{ vars.SERVICE_NAME }}" \
+              --binary "${{ vars.REMOTE_APP_DIR }}/backend-app" \
+              --port "${{ vars.BACKEND_PORT }}"
