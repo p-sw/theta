@@ -249,10 +249,16 @@ export class AnthropicProvider extends API<
             });
             break;
           case "tool_use":
+            let toolInput: object;
+            try {
+              toolInput = JSON.parse(turnPartial.input);
+            } catch (e) {
+              toolInput = {};
+            }
             message.content.push({
               type: "tool_use",
               id: turnPartial.id,
-              input: JSON.parse(turnPartial.input),
+              input: toolInput,
               name: turnPartial.name,
             });
             break;
