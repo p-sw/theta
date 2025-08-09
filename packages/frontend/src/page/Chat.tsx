@@ -112,6 +112,7 @@ export default function Chat() {
         { type: "text", text: data.message },
       ]).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        console.error(e);
         setIsStreaming(false);
         setAutoContinue(false);
 
@@ -169,6 +170,7 @@ export default function Chat() {
         }))
       ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        console.error(e);
         setIsStreaming(false);
         setAutoContinue(false);
         setSession((prev) => {
