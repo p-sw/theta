@@ -12,7 +12,6 @@ import { OpenAIProvider } from "@/sdk/providers/openai";
 import type {
   API,
   IMessageRequest,
-  IMessageRequestText,
   IMessageResult,
   IModelInfo,
   IProvider,

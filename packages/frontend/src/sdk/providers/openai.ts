@@ -17,7 +17,6 @@ import type {
   SessionTurns,
   IToolMetaJson,
   IMessageResultToolUse,
-  IMessageRequest,
 } from "@/sdk/shared";
 import {
   API,
