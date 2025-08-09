@@ -162,12 +162,7 @@ export default function Chat() {
         isPermanentSession,
         provider!,
         modelId!,
-        usedTools.map((toolResult) => ({
-          type: "tool_result",
-          tool_use_id: toolResult.useId,
-          content: toolResult.responseContent,
-          is_error: toolResult.isError,
-        }))
+        []
       ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
         console.error(e);

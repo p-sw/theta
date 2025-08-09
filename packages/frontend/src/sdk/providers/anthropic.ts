@@ -227,61 +227,97 @@ export class AnthropicProvider extends API<
     const messages: IAnthropicMessage[] = [];
 
     for (const turn of session) {
-      if (turn.type === "tool") continue;
-
-      const message: IAnthropicMessage = {
-        role: turn.type === "request" ? "user" : "assistant",
-        content: [],
-      };
-      for (const turnPartial of turn.message) {
-        switch (turnPartial.type) {
-          case "text":
-            message.content.push({ type: "text", text: turnPartial.text });
-            break;
-          case "thinking":
-            if (!turnPartial.signature) {
-              throw new SessionTranslationError();
-            }
-            message.content.push({
-              type: "thinking",
-              thinking: turnPartial.thinking,
-              signature: turnPartial.signature,
-            });
-            break;
-          case "tool_use":
-            let toolInput: object;
-            try {
-              toolInput = JSON.parse(turnPartial.input);
-            } catch (e) {
-              toolInput = {};
-            }
-            message.content.push({
-              type: "tool_use",
-              id: turnPartial.id,
-              input: toolInput,
-              name: turnPartial.name,
-            });
-            break;
-          case "tool_result":
-            message.content.push({
-              type: "tool_result",
-              tool_use_id: turnPartial.tool_use_id,
-              content: turnPartial.content,
-              is_error: turnPartial.is_error,
-            });
-            break;
-          case "start":
-          case "end":
-          case "refusal": // ignore, refusal is not thrown on Anthropic
-            break;
-          default:
-            console.warn(
-              "[Anthropic] Unexpected message type while translating session:",
-              turnPartial
+      if (turn.type === "tool" || turn.type === "request") {
+        const lastMessage = messages.at(-1);
+        let message: IAnthropicMessage;
+        if (lastMessage?.role === "user") {
+          message = lastMessage;
+        } else {
+          message = {
+            role: "user",
+            content: [],
+          };
+          messages.push(message);
+        }
+        if (turn.type === "tool") {
+          if (!turn.done)
+            throw new SessionTranslationError(
+              `Tool is not done: ${turn.useId} ${turn.toolName}`
             );
+          message.content.push({
+            type: "tool_result",
+            tool_use_id: turn.useId,
+            content: turn.responseContent,
+            is_error: turn.isError,
+          });
+        }
+        if (turn.type === "request") {
+          for (const turnPartial of turn.message) {
+            switch (turnPartial.type) {
+              case "text":
+                message.content.push({ type: "text", text: turnPartial.text });
+                break;
+              default:
+                console.warn(
+                  "[Anthropic] Unexpected message type while translating session:",
+                  turnPartial
+                );
+            }
+          }
         }
       }
-      messages.push(message);
+      if (turn.type === "response") {
+        const message: IAnthropicMessage = {
+          role: "assistant",
+          content: [],
+        };
+        messages.push(message);
+
+        for (const turnPartial of turn.message) {
+          switch (turnPartial.type) {
+            case "text":
+              message.content.push({ type: "text", text: turnPartial.text });
+              break;
+            case "thinking":
+              if (!turnPartial.signature) {
+                throw new SessionTranslationError(
+                  `Thinking signature is missing in ${JSON.stringify(
+                    turnPartial
+                  )}`
+                );
+              }
+              message.content.push({
+                type: "thinking",
+                thinking: turnPartial.thinking,
+                signature: turnPartial.signature,
+              });
+              break;
+            case "tool_use":
+              let toolInput: object;
+              try {
+                toolInput = JSON.parse(turnPartial.input);
+              } catch (e) {
+                toolInput = {};
+              }
+              message.content.push({
+                type: "tool_use",
+                id: turnPartial.id,
+                input: toolInput,
+                name: turnPartial.name,
+              });
+              break;
+            case "start":
+            case "end":
+            case "refusal":
+              break;
+            default:
+              console.warn(
+                "[Anthropic] Unexpected message type while translating session:",
+                turnPartial
+              );
+          }
+        }
+      }
     }
 
     return messages;

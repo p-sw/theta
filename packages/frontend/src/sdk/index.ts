@@ -12,6 +12,7 @@ import { OpenAIProvider } from "@/sdk/providers/openai";
 import type {
   API,
   IMessageRequest,
+  IMessageRequestText,
   IMessageResult,
   IModelInfo,
   IProvider,
@@ -181,16 +182,11 @@ export class AISDK {
       }
     }
 
-    const lastTurn = session.turns.at(-1);
-    if (lastTurn?.type === "request") {
-      lastTurn.message.push(...requestMessage);
-    } else {
-      session.turns.push({
-        type: "request",
-        messageId: hyperidInstance(),
-        message: requestMessage,
-      });
-    }
+    session.turns.push({
+      type: "request",
+      messageId: hyperidInstance(),
+      message: requestMessage,
+    });
     saveSession(false /* no throttle – first write */);
 
     const resultMessage: IMessageResult[] = [];
