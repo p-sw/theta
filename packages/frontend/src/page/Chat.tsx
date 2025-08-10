@@ -103,14 +103,41 @@ export default function Chat() {
 
   const handleSubmit = useCallback(
     (data: { message: string }) => {
-      if (!modelId || !provider || data.message.trim() === "" || isStreaming)
+      const effectiveProvider =
+        (session as TemporarySession).provider ?? provider;
+      const effectiveModelId = (session as TemporarySession).modelId ?? modelId;
+      if (
+        !effectiveModelId ||
+        !effectiveProvider ||
+        data.message.trim() === "" ||
+        isStreaming
+      )
         return;
+
+      // Persist provider/model to session on first send
+      if (
+        (!("provider" in session) || !session.provider || !session.modelId) &&
+        session.turns.length === 0 &&
+        provider &&
+        modelId
+      ) {
+        setSession((prev) => ({
+          ...prev,
+          provider,
+          modelId,
+        }));
+      }
+
       form.reset();
       setIsStreaming(true);
       setAutoContinue(true);
-      AiSdk.message(sessionId, isPermanentSession, provider!, modelId!, [
-        { type: "text", text: data.message },
-      ]).catch((e) => {
+      AiSdk.message(
+        sessionId,
+        isPermanentSession,
+        effectiveProvider!,
+        effectiveModelId!,
+        [{ type: "text", text: data.message }]
+      ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
         console.error(e);
         setIsStreaming(false);
@@ -134,7 +161,16 @@ export default function Chat() {
         }
       });
     },
-    [modelId, provider, isStreaming, form, sessionId, isPermanentSession]
+    [
+      session,
+      modelId,
+      provider,
+      isStreaming,
+      form,
+      sessionId,
+      isPermanentSession,
+      setSession,
+    ]
   );
 
   useEffect(() => {
@@ -157,11 +193,14 @@ export default function Chat() {
       usedTools.length > 0 &&
       usedTools.every((tool) => tool.done)
     ) {
+      const effectiveProvider =
+        (session as TemporarySession).provider ?? provider;
+      const effectiveModelId = (session as TemporarySession).modelId ?? modelId;
       AiSdk.message(
         sessionId,
         isPermanentSession,
-        provider!,
-        modelId!,
+        effectiveProvider!,
+        effectiveModelId!,
         []
       ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
@@ -178,7 +217,14 @@ export default function Chat() {
         });
       });
     }
-  }, [session.turns, sessionId, isPermanentSession, provider, modelId]);
+  }, [
+    session.turns,
+    sessionId,
+    isPermanentSession,
+    provider,
+    modelId,
+    session,
+  ]);
 
   const handlePause = useCallback(() => {
     AiSdk.abortCurrent();
@@ -502,9 +548,16 @@ export default function Chat() {
                       <Button
                         type="submit"
                         size="icon"
-                        disabled={
-                          !modelId || !provider || !form.watch("message").trim()
-                        }
+                        disabled={(() => {
+                          const effectiveProvider =
+                            session.provider ?? provider;
+                          const effectiveModelId = session.modelId ?? modelId;
+                          return (
+                            !effectiveModelId ||
+                            !effectiveProvider ||
+                            !form.watch("message").trim()
+                          );
+                        })()}
                       >
                         <LucideSend className="size-4" />
                       </Button>
@@ -514,11 +567,13 @@ export default function Chat() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                <ModelSelector
-                  provider={provider}
-                  modelId={modelId}
-                  setModelId={setModelId}
-                />
+                {!(session.provider && session.modelId) && (
+                  <ModelSelector
+                    provider={provider}
+                    modelId={modelId}
+                    setModelId={setModelId}
+                  />
+                )}
               </div>
             </TextareaContainer>
           </form>
