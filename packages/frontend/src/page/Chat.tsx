@@ -112,6 +112,7 @@ export default function Chat() {
         { type: "text", text: data.message },
       ]).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        console.error(e);
         setIsStreaming(false);
         setAutoContinue(false);
 
@@ -161,14 +162,10 @@ export default function Chat() {
         isPermanentSession,
         provider!,
         modelId!,
-        usedTools.map((toolResult) => ({
-          type: "tool_result",
-          tool_use_id: toolResult.useId,
-          content: toolResult.responseContent,
-          is_error: toolResult.isError,
-        }))
+        []
       ).catch((e) => {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
+        console.error(e);
         setIsStreaming(false);
         setAutoContinue(false);
         setSession((prev) => {
@@ -186,6 +183,7 @@ export default function Chat() {
   const handlePause = useCallback(() => {
     AiSdk.abortCurrent();
     setIsStreaming(false);
+    setAutoContinue(false);
     setSession((prev) => {
       const newSession = { ...prev } as typeof prev;
       newSession.turns = newSession.turns.map((turn) => {

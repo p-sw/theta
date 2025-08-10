@@ -8,6 +8,12 @@ import type {
 } from "@/sdk/shared";
 import { OpenWeatherProvider } from "@/sdk/tools/providers/openweather";
 import { GoogleCalendarProvider } from "@/sdk/tools/providers/google-calendar";
+import { GoogleSheetsProvider } from "@/sdk/tools/providers/google-sheets";
+import { GoogleDriveProvider } from "@/sdk/tools/providers/google-drive";
+import { GoogleContactsProvider } from "@/sdk/tools/providers/google-contacts";
+import { GoogleDocsProvider } from "@/sdk/tools/providers/google-docs";
+import { GoogleTasksProvider } from "@/sdk/tools/providers/google-tasks";
+import { GoogleGmailProvider } from "@/sdk/tools/providers/google-gmail";
 import { localStorage } from "@/lib/storage";
 import {
   TOOL_ENABLED_KEY,
@@ -20,7 +26,6 @@ import { ToolRegistryError } from "@/sdk/tools/errors";
 import { z } from "zod";
 import type { JSONSchema7 } from "json-schema";
 import { dispatchEvent } from "@/lib/utils";
-import { GoogleGmailProvider } from "@/sdk/tools/providers/google-gmail";
 
 export class ToolRegistry implements IToolRegistry {
   private providers: Record<string, IToolProvider<Record<string, unknown>>> =
@@ -34,6 +39,11 @@ export class ToolRegistry implements IToolRegistry {
     this.registerProvider(new OpenWeatherProvider() as never);
     this.registerProvider(new GoogleCalendarProvider() as never);
     this.registerProvider(new GoogleGmailProvider() as never);
+    this.registerProvider(new GoogleSheetsProvider() as never);
+    this.registerProvider(new GoogleDriveProvider() as never);
+    this.registerProvider(new GoogleContactsProvider() as never);
+    this.registerProvider(new GoogleDocsProvider() as never);
+    this.registerProvider(new GoogleTasksProvider() as never);
     this.initProviders();
   }
 

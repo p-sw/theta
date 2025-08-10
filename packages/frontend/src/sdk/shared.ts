@@ -169,18 +169,11 @@ export interface IToolRegistry {
   ): [object, Record<string, IConfigSchema>, z.ZodSchema<object>];
 }
 
-export type IMessageRequest = IMessageRequestText | IMessageRequestToolResult;
+export type IMessageRequest = IMessageRequestText;
 
 export interface IMessageRequestText {
   type: "text";
   text: string;
-}
-
-export interface IMessageRequestToolResult {
-  type: "tool_result";
-  tool_use_id: string;
-  content: string;
-  is_error: boolean;
 }
 
 export type IMessageResult =
