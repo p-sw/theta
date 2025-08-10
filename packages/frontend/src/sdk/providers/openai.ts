@@ -208,8 +208,17 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     const messages: IOpenAIInput[] = [];
 
     for (const turn of session) {
-      if (turn.type === "tool") continue;
-
+      if (turn.type === "tool") {
+        if (!turn.done)
+          throw new SessionTranslationError(
+            `Tool is not done: ${turn.useId} ${turn.toolName}`
+          );
+        messages.push({
+          type: "function_call_output",
+          call_id: turn.useId,
+          output: turn.responseContent,
+        });
+      }
       if (turn.type === "request") {
         const message: IOpenAIInputMessage = {
           type: "message",
@@ -223,13 +232,6 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
               message.content.push({
                 type: "input_text",
                 text: turnPartial.text,
-              });
-              break;
-            case "tool_result":
-              toolResults.push({
-                type: "function_call_output",
-                call_id: turnPartial.tool_use_id,
-                output: turnPartial.content,
               });
               break;
             default:
