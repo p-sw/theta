@@ -24,14 +24,74 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 ### Supported Built-in Tools
 
 - Openweather
+  - [x] Get coordinates by location name
+  - [x] Current and forecasts Weather
+  - [x] Weather data for timestamp
+  - [x] Daily Aggregation
 - Google Workspace Services
   - Google Calendar
+    - [x] List Calendars
+    - [x] List Events
+    - [x] Create Event
+    - [x] Update Event
+    - [x] Delete Event
+    - [x] Move Event
   - Google Contacts
+    - [x] List Connections
+    - [x] Search Contacts
+    - [x] Get Person
+    - [x] Create Contact
+    - [x] Update Contact
+    - [x] Delete Contact
   - Google Docs
+    - [x] List Google Docs
+    - [x] Get Document
+    - [x] Create Document
+    - [x] Append Text
+    - [x] Replace Text (All)
   - Google Drive
+    - [x] List Files
+    - [x] Get File Metadata
+    - [x] Download File (base64)
+    - [x] Export google Doc/Sheet/Slide
+    - [x] Update File Metadata
+    - [x] Delete File
+    - [x] List Revisions
+    - [x] Share / Create Permission
   - Google Sheets
+    - [x] Get Values
+    - [x] Append Values
+    - [x] Update Values
+    - [x] Clear Values
+    - [x] Get Spreadsheet
+    - [x] Create Spreadsheet
   - Google Tasks
+    - [x] List Task Lists
+    - [x] List Tasks
+    - [x] Create Task
+    - [x] Update Task
+    - [x] Delete Task
+    - [x] Move Task
+    - [x] Clear Completed Tasks
   - Gmail
+    - [x] List Labels
+    - [x] List Messages
+    - [x] List Threads
+    - [x] Get Message
+    - [x] Get Thread
+    - [x] Send Email
+    - [x] Create Draft
+    - [x] List Drafts
+    - [x] Send Draft
+    - [x] Delete Message
+    - [x] Trash Message
+    - [x] Untrash Message
+    - [x] Modify Message Labels
+    - [x] Batch Modify Labels
+    - [x] Move Messages
+    - [x] Create Label
+    - [x] Update Label
+    - [x] Delete Label
 
 ## Overview
 
