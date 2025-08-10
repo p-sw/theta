@@ -181,16 +181,11 @@ export class AISDK {
       }
     }
 
-    const lastTurn = session.turns.at(-1);
-    if (lastTurn?.type === "request") {
-      lastTurn.message.push(...requestMessage);
-    } else {
-      session.turns.push({
-        type: "request",
-        messageId: hyperidInstance(),
-        message: requestMessage,
-      });
-    }
+    session.turns.push({
+      type: "request",
+      messageId: hyperidInstance(),
+      message: requestMessage,
+    });
     saveSession(false /* no throttle – first write */);
 
     const resultMessage: IMessageResult[] = [];
@@ -274,7 +269,7 @@ export class AISDK {
           useId: toolUse.id,
           toolName: toolUse.name,
           granted: isWhitelisted, // Auto-grant if whitelisted
-          requestContent: toolUse.input,
+          requestContent: toolUse.input !== "" ? toolUse.input : "{}",
           done: false,
         };
         session.turns.push(toolTurn);
