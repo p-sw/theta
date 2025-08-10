@@ -23,8 +23,15 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 
 ### Supported Built-in Tools
 
-- Openweather API
-- Google Calendar API
+- Openweather
+- Google Workspace Services
+  - Google Calendar
+  - Google Contacts
+  - Google Docs
+  - Google Drive
+  - Google Sheets
+  - Google Tasks
+  - Gmail
 
 ## Overview
 
