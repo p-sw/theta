@@ -1,6 +1,8 @@
 name: Build and Deploy
 
 on:
+  push:
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -33,8 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,14 +48,13 @@ jobs:
         working-directory: packages/frontend
         run: bun install --frozen-lockfile
 
-      - name: Build with Vite (override .env with production value)
+      - name: Build with Vite
         working-directory: packages/frontend
         env:
-          VITE_BACKEND_URL: ${{ env.VITE_BACKEND_URL }}
+          VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL }}
         run: bun run build
 
       - name: Deploy to Cloudflare Workers (wrangler)
-        if: github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
