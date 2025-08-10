@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["**"]
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -26,7 +26,7 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'frontend/**'
+              - 'packages/frontend/**'
 
   frontend:
     name: Frontend build and deploy
@@ -35,34 +35,29 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          bun-version: latest
 
       - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
+        working-directory: packages/frontend
+        run: bun install --frozen-lockfile
 
-      - name: Build with Vite (override .env with production value)
-        working-directory: frontend
+      - name: Build with Vite
+        working-directory: packages/frontend
         env:
-          VITE_BACKEND_URL: ${{ env.VITE_BACKEND_URL }}
-        run: npm run build
+          VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL }}
+        run: bun run build
 
       - name: Deploy to Cloudflare Workers (wrangler)
-        if: github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: frontend
+          workingDirectory: packages/frontend
           command: deploy --assets dist --name ${{ vars.CF_WORKER_NAME }}
