@@ -2,7 +2,12 @@ import { ModelSelector } from "@/components/block/chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea, TextareaContainer } from "@/components/ui/textarea";
-import { useEventListener, useStorage } from "@/lib/utils";
+import {
+  parseResponseSessionDisplayables,
+  parseSessionDisplayables,
+  useEventListener,
+  useStorage,
+} from "@/lib/utils";
 import { useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
@@ -18,7 +23,6 @@ import {
 } from "@/lib/const";
 import type {
   PermanentSession,
-  SessionTurnsRequest,
   SessionTurnsResponse,
   SessionTurnsTool,
   TemporarySession,
@@ -128,7 +132,9 @@ export default function Chat() {
         }));
       }
 
-      form.reset();
+      form.reset({
+        message: "",
+      });
       setIsStreaming(true);
       setAutoContinue(true);
       AiSdk.message(
@@ -149,15 +155,19 @@ export default function Chat() {
           ) ?? "{}"
         ) as TemporarySession;
         const lastTurn = sessionRef.turns.at(-1);
-        if (lastTurn?.type === "response" && lastTurn.message.length === 0) {
-          form.setValue("message", data.message);
-          sessionRef.turns.pop();
-          sessionRef.turns.pop();
+        if (lastTurn?.type === "response") {
+          const lastTurnDisplayables =
+            parseResponseSessionDisplayables(lastTurn);
+          if (lastTurnDisplayables.message.length === 0) {
+            form.setValue("message", data.message);
+            sessionRef.turns.pop();
+            sessionRef.turns.pop();
 
-          (isPermanentSession ? localStorage : sessionStorage).setItem(
-            SESSION_STORAGE_KEY(sessionId),
-            JSON.stringify(sessionRef)
-          );
+            (isPermanentSession ? localStorage : sessionStorage).setItem(
+              SESSION_STORAGE_KEY(sessionId),
+              JSON.stringify(sessionRef)
+            );
+          }
         }
       });
     },
@@ -210,8 +220,12 @@ export default function Chat() {
         setSession((prev) => {
           const newSession = { ...prev };
           const lastTurn = newSession.turns.at(-1);
-          if (lastTurn?.type === "response" && lastTurn.message.length === 0) {
-            newSession.turns.pop(); // remove unfinished response
+          if (lastTurn?.type === "response") {
+            const lastTurnDisplayables =
+              parseResponseSessionDisplayables(lastTurn);
+            if (lastTurnDisplayables.message.length === 0) {
+              newSession.turns.pop(); // remove unfinished response
+            }
           }
           return newSession;
         });
@@ -426,43 +440,10 @@ export default function Chat() {
     triggerAutoScroll();
   }, [session.turns.length, triggerAutoScroll]);
 
-  const displaySession = useMemo<
-    (SessionTurnsRequest | SessionTurnsResponse | SessionTurnsTool[])[]
-  >(() => {
-    const turns: (
-      | SessionTurnsRequest
-      | SessionTurnsResponse
-      | SessionTurnsTool[]
-    )[] = [];
-
-    for (const turn of session.turns) {
-      if (turn.type === "request") {
-        const displayableMessages = turn.message.filter(
-          (message) => message.type === "text" && message.text.trim().length > 0
-        );
-        if (displayableMessages.length === 0) continue;
-        turns.push({
-          ...turn,
-          message: displayableMessages,
-        });
-      } else if (turn.type === "response") {
-        const displayableMessages = turn.message.filter(
-          (message) =>
-            (message.type === "text" && message.text.trim().length > 0) ||
-            (message.type === "thinking" && message.thinking.trim().length > 0)
-        );
-        turns.push({
-          ...turn,
-          message: displayableMessages,
-        });
-      } else if (turn.type === "tool") {
-        if (Array.isArray(turns.at(-1)))
-          (turns.at(-1) as SessionTurnsTool[]).push(turn);
-        else turns.push([turn]);
-      }
-    }
-    return turns;
-  }, [session.turns]);
+  const displaySession = useMemo(
+    () => parseSessionDisplayables(session.turns),
+    [session.turns]
+  );
 
   return (
     <div className="w-full h-svhfull flex flex-row">

@@ -1,5 +1,11 @@
 import { STORAGE_CHANGE_EVENT, STORAGE_CHANGE_EVENT_KEY } from "@/lib/const";
 import { localStorage, sessionStorage } from "@/lib/storage";
+import type {
+  SessionTurns,
+  SessionTurnsRequest,
+  SessionTurnsResponse,
+  SessionTurnsTool,
+} from "@/sdk/shared";
 import { clsx, type ClassValue } from "clsx";
 import hyperid from "hyperid";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -178,4 +184,46 @@ export function useHyperId() {
 
 export function useHyperInstance() {
   return useMemo(() => hyperid(), []);
+}
+
+export function parseResponseSessionDisplayables(
+  turn: SessionTurnsResponse
+): SessionTurnsResponse {
+  const displayableMessages = turn.message.filter(
+    (message) =>
+      (message.type === "text" && message.text.trim().length > 0) ||
+      (message.type === "thinking" && message.thinking.trim().length > 0)
+  );
+  return {
+    ...turn,
+    message: displayableMessages,
+  };
+}
+
+export function parseSessionDisplayables(sessionTurns: SessionTurns) {
+  const turns: (
+    | SessionTurnsRequest
+    | SessionTurnsResponse
+    | SessionTurnsTool[]
+  )[] = [];
+
+  for (const turn of sessionTurns) {
+    if (turn.type === "request") {
+      const displayableMessages = turn.message.filter(
+        (message) => message.type === "text" && message.text.trim().length > 0
+      );
+      if (displayableMessages.length === 0) continue;
+      turns.push({
+        ...turn,
+        message: displayableMessages,
+      });
+    } else if (turn.type === "response") {
+      turns.push(parseResponseSessionDisplayables(turn));
+    } else if (turn.type === "tool") {
+      if (Array.isArray(turns.at(-1)))
+        (turns.at(-1) as SessionTurnsTool[]).push(turn);
+      else turns.push([turn]);
+    }
+  }
+  return turns;
 }
