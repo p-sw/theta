@@ -21,13 +21,6 @@ export class ServerSideHttpError extends Error {
   }
 }
 
-interface HostLimiter {
-  activeRequests: number;
-  queue: Array<() => void>;
-}
-
-const hostLimiters = new Map<string, HostLimiter>();
-
 const getNumberFromEnv = (
   value: string | undefined,
   fallback: number
@@ -41,19 +34,6 @@ const BASE_DELAY_MS = getNumberFromEnv(
   import.meta.env.VITE_PROXY_RETRY_BASE_DELAY_MS,
   500
 );
-const MAX_CONCURRENCY = getNumberFromEnv(
-  import.meta.env.VITE_PROXY_MAX_CONCURRENCY,
-  4
-);
-
-function getLimiter(host: string): HostLimiter {
-  let limiter = hostLimiters.get(host);
-  if (!limiter) {
-    limiter = { activeRequests: 0, queue: [] };
-    hostLimiters.set(host, limiter);
-  }
-  return limiter;
-}
 
 // await delay, but support aborting
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
@@ -72,40 +52,6 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
     };
     if (signal) signal.addEventListener("abort", onAbort, { once: true });
   });
-}
-
-async function withHostConcurrency<T>(
-  host: string,
-  task: () => Promise<T>,
-  signal?: AbortSignal
-): Promise<T> {
-  const limiter = getLimiter(host);
-  if (limiter.activeRequests >= MAX_CONCURRENCY) {
-    // Wait for slot
-    await new Promise<void>((resolve, reject) => {
-      const proceed = () => resolve();
-      limiter.queue.push(proceed);
-      if (signal) {
-        const onAbort = () => {
-          // Remove queued proceed if still present
-          const idx = limiter.queue.indexOf(proceed);
-          if (idx >= 0) limiter.queue.splice(idx, 1);
-          signal.removeEventListener("abort", onAbort);
-          reject(new DOMException("Aborted", "AbortError"));
-        };
-        signal.addEventListener("abort", onAbort, { once: true });
-      }
-    });
-  }
-
-  limiter.activeRequests++;
-  try {
-    return await task();
-  } finally {
-    limiter.activeRequests--;
-    const next = limiter.queue.shift();
-    if (next) next();
-  }
 }
 
 function isRetriableStatus(status: number): boolean {
@@ -136,29 +82,20 @@ export async function proxyfetch(
   const backendUrl = new URL(import.meta.env.VITE_BACKEND_URL);
   backendUrl.pathname = "/proxy";
 
-  const targetUrl = new URL(url.toString());
-  const hostKey: string = targetUrl.host;
-
   let attempt = 0;
   while (attempt <= MAX_RETRIES) {
     try {
-      const response = await withHostConcurrency(
-        hostKey,
-        async () => {
-          return await fetch(backendUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              url: url.toString(),
-              method: options.method,
-              headers: options.headers,
-              data: options.body,
-            }),
-            signal: options.signal,
-          });
-        },
-        options.signal
-      );
+      const response = await fetch(backendUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: url.toString(),
+          method: options.method,
+          headers: options.headers,
+          data: options.body,
+        }),
+        signal: options.signal,
+      });
 
       if (!response.ok) {
         const isProxied = response.headers.get("x-theta-proxied") === "true";
