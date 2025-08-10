@@ -201,7 +201,8 @@ export default function Chat() {
     if (
       autoContinue &&
       usedTools.length > 0 &&
-      usedTools.every((tool) => tool.done)
+      usedTools.every((tool) => tool.done) &&
+      session.turns.at(-1)!.type === "tool"
     ) {
       const effectiveProvider =
         (session as TemporarySession).provider ?? provider;
