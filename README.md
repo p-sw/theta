@@ -93,6 +93,17 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
     - [x] Update Label
     - [x] Delete Label
 
+## TODO
+
+- [ ] Actual routing & file splitting for build
+- [ ] Separate sdks to dedicated package
+- [ ] Remote MCP server support
+- [ ] Rate limit handling
+- [ ] Token counting & Context window handling
+- [ ] Predicted costs for AI API calls
+- [ ] Dedicated backend for remote sync with client key
+- [ ] Maybe cross-provider support??
+
 ## Overview
 
 Project Theta is a monorepo managed with Bun workspaces:
