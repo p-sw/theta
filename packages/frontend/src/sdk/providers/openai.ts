@@ -483,6 +483,14 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
               const err = (
                 event as { error?: { type?: string; message?: string } }
               ).error ?? { type: "unknown_error", message: "Unknown error" };
+              setStop({
+                type: "message",
+                reason: `[OpenAI] ${String(err.type ?? "error")}: ${String(
+                  err.message ?? "Streaming error"
+                )}`,
+                level: "error",
+              });
+              await result(async (prev) => prev.push({ type: "end" }));
               throw new ExpectedError(
                 response.status,
                 String(err.type ?? "error"),

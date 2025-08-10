@@ -443,6 +443,12 @@ export class AnthropicProvider extends API<
             try {
               const event = JSON.parse(data) as IAnthropicMessageResultData;
               if (isErrorBody(event)) {
+                setStop({
+                  type: "message",
+                  reason: `[Anthropic] ${event.error.type}: ${event.error.message}`,
+                  level: "error",
+                });
+                await result(async (prev) => prev.push({ type: "end" }));
                 throw new ExpectedError(
                   response.status,
                   event.error.type,
