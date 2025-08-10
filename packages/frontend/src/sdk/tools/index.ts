@@ -8,6 +8,7 @@ import type {
 } from "@/sdk/shared";
 import { OpenWeatherProvider } from "@/sdk/tools/providers/openweather";
 import { GoogleCalendarProvider } from "@/sdk/tools/providers/google-calendar";
+import { GoogleSheetsProvider } from "@/sdk/tools/providers/google-sheets";
 import { GoogleDriveProvider } from "@/sdk/tools/providers/google-drive";
 import { GoogleContactsProvider } from "@/sdk/tools/providers/google-contacts";
 import { GoogleDocsProvider } from "@/sdk/tools/providers/google-docs";
@@ -36,6 +37,7 @@ export class ToolRegistry implements IToolRegistry {
   constructor() {
     this.registerProvider(new OpenWeatherProvider() as never);
     this.registerProvider(new GoogleCalendarProvider() as never);
+    this.registerProvider(new GoogleSheetsProvider() as never);
     this.registerProvider(new GoogleDriveProvider() as never);
     this.registerProvider(new GoogleContactsProvider() as never);
     this.registerProvider(new GoogleDocsProvider() as never);
