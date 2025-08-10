@@ -21,6 +21,10 @@ import LucidePlus from "~icons/lucide/plus";
 import LucideSave from "~icons/lucide/save";
 import { dispatchEvent } from "@/lib/utils";
 import { SaveSessionItem } from "@/components/block/dialogs/save-session";
+import LucideUpload from "~icons/lucide/upload";
+import LucideDownload from "~icons/lucide/download";
+import { useRef } from "react";
+import { downloadLocalStorageExport, importLocalStorageFromFile } from "@/lib/import-export";
 
 export default function Menu() {
   const [theme, setTheme] = useTheme();
@@ -31,6 +35,7 @@ export default function Menu() {
   }, [theme]);
 
   const [saveSessionDialogOpen, setSaveSessionDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-16 bg-background/75 dark:bg-background/75 border-b backdrop-blur-sm flex flex-row justify-between items-center px-4">
@@ -80,8 +85,41 @@ export default function Menu() {
               <LucideSave className="size-4" /> Save this session
             </DropdownMenuItem>
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Import/Export</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={() => {
+                downloadLocalStorageExport();
+              }}
+            >
+              <LucideDownload className="size-4" /> Export Everything
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+            >
+              <LucideUpload className="size-4" /> Import Everything
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            await importLocalStorageFromFile(file, { merge: false });
+          } finally {
+            e.currentTarget.value = "";
+          }
+        }}
+      />
       <SaveSessionItem
         open={saveSessionDialogOpen}
         onOpenChange={setSaveSessionDialogOpen}
