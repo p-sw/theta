@@ -3,7 +3,11 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "compile": "bun run compile:x64;bun run compile:arm;bun run compile:win",
+    "compile:x64": "bun build --compile --minify --sourcemap --bytecode --target bun-linux-x64 --outfile dist/server-linux-x64 ./src/index.ts",
+    "compile:arm": "bun build --compile --minify --sourcemap --bytecode --target bun-linux-arm64 --outfile dist/server-linux-arm64 ./src/index.ts",
+    "compile:win": "bun build --compile --minify --sourcemap --bytecode --target bun-windows-x64 --outfile dist/server-windows-x64 ./src/index.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.3.3",
