@@ -13,6 +13,7 @@ import { GoogleDriveProvider } from "@/sdk/tools/providers/google-drive";
 import { GoogleContactsProvider } from "@/sdk/tools/providers/google-contacts";
 import { GoogleDocsProvider } from "@/sdk/tools/providers/google-docs";
 import { GoogleTasksProvider } from "@/sdk/tools/providers/google-tasks";
+import { GoogleGmailProvider } from "@/sdk/tools/providers/google-gmail";
 import { localStorage } from "@/lib/storage";
 import {
   TOOL_ENABLED_KEY,
@@ -37,6 +38,7 @@ export class ToolRegistry implements IToolRegistry {
   constructor() {
     this.registerProvider(new OpenWeatherProvider() as never);
     this.registerProvider(new GoogleCalendarProvider() as never);
+    this.registerProvider(new GoogleGmailProvider() as never);
     this.registerProvider(new GoogleSheetsProvider() as never);
     this.registerProvider(new GoogleDriveProvider() as never);
     this.registerProvider(new GoogleContactsProvider() as never);
