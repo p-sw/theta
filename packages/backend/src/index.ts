@@ -81,17 +81,9 @@ function upsertServerChanges(syncKey: string, changes: Record<string, { value: s
      ON CONFLICT(key_id, k) DO UPDATE SET v = excluded.v, updated_at = excluded.updated_at
      WHERE excluded.updated_at > sync_kv.updated_at`
   );
-  const del = db.query(
-    `DELETE FROM sync_kv WHERE key_id = $key AND k = $k AND updated_at < $at`
-  );
   db.transaction(() => {
     for (const [k, { value, updatedAt }] of Object.entries(changes)) {
-      if (value === null) {
-        // treat as deletion; keep only if client's timestamp is newer
-        del.run({ $key: syncKey, $k: k, $at: updatedAt });
-      } else {
-        upsert.run({ $key: syncKey, $k: k, $v: value, $at: updatedAt });
-      }
+      upsert.run({ $key: syncKey, $k: k, $v: value, $at: updatedAt });
     }
   })();
 }
