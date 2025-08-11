@@ -44,6 +44,16 @@ class StorageWrapper implements Storage {
     this.writeVersionMap(map);
   }
 
+  private removeVersion(key: string): void {
+    if (!this.isLocal()) return;
+    if (key === VERSION_KEY) return;
+    const map = this.readVersionMap();
+    if (key in map) {
+      delete map[key];
+      this.writeVersionMap(map);
+    }
+  }
+
   private getStorageType(): "local" | "session" {
     return this.storage === window.localStorage ? "local" : "session";
   }
@@ -121,7 +131,7 @@ class StorageWrapper implements Storage {
       const previousValue = this.storage.getItem(key);
       this.storage.removeItem(key);
       this.keys.delete(key);
-      this.touchVersion(key, now);
+      this.removeVersion(key);
       return this.getStorageEventDelta(key, previousValue);
     });
     const hadKeys = delta.length > 0;
@@ -164,7 +174,7 @@ class StorageWrapper implements Storage {
 
     if (hadKey) {
       this.keys.delete(key);
-      this.touchVersion(key);
+      this.removeVersion(key);
       const detail: IStorageChangeEventStorage = {
         ...this.getStorageEventBase(),
         hasRemoved: true,

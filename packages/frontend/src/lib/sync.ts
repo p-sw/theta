@@ -66,8 +66,12 @@ function applyServerUpdates(
   nextVersion: IVersionMap
 ) {
   for (const [key, { value }] of Object.entries(updates)) {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
+    if (value === null) {
+      localStorage.removeItem(key);
+      // version removal handled by StorageWrapper.removeItem -> removeVersion
+    } else {
+      localStorage.setItem(key, value);
+    }
   }
   localStorage.setItem(VERSION_KEY, JSON.stringify(nextVersion));
 }
