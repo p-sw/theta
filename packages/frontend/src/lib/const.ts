@@ -88,4 +88,4 @@ export const SYNC_EXCLUDED_KEYS = new Set<string>([
   SYNC_KEY_KEY,
 ]);
 // Default sync interval (ms)
-export const SYNC_INTERVAL_MS = 15000;
+export const SYNC_INTERVAL_MS = 5000;
