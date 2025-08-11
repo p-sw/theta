@@ -14,12 +14,16 @@ function assertIsObject(value: unknown): asserts value is Record<string, unknown
 }
 
 import { localStorage } from "@/lib/storage";
+import { SYNC_EXCLUDED_KEYS, VERSION_KEY } from "@/lib/const";
 
 export function buildLocalStorageExport(): LocalStorageExportV1 {
   const data: Record<string, string> = {};
   for (const key of localStorage.getKeys()) {
     const value = localStorage.getItem(key);
-    if (value !== null) data[key] = value;
+    if (value === null) continue;
+    // Always include VERSION_KEY for consistent seeding; skip other excluded keys
+    if (key !== VERSION_KEY && SYNC_EXCLUDED_KEYS.has(key)) continue;
+    data[key] = value;
   }
   return {
     schema: EXPORT_SCHEMA,

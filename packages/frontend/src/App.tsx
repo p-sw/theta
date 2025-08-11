@@ -5,9 +5,10 @@ import Chat from "@/page/Chat";
 import Sessions from "@/page/Sessions";
 import Setting from "@/page/Setting";
 import { Toaster } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatContext } from "@/page/context/Chat";
 import { useHyperInstance } from "@/lib/utils";
+import { startSyncDaemon } from "@/lib/sync";
 
 function App() {
   const [path] = usePath();
@@ -32,6 +33,10 @@ function App() {
     return emptySessionId;
   });
   const [isPermanentSession, setIsPermanentSession] = useState(false);
+
+  useEffect(() => {
+    startSyncDaemon();
+  }, []);
 
   return (
     <>
