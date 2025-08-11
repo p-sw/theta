@@ -96,7 +96,7 @@ function upsertServerChanges(
 }
 
 const app = new Elysia()
-  .use(cors()) // Add CORS support
+  .use(cors({ origin: process.env.FRONTEND_HOST ?? true })) // Add CORS support
   .post(
     "/proxy",
     async ({ body }) => {
