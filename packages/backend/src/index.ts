@@ -54,13 +54,17 @@ function getServerVersion(syncKey: string): VersionMap {
   return map;
 }
 
-function getServerValues(syncKey: string, keys: string[]): Record<string, { value: string | null; updatedAt: number }> {
+function getServerValues(
+  syncKey: string,
+  keys: string[]
+): Record<string, { value: string | null; updatedAt: number }> {
   if (keys.length === 0) return {};
   const placeholders = keys.map((_, i) => `?`).join(",");
   const stmt = db.query(
     `SELECT k, v, updated_at FROM sync_kv WHERE key_id = ? AND k IN (${placeholders})`
   );
-  const result: Record<string, { value: string | null; updatedAt: number }> = {};
+  const result: Record<string, { value: string | null; updatedAt: number }> =
+    {};
   for (const row of stmt.iterate(syncKey, ...keys) as Iterable<{
     k: string;
     v: string | null;
@@ -75,7 +79,10 @@ function getServerValues(syncKey: string, keys: string[]): Record<string, { valu
   return result;
 }
 
-function upsertServerChanges(syncKey: string, changes: Record<string, { value: string | null; updatedAt: number }>) {
+function upsertServerChanges(
+  syncKey: string,
+  changes: Record<string, { value: string | null; updatedAt: number }>
+) {
   const upsert = db.query(
     `INSERT INTO sync_kv (key_id, k, v, updated_at) VALUES ($key, $k, $v, $at)
      ON CONFLICT(key_id, k) DO UPDATE SET v = excluded.v, updated_at = excluded.updated_at
@@ -139,9 +146,15 @@ const app = new Elysia()
   .post(
     "/sync/generate",
     ({ body }) => {
-      const { data, version } = body as { data: Record<string, string>; version: VersionMap };
+      const { data, version } = body as {
+        data: Record<string, string>;
+        version: VersionMap;
+      };
       const key = generateKey();
-      db.run(`INSERT INTO sync_keys (key, created_at) VALUES (?, ?)`, key, Date.now());
+      db.run(`INSERT INTO sync_keys (key, created_at) VALUES (?, ?)`, [
+        key,
+        Date.now(),
+      ]);
       const insert = db.query(
         `INSERT OR REPLACE INTO sync_kv (key_id, k, v, updated_at) VALUES ($key, $k, $v, $at)`
       );
@@ -164,11 +177,14 @@ const app = new Elysia()
   .post(
     "/sync/diff",
     ({ body, set }) => {
-      const { syncKey, version } = body as { syncKey: string; version: VersionMap };
+      const { syncKey, version } = body as {
+        syncKey: string;
+        version: VersionMap;
+      };
       // Validate that syncKey exists
-      const exists = db.query(`SELECT key FROM sync_keys WHERE key = ?`).get(syncKey) as
-        | { key: string }
-        | undefined;
+      const exists = db
+        .query(`SELECT key FROM sync_keys WHERE key = ?`)
+        .get(syncKey) as { key: string } | undefined;
       if (!exists) {
         set.status = 404;
         return { error: "Sync key not found" };
@@ -200,9 +216,9 @@ const app = new Elysia()
         syncKey: string;
         changes: Record<string, { value: string | null; updatedAt: number }>;
       };
-      const exists = db.query(`SELECT key FROM sync_keys WHERE key = ?`).get(syncKey) as
-        | { key: string }
-        | undefined;
+      const exists = db
+        .query(`SELECT key FROM sync_keys WHERE key = ?`)
+        .get(syncKey) as { key: string } | undefined;
       if (!exists) {
         set.status = 404;
         return { error: "Sync key not found" };
