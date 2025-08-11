@@ -1,9 +1,10 @@
-import { Separator } from "@/components/ui/separator";
 import type { IMessageRequest } from "@/sdk/shared";
 import Markdown from "react-markdown";
 import { dispatchEvent } from "@/lib/utils";
 import { CHECKOUT_MESSAGE_EVENT } from "@/lib/const";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export function UserMessage({
   sessionId,
@@ -15,27 +16,31 @@ export function UserMessage({
   messages: IMessageRequest[];
 }) {
   return (
-    <div className="flex flex-col items-end gap-2 w-full pb-8">
-      <Separator className="relative mb-2">
+    <div
+      className="group flex flex-col items-end gap-2 w-full pb-8"
+      data-message-role="user"
+    >
+      <Separator className="relative mb-4">
         <div className="bg-background dark:bg-background rounded-md px-2 absolute right-4 inset-y-0 flex flex-row justify-end items-center gap-1">
           <span className="text-sm text-muted-foreground">User</span>
         </div>
       </Separator>
       {/* message content with checkout button */}
-      <div className="group relative flex flex-col items-end justify-start prose dark:prose-invert w-full max-w-full">
-        {/* Message body */}
-        {messages.map((message, index) => {
-          if (message.type === "text") {
-            return (
-              <Markdown key={`${sessionId}-${messageId}-${index}`}>
-                {message.text}
-              </Markdown>
-            );
-          }
-          return null;
-        })}
-
-        {/* Checkout button (appears below messages) */}
+      <div className="flex flex-col items-end w-full">
+        <Card className="w-full max-w-md gap-4">
+          <CardContent>
+            {messages.map((message, index) => {
+              if (message.type === "text") {
+                return (
+                  <Markdown key={`${sessionId}-${messageId}-${index}`}>
+                    {message.text}
+                  </Markdown>
+                );
+              }
+              return null;
+            })}
+          </CardContent>
+        </Card>
         <Button
           variant="link"
           size="sm"

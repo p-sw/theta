@@ -18,24 +18,35 @@ export function AssistantMessage({
   messageId,
   messages,
   stop,
-  isLastMessage,
 }: {
   sessionId: string;
   messageId: string;
   messages: IMessageResult[];
   stop?: SessionTurnsResponseStop;
-  isLastMessage: boolean;
 }) {
   return (
-    <div className="flex flex-col items-start gap-2 w-full mb-8">
-      <Separator className="relative mb-2">
+    <div
+      className={`flex flex-col items-start gap-2 w-full mb-8 ${
+        messages.length === 0
+          ? "not-last:[&:is(:where([data-message-role='assistant'],[data-message-role='tool'])+[data-message-role='assistant'])]:hidden"
+          : ""
+      }`}
+      data-message-role="assistant"
+    >
+      <Separator className="relative mb-2 [&:is(:where([data-message-role='assistant'],[data-message-role='tool'])+[data-message-role='assistant']>*)]:hidden block">
         <div className="bg-background dark:bg-background rounded-md px-2 absolute left-4 inset-y-0 flex flex-row justify-end items-center gap-1">
           <span className="text-sm text-muted-foreground">Assistant</span>
         </div>
       </Separator>
       <div className="flex flex-col items-start justify-start gap-4 w-full">
-        {messages.length === 0 && isLastMessage && (
-          <LucideLoaderCircle className="w-4 h-4 animate-spin" />
+        {messages.length === 0 && (
+          <LucideLoaderCircle
+            className={`w-4 h-4 animate-spin hidden ${
+              !stop
+                ? "[&:is(:where([data-message-role='assistant']):last-child_*)]:block"
+                : ""
+            }`}
+          />
         )}
         {messages.map((message, index) => {
           if (message.type === "text") {
