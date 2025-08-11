@@ -1,4 +1,7 @@
-import { SettingsSection, SettingsSubSection } from "@/components/layout/settings";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "@/components/layout/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +13,10 @@ import { enableSyncWithExisting, generateNewSyncKey } from "@/lib/sync";
 import { toast } from "sonner";
 
 export function SyncSettings() {
-  const [enabledStr, setEnabledStr] = useStorage<string>(SYNC_ENABLED_KEY, "false");
+  const [enabledStr, setEnabledStr] = useStorage<string>(
+    SYNC_ENABLED_KEY,
+    "false"
+  );
   const enabled = enabledStr === "true";
   const [syncKey, setSyncKey] = useStorage<string>(SYNC_KEY_KEY, "");
   const [existingKeyInput, setExistingKeyInput] = useState("");
@@ -41,9 +47,9 @@ export function SyncSettings() {
       return;
     }
     try {
-      await enableSyncWithExisting(key);
       setSyncKey(key);
       setEnabledStr("true");
+      await enableSyncWithExisting();
       toast.success("Synced from existing key and enabled");
     } catch (e) {
       console.error(e);
@@ -69,7 +75,10 @@ export function SyncSettings() {
     >
       <SettingsSubSection title="Status">
         <div className="flex items-center gap-3">
-          <Switch checked={enabled} onCheckedChange={(c) => setEnabledStr(c ? "true" : "false")} />
+          <Switch
+            checked={enabled}
+            onCheckedChange={(c) => setEnabledStr(c ? "true" : "false")}
+          />
           <Label>{enabled ? "Enabled" : "Disabled"}</Label>
         </div>
       </SettingsSubSection>
@@ -110,7 +119,8 @@ export function SyncSettings() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Keep this key private. Anyone with this key can read and update your synced data.
+              Keep this key private. Anyone with this key can read and update
+              your synced data.
             </p>
           </div>
         </SettingsSubSection>
