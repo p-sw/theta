@@ -1,4 +1,3 @@
-import { proxyfetch } from "@/lib/proxy";
 import {
   SYNC_ENABLED_KEY,
   SYNC_EXCLUDED_KEYS,
@@ -40,10 +39,10 @@ export async function generateNewSyncKey(): Promise<string> {
     if (v !== null) data[key] = v;
   }
 
-  const resp = await proxyfetch(new URL("/sync/generate", import.meta.env.VITE_BACKEND_URL), {
+  const resp = await fetch(new URL("/sync/generate", import.meta.env.VITE_BACKEND_URL), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: { data, version },
+    body: JSON.stringify({ data, version }),
   });
   if (!resp.ok) throw new Error("Failed to generate sync key");
   const json = (await resp.json()) as SyncGenerateResponse;
@@ -52,10 +51,10 @@ export async function generateNewSyncKey(): Promise<string> {
 
 export async function enableSyncWithExisting(syncKey: string): Promise<void> {
   const version: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
-  const resp = await proxyfetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
+  const resp = await fetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: { syncKey, version } satisfies SyncDiffRequest,
+    body: JSON.stringify({ syncKey, version } satisfies SyncDiffRequest),
   });
   if (!resp.ok) throw new Error("Failed to fetch initial sync diff");
   const json = (await resp.json()) as SyncDiffResponse;
@@ -81,10 +80,10 @@ async function runDiffCycle(): Promise<void> {
   const localVersion: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
 
   // 1) Fetch server-side newer keys
-  const diffResp = await proxyfetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
+  const diffResp = await fetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: { syncKey, version: localVersion } satisfies SyncDiffRequest,
+    body: JSON.stringify({ syncKey, version: localVersion } satisfies SyncDiffRequest),
   });
   if (!diffResp.ok) return; // silent failure; try again later
   const serverDiff = (await diffResp.json()) as SyncDiffResponse;
@@ -107,10 +106,10 @@ async function runDiffCycle(): Promise<void> {
     }
   }
   if (Object.keys(changes).length > 0) {
-    const uploadResp = await proxyfetch(new URL("/sync/upload", import.meta.env.VITE_BACKEND_URL), {
+    const uploadResp = await fetch(new URL("/sync/upload", import.meta.env.VITE_BACKEND_URL), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: { syncKey, changes } satisfies SyncUploadRequest,
+      body: JSON.stringify({ syncKey, changes } satisfies SyncUploadRequest),
     });
     if (uploadResp.ok) {
       const merged = (await uploadResp.json()) as { version: IVersionMap };
