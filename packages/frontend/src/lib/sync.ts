@@ -31,9 +31,7 @@ interface SyncUploadRequest {
 
 export async function generateNewSyncKey(): Promise<string> {
   // prepare full snapshot of current localStorage excluding excluded keys, plus version map
-  const version: IVersionMap = JSON.parse(
-    localStorage.getItem(VERSION_KEY) ?? "{}"
-  );
+  const version: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
   const data: Record<string, string> = {};
   for (const key of localStorage.getKeys()) {
     if (SYNC_EXCLUDED_KEYS.has(key)) continue;
@@ -41,21 +39,26 @@ export async function generateNewSyncKey(): Promise<string> {
     if (v !== null) data[key] = v;
   }
 
-  const resp = await fetch(
-    new URL("/sync/generate", import.meta.env.VITE_BACKEND_URL),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data, version }),
-    }
-  );
+  const resp = await fetch(new URL("/sync/generate", import.meta.env.VITE_BACKEND_URL), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data, version }),
+  });
   if (!resp.ok) throw new Error("Failed to generate sync key");
   const json = (await resp.json()) as SyncGenerateResponse;
   return json.syncKey;
 }
 
-export async function enableSyncWithExisting(): Promise<void> {
-  await runDiffCycle();
+export async function enableSyncWithExisting(syncKey: string): Promise<void> {
+  const version: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
+  const resp = await fetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ syncKey, version } satisfies SyncDiffRequest),
+  });
+  if (!resp.ok) throw new Error("Failed to fetch initial sync diff");
+  const json = (await resp.json()) as SyncDiffResponse;
+  applyServerUpdates(json.updates, json.version);
 }
 
 function applyServerUpdates(
@@ -73,31 +76,19 @@ function applyServerUpdates(
   localStorage.setItem(VERSION_KEY, JSON.stringify(nextVersion));
 }
 
-let diffCycleLock = false;
 async function runDiffCycle(): Promise<void> {
-  if (diffCycleLock) return;
-  diffCycleLock = true;
-
   const enabled = localStorage.getItem(SYNC_ENABLED_KEY) === "true";
   const syncKey = localStorage.getItem(SYNC_KEY_KEY);
   if (!enabled || !syncKey) return;
 
-  const localVersion: IVersionMap = JSON.parse(
-    localStorage.getItem(VERSION_KEY) ?? "{}"
-  );
+  const localVersion: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
 
   // 1) Fetch server-side newer keys
-  const diffResp = await fetch(
-    new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        syncKey,
-        version: localVersion,
-      } satisfies SyncDiffRequest),
-    }
-  );
+  const diffResp = await fetch(new URL("/sync/diff", import.meta.env.VITE_BACKEND_URL), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ syncKey, version: localVersion } satisfies SyncDiffRequest),
+  });
   if (!diffResp.ok) return; // silent failure; try again later
   const serverDiff = (await diffResp.json()) as SyncDiffResponse;
   if (Object.keys(serverDiff.updates).length > 0) {
@@ -105,11 +96,8 @@ async function runDiffCycle(): Promise<void> {
   }
 
   // 2) Upload client-side newer keys
-  const nextLocalVersion: IVersionMap = JSON.parse(
-    localStorage.getItem(VERSION_KEY) ?? "{}"
-  );
-  const changes: Record<string, { value: string | null; updatedAt: number }> =
-    {};
+  const nextLocalVersion: IVersionMap = JSON.parse(localStorage.getItem(VERSION_KEY) ?? "{}");
+  const changes: Record<string, { value: string | null; updatedAt: number }> = {};
   // Compute keys where local version is newer than server version
   for (const [key, updatedAt] of Object.entries(nextLocalVersion)) {
     if (SYNC_EXCLUDED_KEYS.has(key)) continue;
@@ -122,21 +110,16 @@ async function runDiffCycle(): Promise<void> {
     }
   }
   if (Object.keys(changes).length > 0) {
-    const uploadResp = await fetch(
-      new URL("/sync/upload", import.meta.env.VITE_BACKEND_URL),
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ syncKey, changes } satisfies SyncUploadRequest),
-      }
-    );
+    const uploadResp = await fetch(new URL("/sync/upload", import.meta.env.VITE_BACKEND_URL), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ syncKey, changes } satisfies SyncUploadRequest),
+    });
     if (uploadResp.ok) {
       const merged = (await uploadResp.json()) as { version: IVersionMap };
       localStorage.setItem(VERSION_KEY, JSON.stringify(merged.version));
     }
   }
-
-  diffCycleLock = false;
 }
 
 let intervalId: number | null = null;
