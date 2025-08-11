@@ -12,7 +12,7 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 - Chat interface with session management
 - Pluggable AI provider system
 - Pluggable function call system (close to mcp, but not implemented yet)
-- **Client-first system**
+- **Client-first system** with remote sync support
 - **Mobile-first design**
 - Super easy to self-host
 
@@ -101,7 +101,8 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 - [x] Rate limit handling (not properly tested)
 - [ ] Token counting & Context window handling
 - [ ] Predicted costs for AI API calls
-- [ ] Dedicated backend for remote sync with client key
+- [x] Remote sync with client key
+- [ ] Multi-agent system
 - [ ] Daily news search bot??
 - [ ] Maybe cross-provider support??
 
