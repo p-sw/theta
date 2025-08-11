@@ -269,6 +269,8 @@ export default function Chat() {
   }, [setIsPermanentSession, setNewSession]);
   const handleSaveSession = useCallback(
     (e: CustomEvent<SaveSessionForm & { sessionId?: string }>) => {
+      // make this page use localStorage
+      setIsPermanentSession(true);
       // copy from sessionStorage to localStorage
       localStorage.setItem(
         SESSION_STORAGE_KEY(e.detail.sessionId ?? sessionId),
@@ -278,8 +280,6 @@ export default function Chat() {
           updatedAt: Date.now(),
         })
       );
-      // make this page use localStorage
-      setIsPermanentSession(true);
       // remove from sessionStorage
       sessionStorage.removeItem(SESSION_STORAGE_KEY(sessionId));
     },
