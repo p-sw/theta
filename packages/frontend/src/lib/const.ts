@@ -74,3 +74,18 @@ export const SAVE_SESSION_EVENT = "save-session";
 export const SYSTEM_PROMPTS_KEY = "system-prompts";
 
 export const CHECKOUT_MESSAGE_EVENT = "checkout-message";
+
+// Additions: Sync & Versioning
+export const VERSION_KEY = "version";
+export type IVersionMap = Record<string, number>; // key -> updatedAt (ms)
+
+export const SYNC_ENABLED_KEY = "sync-enabled";
+export const SYNC_KEY_KEY = "sync-key";
+// Exclude these keys from sync payloads
+export const SYNC_EXCLUDED_KEYS = new Set<string>([
+  VERSION_KEY,
+  SYNC_ENABLED_KEY,
+  SYNC_KEY_KEY,
+]);
+// Default sync interval (ms)
+export const SYNC_INTERVAL_MS = 15000;

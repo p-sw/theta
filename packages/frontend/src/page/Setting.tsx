@@ -5,6 +5,7 @@ import { usePath } from "@/lib/storage-hooks.ts";
 import { PATHS } from "@/lib/const.ts";
 import LucideArrowLeft from "~icons/lucide/arrow-left";
 import { Tools } from "@/components/block/settings/tools";
+import { SyncSettings } from "@/components/block/settings/sync";
 
 export default function Setting() {
   const [_, setPath] = usePath();
@@ -25,6 +26,7 @@ export default function Setting() {
         </Button>
         <Appearance />
         <Providers />
+        <SyncSettings />
         <Tools />
       </div>
     </main>

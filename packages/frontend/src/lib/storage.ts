@@ -7,12 +7,42 @@ import {
   type StorageChangeEventBody,
   type StorageChangeEventAllBody,
   type StorageChangeEventKeyBody,
+  VERSION_KEY,
+  type IVersionMap,
 } from "@/lib/const";
 import { dispatchEvent } from "@/lib/utils";
 
 class StorageWrapper implements Storage {
   private storage: Storage;
   private keys: Set<string>;
+
+  private isLocal(): boolean {
+    return this.storage === window.localStorage;
+  }
+
+  private readVersionMap(): IVersionMap {
+    if (!this.isLocal()) return {};
+    try {
+      const raw = this.storage.getItem(VERSION_KEY);
+      return raw ? (JSON.parse(raw) as IVersionMap) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private writeVersionMap(map: IVersionMap): void {
+    if (!this.isLocal()) return;
+    // Avoid recursive touch when writing VERSION_KEY itself by using native storage
+    this.storage.setItem(VERSION_KEY, JSON.stringify(map));
+  }
+
+  private touchVersion(key: string, timestamp?: number): void {
+    if (!this.isLocal()) return;
+    if (key === VERSION_KEY) return; // never version VERSION_KEY itself
+    const map = this.readVersionMap();
+    map[key] = timestamp ?? Date.now();
+    this.writeVersionMap(map);
+  }
 
   private getStorageType(): "local" | "session" {
     return this.storage === window.localStorage ? "local" : "session";
@@ -71,6 +101,10 @@ class StorageWrapper implements Storage {
   constructor(storage: Storage) {
     this.storage = storage;
     this.keys = new Set(Object.keys(storage));
+    // Ensure version map exists for local storage
+    if (this.isLocal() && this.storage.getItem(VERSION_KEY) === null) {
+      this.storage.setItem(VERSION_KEY, JSON.stringify({} satisfies IVersionMap));
+    }
   }
 
   get length(): number {
@@ -78,11 +112,16 @@ class StorageWrapper implements Storage {
   }
 
   clear(): void {
-    const delta = Array.from(this.keys).map((key) => {
+    const now = Date.now();
+    const keysToClear = Array.from(this.keys).filter(
+      (k) => !(this.isLocal() && k === VERSION_KEY)
+    );
+    const delta = keysToClear.map((key) => {
       // do not fire event
       const previousValue = this.storage.getItem(key);
       this.storage.removeItem(key);
       this.keys.delete(key);
+      this.touchVersion(key, now);
       return this.getStorageEventDelta(key, previousValue);
     });
     const hadKeys = delta.length > 0;
@@ -125,6 +164,7 @@ class StorageWrapper implements Storage {
 
     if (hadKey) {
       this.keys.delete(key);
+      this.touchVersion(key);
       const detail: IStorageChangeEventStorage = {
         ...this.getStorageEventBase(),
         hasRemoved: true,
@@ -148,6 +188,7 @@ class StorageWrapper implements Storage {
 
     const isNewKey = !this.keys.has(key);
     this.storage.setItem(key, value);
+    this.touchVersion(key);
 
     if (isNewKey) {
       this.keys.add(key);
