@@ -102,7 +102,13 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 - [ ] Token counting & Context window handling
 - [ ] Predicted costs for AI API calls
 - [x] Remote sync with client key
-- [ ] Multi-agent system
+- [ ] Agent system
+  - Creating multiple agent
+    - Separate page for configuration
+    - Custom system prompt for agent
+    - Toolsets for agent
+    - Enable/disable calling from chat
+  - Calling agent like tools from chat (thread-like design?)
 - [ ] Daily news search bot??
 - [ ] Maybe cross-provider support??
 
