@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { SaveSessionForm } from "@/components/block/dialogs/save-session";
 import { ChatContext } from "./context/Chat";
+import { ConnectivityContext } from "./context/Connectivity";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
@@ -50,6 +51,7 @@ export default function Chat() {
     isPermanentSession,
     setIsPermanentSession,
   } = useContext(ChatContext);
+  const { isOnline } = useContext(ConnectivityContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
   const { scrollContainerRef, triggerAutoScroll } =
     useAutoScroll<HTMLDivElement>();
@@ -114,7 +116,8 @@ export default function Chat() {
         !effectiveModelId ||
         !effectiveProvider ||
         data.message.trim() === "" ||
-        isStreaming
+        isStreaming ||
+        !isOnline
       )
         return;
 
@@ -180,6 +183,7 @@ export default function Chat() {
       sessionId,
       isPermanentSession,
       setSession,
+      isOnline
     ]
   );
 
@@ -200,6 +204,7 @@ export default function Chat() {
     );
     if (
       autoContinue &&
+      isOnline &&
       usedTools.length > 0 &&
       usedTools.every((tool) => tool.done) &&
       session.turns.at(-1)!.type === "tool"
@@ -239,6 +244,7 @@ export default function Chat() {
     provider,
     modelId,
     session,
+    isOnline,
   ]);
 
   const handlePause = useCallback(() => {
@@ -524,7 +530,7 @@ export default function Chat() {
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <Tooltip>
+                  <Tooltip open={!isOnline ? true : undefined}>
                     <TooltipTrigger asChild>
                       <Button
                         type="submit"
@@ -536,7 +542,8 @@ export default function Chat() {
                           return (
                             !effectiveModelId ||
                             !effectiveProvider ||
-                            !form.watch("message").trim()
+                            !form.watch("message").trim() ||
+                            !isOnline
                           );
                         })()}
                       >
@@ -544,7 +551,7 @@ export default function Chat() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Send</p>
+                      <p>{isOnline ? "Send" : "You are in offline mode"}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
