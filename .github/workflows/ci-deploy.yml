@@ -40,4 +40,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/frontend
+          packageManager: bun
           command: deploy --assets dist --name ${{ vars.CF_WORKER_NAME }}
