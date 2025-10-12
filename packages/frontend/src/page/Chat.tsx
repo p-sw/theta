@@ -37,11 +37,14 @@ import {
 } from "@/components/ui/tooltip";
 import type { SaveSessionForm } from "@/components/block/dialogs/save-session";
 import { ChatContext } from "./context/Chat";
+import { ConnectivityContext } from "./context/Connectivity";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
 import { toolRegistry } from "@/sdk/tools";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import LucideWifiOff from "~icons/lucide/wifi-off";
 
 export default function Chat() {
   const {
@@ -50,6 +53,7 @@ export default function Chat() {
     isPermanentSession,
     setIsPermanentSession,
   } = useContext(ChatContext);
+  const { isOnline } = useContext(ConnectivityContext);
   const [[provider, modelId], setModelId] = useSelectedModel();
   const { scrollContainerRef, triggerAutoScroll } =
     useAutoScroll<HTMLDivElement>();
@@ -114,7 +118,8 @@ export default function Chat() {
         !effectiveModelId ||
         !effectiveProvider ||
         data.message.trim() === "" ||
-        isStreaming
+        isStreaming ||
+        !isOnline
       )
         return;
 
@@ -180,6 +185,7 @@ export default function Chat() {
       sessionId,
       isPermanentSession,
       setSession,
+      isOnline
     ]
   );
 
@@ -200,6 +206,7 @@ export default function Chat() {
     );
     if (
       autoContinue &&
+      isOnline &&
       usedTools.length > 0 &&
       usedTools.every((tool) => tool.done) &&
       session.turns.at(-1)!.type === "tool"
@@ -239,6 +246,7 @@ export default function Chat() {
     provider,
     modelId,
     session,
+    isOnline,
   ]);
 
   const handlePause = useCallback(() => {
@@ -511,7 +519,14 @@ export default function Chat() {
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              <div className="flex flex-row-reverse justify-between">
+              <div className="flex flex-col gap-2">
+                {!isOnline && (
+                  <Alert className="flex items-center gap-2">
+                    <LucideWifiOff />
+                    <AlertDescription>You are in offline mode</AlertDescription>
+                  </Alert>
+                )}
+                <div className="flex flex-row-reverse justify-between">
                 {isStreaming ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -526,25 +541,28 @@ export default function Chat() {
                 ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        type="submit"
-                        size="icon"
-                        disabled={(() => {
-                          const effectiveProvider =
-                            session.provider ?? provider;
-                          const effectiveModelId = session.modelId ?? modelId;
-                          return (
-                            !effectiveModelId ||
-                            !effectiveProvider ||
-                            !form.watch("message").trim()
-                          );
-                        })()}
-                      >
-                        <LucideSend className="size-4" />
-                      </Button>
+                      <div className="inline-flex">
+                        <Button
+                          type="submit"
+                          size="icon"
+                          disabled={(() => {
+                            const effectiveProvider =
+                              session.provider ?? provider;
+                            const effectiveModelId = session.modelId ?? modelId;
+                            return (
+                              !effectiveModelId ||
+                              !effectiveProvider ||
+                              !form.watch("message").trim() ||
+                              !isOnline
+                            );
+                          })()}
+                        >
+                          <LucideSend className="size-4" />
+                        </Button>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Send</p>
+                      <p>{isOnline ? "Send" : "You are in offline mode"}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -555,6 +573,7 @@ export default function Chat() {
                     setModelId={setModelId}
                   />
                 )}
+                </div>
               </div>
             </TextareaContainer>
           </form>
