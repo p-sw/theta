@@ -32,37 +32,6 @@ export function usePath() {
     { temp: true }
   );
 
-  // Sync initial URL to state and initialize history without adding a new entry
-  useEffect(() => {
-    try {
-      const urlPath = window.location.pathname;
-      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
-
-      if (storedPath !== targetPath) {
-        setStoredPath(targetPath);
-      }
-      if (!window.history.state || window.history.state.path !== targetPath) {
-        window.history.replaceState({ path: targetPath }, "", targetPath);
-      }
-    } catch {
-      // ignore history errors in non-browser environments
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setStoredPath]);
-
-  // Update state when user navigates with browser back/forward
-  useEffect(() => {
-    const onPopState = () => {
-      const urlPath = window.location.pathname;
-      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
-      if (targetPath !== storedPath) {
-        setStoredPath(targetPath);
-      }
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [storedPath, setStoredPath]);
-
   const setPath = useCallback(
     (next: string | ((prev: string) => string)) => {
       const nextPath =
@@ -77,6 +46,31 @@ export function usePath() {
     },
     [storedPath, setStoredPath]
   );
+
+  // Initial DOM load: ensure state reflects current URL via setPath
+  useEffect(() => {
+    try {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+      setPath(targetPath);
+    } catch {
+      // ignore history errors in non-browser environments
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update state when user navigates with browser back/forward
+  useEffect(() => {
+    const onPopState = () => {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+      if (targetPath !== storedPath) {
+        setStoredPath(targetPath);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [storedPath, setStoredPath]);
 
   return [storedPath, setPath] as const;
 }
