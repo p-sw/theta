@@ -539,27 +539,25 @@ export default function Chat() {
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <Tooltip>
+                  <Tooltip open={!isOnline ? true : undefined}>
                     <TooltipTrigger asChild>
-                      <div className="inline-flex">
-                        <Button
-                          type="submit"
-                          size="icon"
-                          disabled={(() => {
-                            const effectiveProvider =
-                              session.provider ?? provider;
-                            const effectiveModelId = session.modelId ?? modelId;
-                            return (
-                              !effectiveModelId ||
-                              !effectiveProvider ||
-                              !form.watch("message").trim() ||
-                              !isOnline
-                            );
-                          })()}
-                        >
-                          <LucideSend className="size-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        type="submit"
+                        size="icon"
+                        disabled={(() => {
+                          const effectiveProvider =
+                            session.provider ?? provider;
+                          const effectiveModelId = session.modelId ?? modelId;
+                          return (
+                            !effectiveModelId ||
+                            !effectiveProvider ||
+                            !form.watch("message").trim() ||
+                            !isOnline
+                          );
+                        })()}
+                      >
+                        <LucideSend className="size-4" />
+                      </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{isOnline ? "Send" : "You are in offline mode"}</p>
