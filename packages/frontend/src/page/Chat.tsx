@@ -43,8 +43,6 @@ import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
 import { toolRegistry } from "@/sdk/tools";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import LucideWifiOff from "~icons/lucide/wifi-off";
 
 export default function Chat() {
   const {
@@ -519,14 +517,7 @@ export default function Chat() {
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              <div className="flex flex-col gap-2">
-                {!isOnline && (
-                  <Alert className="flex items-center gap-2">
-                    <LucideWifiOff />
-                    <AlertDescription>You are in offline mode</AlertDescription>
-                  </Alert>
-                )}
-                <div className="flex flex-row-reverse justify-between">
+              <div className="flex flex-row-reverse justify-between">
                 {isStreaming ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -571,7 +562,6 @@ export default function Chat() {
                     setModelId={setModelId}
                   />
                 )}
-                </div>
               </div>
             </TextareaContainer>
           </form>
