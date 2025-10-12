@@ -3,20 +3,71 @@ import {
   type IApiKey,
   type ITheme,
   MODELS,
-  PATH,
   PATHS,
   SELECTED_MODEL,
   THEME,
 } from "@/lib/const";
 import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { sessionStorage } from "@/lib/storage";
 
 export function usePath() {
-  return useStorage<string>(PATH, PATHS.CHAT, undefined, {
-    temp: true,
-  });
+  // Determine initial path from URL to avoid first-render mismatch
+  const allowed = new Set<string>(Object.values(PATHS));
+  const initialUrlPath = (() => {
+    try {
+      return window.location.pathname;
+    } catch {
+      return PATHS.CHAT;
+    }
+  })();
+  const fallbackPath = allowed.has(initialUrlPath) ? initialUrlPath : PATHS.CHAT;
+
+  // In-memory state for current path (no persistence)
+  const [storedPath, setStoredPath] = useState<string>(fallbackPath);
+
+  const setPath = useCallback(
+    (next: string | ((prev: string) => string)) => {
+      const nextPath =
+        typeof next === "function" ? (next as (prev: string) => string)(storedPath) : next;
+      if (nextPath === storedPath) return;
+      setStoredPath(nextPath);
+      try {
+        window.history.pushState({ path: nextPath }, "", nextPath);
+      } catch {
+        // ignore history errors in non-browser environments
+      }
+    },
+    [storedPath, setStoredPath]
+  );
+
+  // Initial DOM load: ensure state reflects current URL via setPath
+  useEffect(() => {
+    try {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+      setPath(targetPath);
+    } catch {
+      // ignore history errors in non-browser environments
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update state when user navigates with browser back/forward
+  useEffect(() => {
+    const onPopState = () => {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+      if (targetPath !== storedPath) {
+        setStoredPath(targetPath);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [storedPath, setStoredPath]);
+
+  return [storedPath, setPath] as const;
 }
 
 export function useTheme() {
