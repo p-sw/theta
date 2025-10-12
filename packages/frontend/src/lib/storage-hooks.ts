@@ -3,14 +3,13 @@ import {
   type IApiKey,
   type ITheme,
   MODELS,
-  PATH,
   PATHS,
   SELECTED_MODEL,
   THEME,
 } from "@/lib/const";
-import { useStorage, useStorageKey, useStore } from "@/lib/utils";
+import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { sessionStorage } from "@/lib/storage";
 
 export function usePath() {
@@ -25,8 +24,8 @@ export function usePath() {
   })();
   const fallbackPath = allowed.has(initialUrlPath) ? initialUrlPath : PATHS.CHAT;
 
-  // Use in-memory store for path (no localStorage/sessionStorage persistence)
-  const [storedPath, setStoredPath] = useStore<string>(PATH, fallbackPath);
+  // In-memory state for current path (no persistence)
+  const [storedPath, setStoredPath] = useState<string>(fallbackPath);
 
   const setPath = useCallback(
     (next: string | ((prev: string) => string)) => {
