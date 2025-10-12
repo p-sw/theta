@@ -10,13 +10,75 @@ import {
 } from "@/lib/const";
 import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { sessionStorage } from "@/lib/storage";
 
 export function usePath() {
-  return useStorage<string>(PATH, PATHS.CHAT, undefined, {
-    temp: true,
-  });
+  // Determine initial path from URL to avoid first-render mismatch
+  const allowed = new Set<string>(Object.values(PATHS));
+  const initialUrlPath = (() => {
+    try {
+      return window.location.pathname;
+    } catch {
+      return PATHS.CHAT;
+    }
+  })();
+  const fallbackPath = allowed.has(initialUrlPath) ? initialUrlPath : PATHS.CHAT;
+
+  const [storedPath, setStoredPath] = useStorage<string>(
+    PATH,
+    fallbackPath,
+    undefined,
+    { temp: true }
+  );
+
+  // Sync initial URL to state and initialize history without adding a new entry
+  useEffect(() => {
+    try {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+
+      if (storedPath !== targetPath) {
+        setStoredPath(targetPath);
+      }
+      if (!window.history.state || window.history.state.path !== targetPath) {
+        window.history.replaceState({ path: targetPath }, "", targetPath);
+      }
+    } catch {
+      // ignore history errors in non-browser environments
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setStoredPath]);
+
+  // Update state when user navigates with browser back/forward
+  useEffect(() => {
+    const onPopState = () => {
+      const urlPath = window.location.pathname;
+      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
+      if (targetPath !== storedPath) {
+        setStoredPath(targetPath);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [storedPath, setStoredPath]);
+
+  const setPath = useCallback(
+    (next: string | ((prev: string) => string)) => {
+      const nextPath =
+        typeof next === "function" ? (next as (prev: string) => string)(storedPath) : next;
+      if (nextPath === storedPath) return;
+      setStoredPath(nextPath);
+      try {
+        window.history.pushState({ path: nextPath }, "", nextPath);
+      } catch {
+        // ignore history errors in non-browser environments
+      }
+    },
+    [storedPath, setStoredPath]
+  );
+
+  return [storedPath, setPath] as const;
 }
 
 export function useTheme() {
