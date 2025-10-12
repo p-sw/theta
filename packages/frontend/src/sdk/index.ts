@@ -7,8 +7,8 @@ import {
   type IApiKey,
 } from "@/lib/const";
 import { hyperidInstance } from "@/lib/utils";
-import { AnthropicProvider } from "@/sdk/providers/anthropic";
-import { OpenAIProvider } from "@/sdk/providers/openai";
+import type { AnthropicProvider } from "@/sdk/providers/anthropic";
+import type { OpenAIProvider } from "@/sdk/providers/openai";
 import type {
   API,
   IMessageRequest,
@@ -21,7 +21,6 @@ import type {
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
-import { toolRegistry } from "@/sdk/tools";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -63,6 +62,7 @@ export class AISDK {
       if (this.anthropic) {
         this.anthropic.setApiKey(apiKey.anthropic);
       } else {
+        const { AnthropicProvider } = await import("@/sdk/providers/anthropic");
         this.anthropic = new AnthropicProvider(apiKey.anthropic);
       }
     } else {
@@ -74,6 +74,7 @@ export class AISDK {
       if (this.openai) {
         this.openai.setApiKey(apiKey.openai);
       } else {
+        const { OpenAIProvider } = await import("@/sdk/providers/openai");
         this.openai = new OpenAIProvider(apiKey.openai);
       }
     } else {
@@ -224,6 +225,7 @@ export class AISDK {
       if (providerInstance === null) {
         throw new Error(`Provider ${provider} not supported`);
       }
+      const { toolRegistry } = await import("@/sdk/tools");
       await providerInstance.message(
         session.turns.slice(0, -1),
         model,

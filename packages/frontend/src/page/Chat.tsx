@@ -41,7 +41,14 @@ import { ConnectivityContext } from "./context/Connectivity";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
-import { toolRegistry } from "@/sdk/tools";
+// toolRegistry is loaded lazily to keep initial bundle small
+let _toolRegistryPromise: Promise<typeof import("@/sdk/tools")> | null = null;
+function getToolRegistry() {
+  if (!_toolRegistryPromise) {
+    _toolRegistryPromise = import("@/sdk/tools");
+  }
+  return _toolRegistryPromise;
+}
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 
 export default function Chat() {
@@ -403,6 +410,7 @@ export default function Chat() {
           console.log("Executing granted tool:", toolTurn.toolName);
           // Small delay to ensure the UI has rendered
           try {
+            const { toolRegistry } = await getToolRegistry();
             const toolResult = await toolRegistry.execute(
               toolTurn.toolName,
               JSON.parse(toolTurn.requestContent)

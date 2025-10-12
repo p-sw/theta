@@ -1,11 +1,8 @@
 import Menu from "@/components/block/menu";
 import { PATHS, SESSION_STORAGE_ID } from "@/lib/const";
 import { usePath, useSessionKeys } from "@/lib/storage-hooks";
-import Chat from "@/page/Chat";
-import Sessions from "@/page/Sessions";
-import Setting from "@/page/Setting";
 import { Toaster } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { ChatContext } from "@/page/context/Chat";
 import { useHyperInstance } from "@/lib/utils";
 import { startSyncDaemon } from "@/lib/sync";
@@ -51,12 +48,19 @@ function App() {
       >
         <Toaster expand richColors />
         <Menu />
-        {path === PATHS.CHAT && <Chat />}
-        {path === PATHS.SETTINGS && <Setting />}
-        {path === PATHS.SESSIONS && <Sessions />}
+        <Suspense>
+          {path === PATHS.CHAT && <Chat />}
+          {path === PATHS.SETTINGS && <Setting />}
+          {path === PATHS.SESSIONS && <Sessions />}
+        </Suspense>
       </ChatContext>
     </>
   );
 }
 
 export default App;
+
+// Lazy-loaded page components to enable code-splitting on build
+const Chat = lazy(() => import("@/page/Chat"));
+const Sessions = lazy(() => import("@/page/Sessions"));
+const Setting = lazy(() => import("@/page/Setting"));
