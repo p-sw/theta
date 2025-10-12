@@ -95,7 +95,7 @@ Modern AI chat application monorepo with a React + TypeScript frontend and a Bun
 
 ## TODO
 
-- [ ] Actual routing & file splitting for build
+- [x] Actual routing & (file splitting for build)
 - [ ] Separate sdks to dedicated package
 - [ ] Remote MCP server support through backend (supporting Stdio)
 - [x] Rate limit handling (not properly tested)
