@@ -8,7 +8,13 @@ import type {
 } from "@/sdk/shared";
 import { clsx, type ClassValue } from "clsx";
 import hyperid from "hyperid";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -226,4 +232,56 @@ export function parseSessionDisplayables(sessionTurns: SessionTurns) {
     }
   }
   return turns;
+}
+
+// Simple global in-memory store with subscription, for ephemeral app state
+const globalStore = new Map<string, unknown>();
+const storeSubscribers = new Map<string, Set<() => void>>();
+
+function subscribeToKey(key: string, listener: () => void): () => void {
+  let set = storeSubscribers.get(key);
+  if (!set) {
+    set = new Set();
+    storeSubscribers.set(key, set);
+  }
+  set.add(listener);
+  return () => {
+    set!.delete(listener);
+  };
+}
+
+function notifyKey(key: string): void {
+  const set = storeSubscribers.get(key);
+  if (!set) return;
+  for (const listener of set) listener();
+}
+
+export function useStore<T>(key: string, initialValue: T): [T, (next: T | ((prev: T) => T)) => void] {
+  // Ensure initial value is seeded once
+  if (!globalStore.has(key)) {
+    globalStore.set(key, initialValue);
+  }
+
+  const getSnapshot = useCallback(() => {
+    return (globalStore.get(key) as T) ?? initialValue;
+  }, [key, initialValue]);
+
+  const value = useSyncExternalStore(
+    useCallback((cb) => subscribeToKey(key, cb), [key]),
+    getSnapshot,
+    getSnapshot
+  );
+
+  const setValue = useCallback(
+    (next: T | ((prev: T) => T)) => {
+      const prev = (globalStore.get(key) as T) ?? initialValue;
+      const nextValue = typeof next === "function" ? (next as (p: T) => T)(prev) : next;
+      if (Object.is(prev, nextValue)) return;
+      globalStore.set(key, nextValue);
+      notifyKey(key);
+    },
+    [key, initialValue]
+  );
+
+  return [value, setValue];
 }

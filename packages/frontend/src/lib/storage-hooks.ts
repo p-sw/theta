@@ -8,7 +8,7 @@ import {
   SELECTED_MODEL,
   THEME,
 } from "@/lib/const";
-import { useStorage, useStorageKey } from "@/lib/utils";
+import { useStorage, useStorageKey, useStore } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
 import { useCallback, useEffect } from "react";
 import { sessionStorage } from "@/lib/storage";
@@ -25,12 +25,8 @@ export function usePath() {
   })();
   const fallbackPath = allowed.has(initialUrlPath) ? initialUrlPath : PATHS.CHAT;
 
-  const [storedPath, setStoredPath] = useStorage<string>(
-    PATH,
-    fallbackPath,
-    undefined,
-    { temp: true }
-  );
+  // Use in-memory store for path (no localStorage/sessionStorage persistence)
+  const [storedPath, setStoredPath] = useStore<string>(PATH, fallbackPath);
 
   const setPath = useCallback(
     (next: string | ((prev: string) => string)) => {
