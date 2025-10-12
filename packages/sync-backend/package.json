@@ -1,0 +1,16 @@
+{
+  "name": "sync-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "compile": "bun build --compile --minify --sourcemap --bytecode --target bun-linux-x64 --outfile dist/sync-server-linux-x64 ./src/index.ts"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.3.3",
+    "elysia": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "module": "src/index.js"
+}
