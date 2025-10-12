@@ -32,6 +32,10 @@ export function usePath() {
       const nextPath =
         typeof next === "function" ? (next as (prev: string) => string)(storedPath) : next;
       if (nextPath === storedPath) return;
+      if (!allowed.has(nextPath)) {
+        console.warn("Trying to load unknown page, ignoring")
+	return
+      }
       setStoredPath(nextPath);
       try {
         window.history.pushState({ path: nextPath }, "", nextPath);
