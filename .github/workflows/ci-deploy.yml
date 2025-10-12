@@ -42,3 +42,4 @@ jobs:
           workingDirectory: packages/frontend
           packageManager: bun
           command: deploy --assets dist --name ${{ vars.CF_WORKER_NAME }}
+          wranglerVersion: "4.42.2"
