@@ -1,4 +1,4 @@
-import Menu from "@/components/block/menu";
+import Loading from "@/page/Loading";
 import { PATHS, SESSION_STORAGE_ID } from "@/lib/const";
 import { usePath, useSessionKeys } from "@/lib/storage-hooks";
 import { Toaster } from "sonner";
@@ -47,8 +47,8 @@ function App() {
         }}
       >
         <Toaster expand richColors />
-        <Menu />
-        <Suspense>
+        <Suspense fallback={<Loading />}>
+          <Menu />
           {path === PATHS.CHAT && <Chat />}
           {path === PATHS.SETTINGS && <Setting />}
           {path === PATHS.SESSIONS && <Sessions />}
@@ -61,6 +61,7 @@ function App() {
 export default App;
 
 // Lazy-loaded page components to enable code-splitting on build
+const Menu = lazy(() => import("@/components/block/menu"));
 const Chat = lazy(() => import("@/page/Chat"));
 const Sessions = lazy(() => import("@/page/Sessions"));
 const Setting = lazy(() => import("@/page/Setting"));
