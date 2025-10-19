@@ -7,6 +7,12 @@ import { ChatContext } from "@/page/context/Chat";
 import { useHyperInstance } from "@/lib/utils";
 import { startSyncDaemon } from "@/lib/sync";
 
+// Lazy-loaded page components to enable code-splitting on build
+const Menu = lazy(() => import("@/components/block/menu"));
+const Chat = lazy(() => import("@/page/Chat"));
+const Sessions = lazy(() => import("@/page/Sessions"));
+const Setting = lazy(() => import("@/page/Setting"));
+
 function App() {
   const [path] = usePath();
   const hyperInstance = useHyperInstance();
@@ -59,9 +65,3 @@ function App() {
 }
 
 export default App;
-
-// Lazy-loaded page components to enable code-splitting on build
-const Menu = lazy(() => import("@/components/block/menu"));
-const Chat = lazy(() => import("@/page/Chat"));
-const Sessions = lazy(() => import("@/page/Sessions"));
-const Setting = lazy(() => import("@/page/Setting"));
