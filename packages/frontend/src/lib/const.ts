@@ -89,3 +89,6 @@ export const SYNC_EXCLUDED_KEYS = new Set<string>([
 ]);
 // Default sync interval (ms)
 export const SYNC_INTERVAL_MS = 5000;
+
+// Developer Mode
+export const DEVELOPER_MODE_KEY = "developer-mode";

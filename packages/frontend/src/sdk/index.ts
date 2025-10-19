@@ -99,12 +99,12 @@ export class AISDK {
         }
       }
 
-      // Merge: keep existing flags (e.g. disabled) for models that still exist
+      // Merge: prefer latest model metadata, but preserve user flags (e.g. disabled)
       const mergedModels: IModelInfo[] = fetchedModels.map((model) => {
         const prev = prevModels.find(
           (m) => m.id === model.id && m.provider === model.provider
         );
-        return prev ?? model;
+        return prev ? { ...model, disabled: prev.disabled } : model;
       });
 
       const next = JSON.stringify(mergedModels);
@@ -234,6 +234,15 @@ export class AISDK {
           saveSession();
         },
         toolRegistry.getEnabledTools(),
+        (usage) => {
+          const current = session.tokenUsage ?? { inputTokens: 0, outputTokens: 0 };
+          session.tokenUsage = {
+            inputTokens: current.inputTokens + (usage.inputTokens ?? 0),
+            outputTokens: current.outputTokens + (usage.outputTokens ?? 0),
+          };
+          // Persist updated counters but keep throttling
+          saveSession();
+        },
         abortController.signal
       );
     } catch (e) {

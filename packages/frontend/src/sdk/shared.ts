@@ -60,9 +60,10 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     ) => Promise<void>, // prev -> new
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage?: (usage: ISessionTokenUsage) => void,
     signal?: AbortSignal
   ): Promise<void>;
-  abstract getModels(modelId: string): Promise<IModelInfo[]>;
+  abstract getModels(): Promise<IModelInfo[]>;
   abstract getDefaultModelConfig(modelId: string): object;
   abstract getModelConfigSchema(
     modelId: string
@@ -224,6 +225,8 @@ export interface IModelInfo {
   id: string;
   displayName: string;
   disabled: boolean;
+  /** The maximum context window size (tokens) for this model */
+  contextWindow: number;
 }
 
 export type SessionTurnsRequest = {
@@ -312,6 +315,10 @@ export type ISessionBase = {
    */
   provider?: IProvider;
   modelId?: string;
+  /**
+   * Cumulative token usage counters for this session (input and output tokens).
+   */
+  tokenUsage?: ISessionTokenUsage;
 };
 
 export type PermanentSession = ISessionBase & {
@@ -320,3 +327,8 @@ export type PermanentSession = ISessionBase & {
 export type TemporarySession = ISessionBase & {
   title: string;
 };
+
+export interface ISessionTokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}

@@ -11,6 +11,7 @@ import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
 import { useCallback, useEffect, useState } from "react";
 import { sessionStorage } from "@/lib/storage";
+import { DEVELOPER_MODE_KEY } from "@/lib/const";
 
 export function usePath() {
   // Determine initial path from URL to avoid first-render mismatch
@@ -122,4 +123,8 @@ export function useSessionCleanup() {
       }
     }
   }, []);
+}
+
+export function useDeveloperMode() {
+  return useStorage<boolean>(DEVELOPER_MODE_KEY, false);
 }

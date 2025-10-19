@@ -8,7 +8,7 @@ import {
   useEventListener,
   useStorage,
 } from "@/lib/utils";
-import { useSelectedModel } from "@/lib/storage-hooks";
+import { useDeveloperMode, useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -20,6 +20,7 @@ import {
   SAVE_SESSION_EVENT,
   SESSION_STORAGE_KEY,
   CHECKOUT_MESSAGE_EVENT,
+  MODELS,
 } from "@/lib/const";
 import type {
   PermanentSession,
@@ -76,6 +77,7 @@ export default function Chat() {
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [autoContinue, setAutoContinue] = useState(false);
+  const [developerMode] = useDeveloperMode();
 
   const form = useForm({
     defaultValues: {
@@ -459,6 +461,13 @@ export default function Chat() {
         <ScrollArea className="h-full overflow-y-auto">
           <ScrollAreaViewport ref={scrollContainerRef}>
             <div className="h-full p-8 flex flex-col">
+              {developerMode && (
+                <DeveloperInfoBanner
+                  provider={session.provider ?? provider}
+                  modelId={session.modelId ?? modelId}
+                  sessionTokenUsage={session.tokenUsage}
+                />
+              )}
               {displaySession.map((message) => {
                 if (Array.isArray(message)) {
                   return message.map((tool) => (
@@ -567,6 +576,52 @@ export default function Chat() {
           </form>
         </Form>
       </main>
+    </div>
+  );
+}
+
+function DeveloperInfoBanner({
+  provider,
+  modelId,
+  sessionTokenUsage,
+}: {
+  provider?: "anthropic" | "openai";
+  modelId?: string | undefined;
+  sessionTokenUsage?: { inputTokens: number; outputTokens: number };
+}) {
+  const [[currentProvider, currentModelId]] = useSelectedModel();
+  const effectiveProvider = provider ?? currentProvider;
+  const effectiveModelId = modelId ?? currentModelId;
+  // get model info from MODELS storage instead of selected model
+  const [allModels] = useStorage(
+    MODELS,
+    [] as { provider: "anthropic" | "openai"; id: string; contextWindow: number }[]
+  );
+  const modelInfo = allModels.find(
+    (m) => m.id === effectiveModelId && m.provider === effectiveProvider
+  );
+
+  if (!effectiveProvider || !effectiveModelId) return null;
+  const input = sessionTokenUsage?.inputTokens ?? 0;
+  const output = sessionTokenUsage?.outputTokens ?? 0;
+  const ctx = modelInfo?.contextWindow;
+
+  return (
+    <div className="mb-4 text-xs text-muted-foreground">
+      <span className="font-medium">Developer Mode:</span>{" "}
+      <span>
+        Provider {effectiveProvider}, Model {effectiveModelId}
+      </span>
+      <span className="mx-2">|</span>
+      <span>
+        Tokens input {input}, output {output}
+      </span>
+      {typeof ctx === "number" && (
+        <>
+          <span className="mx-2">|</span>
+          <span>Context window {ctx.toLocaleString()} tokens</span>
+        </>
+      )}
     </div>
   );
 }

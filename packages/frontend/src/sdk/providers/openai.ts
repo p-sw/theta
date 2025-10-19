@@ -17,6 +17,7 @@ import type {
   SessionTurns,
   IToolMetaJson,
   IMessageResultToolUse,
+  ISessionTokenUsage,
 } from "@/sdk/shared";
 import {
   API,
@@ -359,6 +360,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
       id: model.id,
       displayName: model.displayName,
       disabled: false,
+      contextWindow: model.contextWindow,
     }));
   }
 
@@ -370,6 +372,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage?: (usage: ISessionTokenUsage) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const modelInfo = this.getModelInfo(model)!;
@@ -513,6 +516,21 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                 break;
               }
               case "response.completed": {
+                // OpenAI usage is provided in the final response event
+                const usage = (event as {
+                  response?: {
+                    usage?: {
+                      input_tokens?: number;
+                      output_tokens?: number;
+                    };
+                  };
+                }).response?.usage;
+                if (usage) {
+                  onUsage?.({
+                    inputTokens: usage.input_tokens ?? 0,
+                    outputTokens: usage.output_tokens ?? 0,
+                  });
+                }
                 setStop({
                   type: "log",
                   message: "Assistant has finished its turn.",

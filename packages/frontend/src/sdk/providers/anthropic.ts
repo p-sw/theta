@@ -15,6 +15,7 @@ import type {
   SessionTurns,
   IToolMetaJson,
   IMessageResultToolUse,
+  ISessionTokenUsage,
 } from "@/sdk/shared";
 import {
   API,
@@ -339,6 +340,7 @@ export class AnthropicProvider extends API<
       id: model.id,
       displayName: model.displayName,
       disabled: false,
+      contextWindow: model.contextWindow,
     }));
   }
 
@@ -350,6 +352,7 @@ export class AnthropicProvider extends API<
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage?: (usage: ISessionTokenUsage) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const messages = this.translateSession(session);
@@ -426,6 +429,8 @@ export class AnthropicProvider extends API<
     let buffer = "";
     // actual index of content block in message result
     const contentBlockMap: Record<number, number> = {};
+    // Track cumulative usage for this message per Anthropic spec
+    const usage: ISessionTokenUsage = { inputTokens: 0, outputTokens: 0 };
 
     try {
       while (true) {
@@ -459,6 +464,17 @@ export class AnthropicProvider extends API<
                 // no-op
               } else if (event.type === "message_start") {
                 result(async (prev) => prev.push({ type: "start" }));
+                // usage may be present on message_start per Anthropic streaming
+                const usageStart = (event as unknown as {
+                  message?: { usage?: { input_tokens?: number; output_tokens?: number } };
+                }).message?.usage;
+                if (usageStart) {
+                  if (typeof usageStart.input_tokens === "number")
+                    usage.inputTokens += usageStart.input_tokens;
+                  if (typeof usageStart.output_tokens === "number")
+                    usage.outputTokens += usageStart.output_tokens;
+                  onUsage?.({ ...usage });
+                }
               } else if (event.type === "message_stop") {
                 result(async (prev) => prev.push({ type: "end" }));
               } else if (event.type === "message_delta") {
@@ -513,6 +529,15 @@ export class AnthropicProvider extends API<
                       level: "error",
                     });
                     break;
+                }
+                // Aggregate token usage from delta events when present
+                const u = (event as IAnthropicMessageResultMessageDelta).usage;
+                if (u) {
+                  if (typeof u.input_tokens === "number")
+                    usage.inputTokens += u.input_tokens;
+                  if (typeof u.output_tokens === "number")
+                    usage.outputTokens += u.output_tokens;
+                  onUsage?.({ ...usage });
                 }
               } else if (event.type === "content_block_start") {
                 result(async (prev) => {
