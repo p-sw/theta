@@ -9,6 +9,7 @@ import {
 import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import { OpenAIProvider } from "@/sdk/providers/openai";
+import { toolRegistry } from "@/sdk/tools";
 import type {
   API,
   IMessageRequest,
@@ -21,7 +22,6 @@ import type {
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
-import { toolRegistry } from "@/sdk/tools";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
