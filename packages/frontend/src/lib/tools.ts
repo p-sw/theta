@@ -10,13 +10,7 @@ import {
 import { dispatchEvent, useStorage } from "@/lib/utils";
 import type { IToolMetaJson, IToolProviderMeta, IConfigSchema } from "@/sdk/shared";
 import type { ZodSchema } from "zod";
-let _toolRegistryPromise: Promise<typeof import("@/sdk/tools")> | null = null;
-function getToolRegistry() {
-  if (!_toolRegistryPromise) {
-    _toolRegistryPromise = import("@/sdk/tools");
-  }
-  return _toolRegistryPromise;
-}
+import { toolRegistry } from "@/sdk/tools";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useToolProvidersMeta() {
@@ -25,14 +19,12 @@ export function useToolProvidersMeta() {
   >([]);
 
   const updateProviders = useCallback(() => {
-    getToolRegistry().then(({ toolRegistry }) => {
-      setProviders(
-        toolRegistry.getProviders().map((provider) => ({
-          ...provider,
-          available: toolRegistry.isProviderAvailable(provider.id),
-        }))
-      );
-    });
+    setProviders(
+      toolRegistry.getProviders().map((provider) => ({
+        ...provider,
+        available: toolRegistry.isProviderAvailable(provider.id),
+      }))
+    );
   }, []);
 
   useEffect(() => {
@@ -63,14 +55,7 @@ export function useToolProvidersConfig(providerId: string) {
   );
 
   useEffect(() => {
-    let mounted = true;
-    getToolRegistry().then(({ toolRegistry }) => {
-      if (!mounted) return;
-      setProviderConfig(toolRegistry.getProviderConfig(providerId));
-    });
-    return () => {
-      mounted = false;
-    };
+    setProviderConfig(toolRegistry.getProviderConfig(providerId));
   }, [providerId]);
 
   return [
@@ -89,9 +74,7 @@ export function useTools(providerId: string) {
   const [tools, setTools] = useState<IToolMetaJson[]>([]);
 
   useEffect(() => {
-    getToolRegistry().then(({ toolRegistry }) => {
-      setTools(toolRegistry.getAll(providerId));
-    });
+    setTools(toolRegistry.getAll(providerId));
   }, [providerId]);
 
   return tools;
@@ -206,15 +189,8 @@ export function useToolInformation(providerIdToolId: string): {
   const [provider, setProvider] = useState<IToolProviderMeta | undefined>();
   const [tool, setTool] = useState<IToolMetaJson | undefined>();
   useEffect(() => {
-    let mounted = true;
-    getToolRegistry().then(({ toolRegistry }) => {
-      if (!mounted) return;
-      setProvider(toolRegistry.getProviders().find((p) => p.id === providerId));
-      setTool(toolRegistry.get(providerId, toolId));
-    });
-    return () => {
-      mounted = false;
-    };
+    setProvider(toolRegistry.getProviders().find((p) => p.id === providerId));
+    setTool(toolRegistry.get(providerId, toolId));
   }, [providerId, toolId]);
 
   return {
