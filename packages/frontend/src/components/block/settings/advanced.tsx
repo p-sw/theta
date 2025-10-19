@@ -15,9 +15,7 @@ export function Advanced() {
         <div className="flex items-center justify-between border rounded-md p-2">
           <div className="flex flex-col">
             <span className="text-sm font-medium">Developer Mode</span>
-            <span className="text-xs text-muted-foreground">
-              Show token usage and model context window in chat
-            </span>
+            <span className="text-xs text-muted-foreground">Shows developer stuff</span>
           </div>
           <Switch checked={developerMode} onCheckedChange={setDeveloperMode} />
         </div>

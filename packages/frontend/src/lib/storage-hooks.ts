@@ -126,5 +126,12 @@ export function useSessionCleanup() {
 }
 
 export function useDeveloperMode() {
-  return useStorage<boolean>(DEVELOPER_MODE_KEY, false);
+  return useStorage<boolean>(
+    DEVELOPER_MODE_KEY,
+    false,
+    {
+      get: (value) => value === "true",
+      set: (value) => String(Boolean(value)),
+    }
+  );
 }
