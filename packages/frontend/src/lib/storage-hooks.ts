@@ -126,12 +126,22 @@ export function useSessionCleanup() {
 }
 
 export function useDeveloperMode() {
-  return useStorage<boolean>(
+  const [devObj, setDevObj] = useStorage<{ developer: boolean }>(
     DEVELOPER_MODE_KEY,
-    false,
-    {
-      get: (value) => value === "true",
-      set: (value) => String(Boolean(value)),
-    }
+    { developer: false }
   );
+
+  const setDeveloper = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setDevObj((prev) => ({
+        developer:
+          typeof next === "function"
+            ? (next as (p: boolean) => boolean)(prev.developer)
+            : Boolean(next),
+      }));
+    },
+    [setDevObj]
+  );
+
+  return [devObj.developer, setDeveloper] as const;
 }
