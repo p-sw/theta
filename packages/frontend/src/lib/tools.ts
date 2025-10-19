@@ -8,8 +8,7 @@ import {
   TOOL_PROVIDER_SEPARATOR,
 } from "@/lib/const";
 import { dispatchEvent, useStorage } from "@/lib/utils";
-import type { IToolMetaJson, IToolProviderMeta, IConfigSchema } from "@/sdk/shared";
-import type { ZodSchema } from "zod";
+import type { IToolMetaJson, IToolProviderMeta } from "@/sdk/shared";
 import { toolRegistry } from "@/sdk/tools";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -45,13 +44,13 @@ export function useToolProvidersMeta() {
 type Param<T> = T extends (...args: (infer U)[]) => unknown ? U : never;
 
 export function useToolProvidersConfig(providerId: string) {
-  const [providerConfig, setProviderConfig] = useState<
-    [object, Record<string, IConfigSchema>, ZodSchema<object>] | null
-  >(null);
+  const [providerConfig, setProviderConfig] = useState(
+    toolRegistry.getProviderConfig(providerId)
+  );
 
   const [config, setConfig] = useStorage(
     TOOL_PROVIDER_CONFIG_KEY(providerId),
-    providerConfig?.[0] ?? {}
+    providerConfig[0]
   );
 
   useEffect(() => {
@@ -65,8 +64,8 @@ export function useToolProvidersConfig(providerId: string) {
       dispatchEvent(TOOL_PROVIDER_CONFIG_ANY_KEY, {});
       dispatchEvent(TOOL_PROVIDER_CONFIG_KEY(providerId), {});
     },
-    providerConfig?.[1] as Record<string, IConfigSchema>,
-    providerConfig?.[2] as ZodSchema<object>,
+    providerConfig[1],
+    providerConfig[2],
   ] as const;
 }
 
@@ -186,12 +185,14 @@ export function useToolInformation(providerIdToolId: string): {
     [providerIdToolId]
   );
 
-  const [provider, setProvider] = useState<IToolProviderMeta | undefined>();
-  const [tool, setTool] = useState<IToolMetaJson | undefined>();
-  useEffect(() => {
-    setProvider(toolRegistry.getProviders().find((p) => p.id === providerId));
-    setTool(toolRegistry.get(providerId, toolId));
-  }, [providerId, toolId]);
+  const provider = useMemo(
+    () => toolRegistry.getProviders().find((p) => p.id === providerId),
+    [providerId]
+  );
+  const tool = useMemo(
+    () => toolRegistry.get(providerId, toolId),
+    [providerId, toolId]
+  );
 
   return {
     provider,
