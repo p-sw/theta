@@ -14,7 +14,7 @@ const Sessions = lazy(() => import("@/page/Sessions"));
 const Setting = lazy(() => import("@/page/Setting"));
 
 function App() {
-  const [path, setPath] = usePath();
+  const [path] = usePath();
   const hyperInstance = useHyperInstance();
   const sessionKeys = useSessionKeys({ sessionStorage: true });
   const [sessionId, setSessionId] = useState<string>(() => {
