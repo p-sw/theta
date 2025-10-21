@@ -3,64 +3,18 @@ import {
   type IApiKey,
   type ITheme,
   MODELS,
-  PATHS,
   SELECTED_MODEL,
   THEME,
 } from "@/lib/const";
 import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext } from "react";
 import { sessionStorage } from "@/lib/storage";
+import { PathContext } from "@/page/context/Path";
 
 export function usePath() {
-  // Determine initial path from URL to avoid first-render mismatch
-  const allowed = new Set<string>(Object.values(PATHS));
-  const initialUrlPath = (() => {
-    try {
-      return window.location.pathname;
-    } catch {
-      return PATHS.CHAT;
-    }
-  })();
-  const fallbackPath = allowed.has(initialUrlPath) ? initialUrlPath : PATHS.CHAT;
-
-  // In-memory state for current path (no persistence)
-  const [storedPath, setStoredPath] = useState<string>(fallbackPath);
-
-  const setPath = useCallback(
-    (next: string | ((prev: string) => string)) => {
-      const nextPath =
-        typeof next === "function" ? (next as (prev: string) => string)(storedPath) : next;
-      if (nextPath === storedPath) return;
-      if (!allowed.has(nextPath)) {
-        console.warn("Trying to load unknown page, ignoring")
-	return
-      }
-      setStoredPath(nextPath);
-      try {
-        window.history.pushState({ path: nextPath }, "", nextPath);
-      } catch {
-        // ignore history errors in non-browser environments
-      }
-    },
-    [storedPath, setStoredPath]
-  );
-
-
-  // Update state when user navigates with browser back/forward
-  useEffect(() => {
-    const onPopState = () => {
-      const urlPath = window.location.pathname;
-      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
-      if (targetPath !== storedPath) {
-        setStoredPath(targetPath);
-      }
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [storedPath, setStoredPath]);
-
-  return [storedPath, setPath] as const;
+  const { path, setPath } = useContext(PathContext);
+  return [path, setPath] as const;
 }
 
 export function useTheme() {

@@ -4,11 +4,14 @@ import "./index.css";
 import "@catppuccin/highlightjs/css/catppuccin-frappe.css";
 import App from "./App.tsx";
 import { ConnectivityProvider } from "@/page/context/Connectivity";
+import { PathProvider } from "@/page/context/Path";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConnectivityProvider>
-      <App />
+      <PathProvider>
+        <App />
+      </PathProvider>
     </ConnectivityProvider>
   </StrictMode>,
 );
