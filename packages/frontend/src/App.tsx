@@ -41,15 +41,6 @@ function App() {
     startSyncDaemon();
   }, []);
 
-  // After DOM load, ensure app path reflects current URL
-  useEffect(() => {
-    try {
-      setPath(window.location.pathname);
-    } catch {
-      // ignore in non-browser environments
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>
@@ -63,8 +54,10 @@ function App() {
         }}
       >
         <Toaster expand richColors />
-        <Suspense fallback={<Loading />}>
+        <Suspense fallback={<div />}> 
           <Menu />
+        </Suspense>
+        <Suspense fallback={<Loading />}>
           {path === PATHS.CHAT && <Chat />}
           {path === PATHS.SETTINGS && <Setting />}
           {path === PATHS.SESSIONS && <Sessions />}
