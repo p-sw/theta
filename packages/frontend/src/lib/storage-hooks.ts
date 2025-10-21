@@ -46,17 +46,6 @@ export function usePath() {
     [storedPath, setStoredPath]
   );
 
-  // Initial DOM load: ensure state reflects current URL via setPath
-  useEffect(() => {
-    try {
-      const urlPath = window.location.pathname;
-      const targetPath = allowed.has(urlPath) ? urlPath : PATHS.CHAT;
-      setPath(targetPath);
-    } catch {
-      // ignore history errors in non-browser environments
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Update state when user navigates with browser back/forward
   useEffect(() => {

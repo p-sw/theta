@@ -14,7 +14,7 @@ const Sessions = lazy(() => import("@/page/Sessions"));
 const Setting = lazy(() => import("@/page/Setting"));
 
 function App() {
-  const [path] = usePath();
+  const [path, setPath] = usePath();
   const hyperInstance = useHyperInstance();
   const sessionKeys = useSessionKeys({ sessionStorage: true });
   const [sessionId, setSessionId] = useState<string>(() => {
@@ -39,6 +39,16 @@ function App() {
 
   useEffect(() => {
     startSyncDaemon();
+  }, []);
+
+  // After DOM load, ensure app path reflects current URL
+  useEffect(() => {
+    try {
+      setPath(window.location.pathname);
+    } catch {
+      // ignore in non-browser environments
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
