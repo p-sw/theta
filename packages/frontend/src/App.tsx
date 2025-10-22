@@ -41,6 +41,7 @@ function App() {
     startSyncDaemon();
   }, []);
 
+
   return (
     <>
       <ChatContext
@@ -53,8 +54,10 @@ function App() {
         }}
       >
         <Toaster expand richColors />
-        <Suspense fallback={<Loading />}>
+        <Suspense fallback={<div />}> 
           <Menu />
+        </Suspense>
+        <Suspense fallback={<Loading />}>
           {path === PATHS.CHAT && <Chat />}
           {path === PATHS.SETTINGS && <Setting />}
           {path === PATHS.SESSIONS && <Sessions />}
