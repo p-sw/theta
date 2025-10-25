@@ -324,14 +324,10 @@ export class AISDK {
   }
 
   getModelContextWindow(provider: IProvider, modelId: string) {
-    if (!this[provider]) return undefined;
-    // Providers implement getModelContextWindow
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const api = this[provider] as any;
-    if (typeof api.getModelContextWindow === "function") {
-      return api.getModelContextWindow(modelId) as number | undefined;
+    if (!this[provider]) {
+      throw new Error(`Provider ${provider} not supported`);
     }
-    return undefined;
+    return this[provider].getModelContextWindow(modelId);
   }
 }
 
