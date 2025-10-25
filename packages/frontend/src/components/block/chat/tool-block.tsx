@@ -40,6 +40,7 @@ import {
   ScrollAreaViewport,
   ScrollBar,
 } from "@/components/ui/scroll-area";
+import { useAdvanced } from "@/lib/storage-hooks";
 
 function prettyJson(json: string) {
   try {
@@ -60,6 +61,7 @@ export function ToolUseCard({
 }) {
   const { provider, tool } = useToolInformation(message.toolName);
   const isWhitelisted = useIsToolWhitelisted(message.toolName);
+  const [advanced] = useAdvanced();
 
   return (
     <Card className="w-full mb-8" data-message-role="tool">
@@ -89,25 +91,7 @@ export function ToolUseCard({
           {provider?.displayName ?? "Unknown provider"}
         </CardDescription>
         <CardAction className="self-center gap-2 items-center hidden sm:flex">
-          {message.done ? (
-            message.granted ? (
-              message.isError ? (
-                <p className="text-destructive text-sm inline-block">
-                  Execution failed
-                </p>
-              ) : (
-                <p className="text-green-500 text-sm inline-block">Done</p>
-              )
-            ) : (
-              <p className="text-destructive text-sm inline-block">
-                Execution rejected
-              </p>
-            )
-          ) : message.granted ? (
-            <p className="text-muted-foreground text-sm inline-block">
-              Executing...
-            </p>
-          ) : (
+          {!message.done && !message.granted ? (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -126,42 +110,71 @@ export function ToolUseCard({
                 <TooltipContent>Reject</TooltipContent>
               </Tooltip>
             </>
+          ) : (
+            advanced.showToolDetails && (
+              <>
+                {message.done ? (
+                  message.granted ? (
+                    message.isError ? (
+                      <p className="text-destructive text-sm inline-block">
+                        Execution failed
+                      </p>
+                    ) : (
+                      <p className="text-green-500 text-sm inline-block">Done</p>
+                    )
+                  ) : (
+                    <p className="text-destructive text-sm inline-block">
+                      Execution rejected
+                    </p>
+                  )
+                ) : (
+                  <p className="text-muted-foreground text-sm inline-block">
+                    Executing...
+                  </p>
+                )}
+                <DetailDialog
+                  provider={provider}
+                  tool={tool}
+                  message={message}
+                  onGrant={onGrant}
+                  onReject={onReject}
+                >
+                  <Button variant="secondary" size="icon" className="ml-4">
+                    <LucideMoveDiagonal className="w-4 h-4" />
+                  </Button>
+                </DetailDialog>
+              </>
+            )
           )}
-          <DetailDialog
-            provider={provider}
-            tool={tool}
-            message={message}
-            onGrant={onGrant}
-            onReject={onReject}
-          >
-            <Button variant="secondary" size="icon" className="ml-4">
-              <LucideMoveDiagonal className="w-4 h-4" />
-            </Button>
-          </DetailDialog>
         </CardAction>
       </CardHeader>
       <CardFooter className="grid grid-cols-2 grid-rows-2 gap-2 sm:hidden">
-        {message.done ? (
-          message.granted ? (
-            message.isError ? (
-              <p className="text-destructive text-sm inline-block col-span-2 text-center">
-                Execution failed
+        {advanced.showToolDetails && (
+          <>
+            {message.done ? (
+              message.granted ? (
+                message.isError ? (
+                  <p className="text-destructive text-sm inline-block col-span-2 text-center">
+                    Execution failed
+                  </p>
+                ) : (
+                  <p className="text-green-500 text-sm inline-block col-span-2 text-center">
+                    Done
+                  </p>
+                )
+              ) : (
+                <p className="text-destructive text-sm inline-block col-span-2 text-center">
+                  Execution rejected
+                </p>
+              )
+            ) : message.granted ? (
+              <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
+                Tool is executing...
               </p>
-            ) : (
-              <p className="text-green-500 text-sm inline-block col-span-2 text-center">
-                Done
-              </p>
-            )
-          ) : (
-            <p className="text-destructive text-sm inline-block col-span-2 text-center">
-              Execution rejected
-            </p>
-          )
-        ) : message.granted ? (
-          <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
-            Executing...
-          </p>
-        ) : (
+            ) : null}
+          </>
+        )}
+        {!message.done && !message.granted && (
           <>
             <Button onClick={onGrant}>
               <LucideCheck className="w-4 h-4" />
@@ -173,19 +186,20 @@ export function ToolUseCard({
             </Button>
           </>
         )}
-
-        <DetailDialog
-          provider={provider}
-          tool={tool}
-          message={message}
-          onGrant={onGrant}
-          onReject={onReject}
-        >
-          <Button variant="secondary" className="col-span-2">
-            <LucideMoveDiagonal className="w-4 h-4" />
-            Show details
-          </Button>
-        </DetailDialog>
+        {advanced.showToolDetails && (
+          <DetailDialog
+            provider={provider}
+            tool={tool}
+            message={message}
+            onGrant={onGrant}
+            onReject={onReject}
+          >
+            <Button variant="secondary" className="col-span-2">
+              <LucideMoveDiagonal className="w-4 h-4" />
+              Show details
+            </Button>
+          </DetailDialog>
+        )}
       </CardFooter>
     </Card>
   );
