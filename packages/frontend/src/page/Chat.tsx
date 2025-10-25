@@ -8,7 +8,7 @@ import {
   useEventListener,
   useStorage,
 } from "@/lib/utils";
-import { useSelectedModel } from "@/lib/storage-hooks";
+import { useAdvanced, useSelectedModel } from "@/lib/storage-hooks";
 import { useAutoScroll } from "@/lib/use-auto-scroll";
 import { AiSdk } from "@/sdk";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -67,12 +67,14 @@ export default function Chat() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       typing: "",
+      tokenUsage: { input: 0, output: 0 },
     },
     undefined,
     {
       temp: !isPermanentSession,
     }
   );
+  const [advanced] = useAdvanced();
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [autoContinue, setAutoContinue] = useState(false);
@@ -517,7 +519,7 @@ export default function Chat() {
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              <div className="flex flex-row-reverse justify-between">
+              <div className="flex flex-row-reverse justify-between items-center">
                 {isStreaming ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -561,6 +563,29 @@ export default function Chat() {
                     modelId={modelId}
                     setModelId={setModelId}
                   />
+                )}
+                {advanced.showTokenCount && (
+                  <p className="text-xs text-muted-foreground">
+                    {(() => {
+                      const input = session.tokenUsage?.input ?? 0;
+                      const output = session.tokenUsage?.output ?? 0;
+                      const total = input + output;
+                      const effectiveProvider = session.provider ?? provider;
+                      const effectiveModelId = session.modelId ?? modelId;
+                      const contextWindow =
+                        effectiveProvider && effectiveModelId
+                          ? AiSdk.getModelContextWindow(
+                              effectiveProvider,
+                              effectiveModelId
+                            )
+                          : undefined;
+                      return `Tokens: ${total.toLocaleString()}${
+                        contextWindow
+                          ? ` / Context window: ${contextWindow.toLocaleString()}`
+                          : ""
+                      }`;
+                    })()}
+                  </p>
                 )}
               </div>
             </TextareaContainer>

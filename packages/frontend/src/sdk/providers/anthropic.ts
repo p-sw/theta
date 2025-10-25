@@ -6,6 +6,7 @@ import type {
   IAnthropicMessage,
   IAnthropicMessageResultData,
   IAnthropicMessageResultMessageDelta,
+  IAnthropicMessageResultMessageStart,
   IAnthropicModelConfig,
 } from "@/sdk/providers/anthropic.types";
 import type {
@@ -350,6 +351,7 @@ export class AnthropicProvider extends API<
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const messages = this.translateSession(session);
@@ -458,10 +460,27 @@ export class AnthropicProvider extends API<
               if (event.type === "ping") {
                 // no-op
               } else if (event.type === "message_start") {
+                // start of message and initial usage (if provided)
                 result(async (prev) => prev.push({ type: "start" }));
+                const usage = (
+                  event as IAnthropicMessageResultMessageStart
+                ).message.usage;
+                if (usage) {
+                  onUsage({
+                    inputTokensDelta: usage.input_tokens ?? 0,
+                    outputTokensDelta: usage.output_tokens ?? 0,
+                  });
+                }
               } else if (event.type === "message_stop") {
                 result(async (prev) => prev.push({ type: "end" }));
               } else if (event.type === "message_delta") {
+                // Track usage deltas when available
+                if (event.usage) {
+                  onUsage({
+                    inputTokensDelta: event.usage.input_tokens ?? 0,
+                    outputTokensDelta: event.usage.output_tokens ?? 0,
+                  });
+                }
                 switch (event.delta.stop_reason) {
                   case "end_turn":
                     setStop({
@@ -559,9 +578,8 @@ export class AnthropicProvider extends API<
               } else if (event.type === "content_block_stop") {
                 // No action needed for content_block_stop events
               } else {
-                throw new AnthropicUnexpectedMessageTypeError(
-                  (event as { type: string }).type
-                );
+                // Unexpected event type
+                throw new AnthropicUnexpectedMessageTypeError("unknown");
               }
             } catch (e) {
               console.error("JSON parse error:", e);
@@ -685,5 +703,9 @@ export class AnthropicProvider extends API<
 
   getModelInfo(modelId: string) {
     return AnthropicModelRegistry.find((m) => m.id === modelId);
+  }
+
+  getModelContextWindow(modelId: string): number | undefined {
+    return this.getModelInfo(modelId)?.contextWindow;
   }
 }

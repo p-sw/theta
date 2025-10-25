@@ -89,3 +89,12 @@ export const SYNC_EXCLUDED_KEYS = new Set<string>([
 ]);
 // Default sync interval (ms)
 export const SYNC_INTERVAL_MS = 5000;
+
+/*
+ * ADVANCED SETTINGS
+ */
+export const ADVANCED_KEY = "advanced";
+export interface IAdvancedSettings {
+  showTokenCount: boolean;
+  showToolDetails: boolean;
+}

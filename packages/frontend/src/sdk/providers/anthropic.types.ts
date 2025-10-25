@@ -229,6 +229,10 @@ export interface IAnthropicMessageResultMessageStart {
     type: "message";
     role: "assistant";
     // ...
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+    };
   };
 }
 

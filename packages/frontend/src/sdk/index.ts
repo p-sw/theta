@@ -234,6 +234,19 @@ export class AISDK {
           saveSession();
         },
         toolRegistry.getEnabledTools(),
+        (delta) => {
+          const inputDelta = delta.inputTokensDelta ?? 0;
+          const outputDelta = delta.outputTokensDelta ?? 0;
+          const anyDelta = inputDelta !== 0 || outputDelta !== 0;
+          if (anyDelta) {
+            if (!session.tokenUsage) {
+              session.tokenUsage = { input: 0, output: 0 };
+            }
+            session.tokenUsage.input += inputDelta;
+            session.tokenUsage.output += outputDelta;
+            saveSession();
+          }
+        },
         abortController.signal
       );
     } catch (e) {
@@ -308,6 +321,13 @@ export class AISDK {
     }
 
     return this[provider].getModelConfigSchema(modelId);
+  }
+
+  getModelContextWindow(provider: IProvider, modelId: string) {
+    if (!this[provider]) {
+      throw new Error(`Provider ${provider} not supported`);
+    }
+    return this[provider].getModelContextWindow(modelId);
   }
 }
 

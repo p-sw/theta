@@ -60,6 +60,7 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     ) => Promise<void>, // prev -> new
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
     signal?: AbortSignal
   ): Promise<void>;
   abstract getModels(modelId: string): Promise<IModelInfo[]>;
@@ -68,6 +69,7 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     modelId: string
   ): [Record<string, IConfigSchema>, z.ZodSchema];
   protected abstract getModelConfig(modelId: string): object;
+  abstract getModelContextWindow(modelId: string): number | undefined;
 }
 
 export type IConfigSchema =
@@ -306,6 +308,13 @@ export type ISessionBase = {
   createdAt: number;
   updatedAt: number;
   typing: string;
+  /**
+   * Cumulative token usage for this session
+   */
+  tokenUsage?: {
+    input: number;
+    output: number;
+  };
   /**
    * Saved on first message: the provider and model to be used for the rest of the session.
    * If absent, the UI should prompt for selection; once set, selection UI can be hidden.
