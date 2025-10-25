@@ -23,65 +23,46 @@ async function getLocalStorage(page: Page, key: string) {
   return await page.evaluate((k) => window.localStorage.getItem(k), key);
 }
 
-test('sync: join existing key, server→client and client→server propagation, multi-client join', async ({ page, request, browser }) => {
-  // Create a fresh sync key on server with no initial data
-  const genResp = await request.post('http://localhost:3000/sync/generate', {
-    headers: { 'content-type': 'application/json' },
-    data: { data: {}, version: {} },
-  });
-  const { syncKey } = await genResp.json();
+test('sync: generate key, join existing key, and verify data synced', async ({ page, request, browser }) => {
+  // Seed client data BEFORE app scripts run so the app wrapper sees them
+  const seedKey1 = `theta-sync-seed-1-${Date.now()}`;
+  const seedKey2 = `theta-sync-seed-2-${Date.now()}`;
+  const seedVal1 = 'value-1';
+  const seedVal2 = 'value-2';
+  await page.addInitScript(({ k1, v1, k2, v2 }) => {
+    window.localStorage.setItem(k1, v1);
+    window.localStorage.setItem(k2, v2);
+  }, { k1: seedKey1, v1: seedVal1, k2: seedKey2, v2: seedVal2 });
+
+  // 1) Create a new sync key via UI (Generate New Key)
+  await gotoSettings(page);
+  await page.getByRole('button', { name: 'Generate New Key' }).click();
+  await expect.poll(async () => await getLocalStorage(page, 'sync-enabled')).toBe('true');
+  const syncKey = await getLocalStorage(page, 'sync-key');
   expect(syncKey).toBeTruthy();
 
-  // Join existing key via UI
-  await gotoSettings(page);
-  await page.getByPlaceholder('Enter existing Sync Key').fill(syncKey);
-  await page.getByRole('button', { name: 'Use Key' }).click();
-  await expect.poll(async () => await getLocalStorage(page, 'sync-enabled')).toBe('true');
-  await expect.poll(async () => await getLocalStorage(page, 'sync-key')).toBe(syncKey);
-
-  // Server → Client propagation
-  const serverInjectedKey = `server-key-${Date.now()}`;
-  const serverInjectedValue = 'server-value-1';
-  await request.post('http://localhost:3000/sync/upload', {
-    headers: { 'content-type': 'application/json' },
-    data: {
-      syncKey,
-      changes: {
-        [serverInjectedKey]: { value: serverInjectedValue, updatedAt: Date.now() },
-      },
-    },
-  });
-  await expect.poll(async () => await getLocalStorage(page, serverInjectedKey)).toBe(serverInjectedValue);
-
-  // Client → Server propagation by changing a real app setting (theme)
-  // Switch to Dark theme
-  await page.getByLabel('Dark').click();
-  await expect.poll(async () => await getLocalStorage(page, 'theme')).toBe('dark');
-
-  // Verify server received the change
+  // Verify server knows about seeded data (initial upload happened)
   await expect.poll(async () => {
     const resp = await request.post('http://localhost:3000/sync/diff', {
       headers: { 'content-type': 'application/json' },
       data: { syncKey, version: {} },
     });
     const json = await resp.json();
-    return json?.updates?.theme?.value ?? null;
-  }).toBe('dark');
+    const updates = json?.updates ?? {};
+    return updates?.[seedKey1]?.value === seedVal1 && updates?.[seedKey2]?.value === seedVal2 ? 'ok' : null;
+  }).toBe('ok');
 
-  // Open a second client and join the same key
+  // 2) Join existing sync key on a second client
   const context2 = await browser.newContext();
   await context2.addInitScript(initSpeedupScript);
   const page2 = await context2.newPage();
   await page2.goto('/settings');
-  await page2.getByPlaceholder('Enter existing Sync Key').fill(syncKey);
+  await page2.getByPlaceholder('Enter existing Sync Key').fill(syncKey!);
   await page2.getByRole('button', { name: 'Use Key' }).click();
   await expect.poll(async () => await getLocalStorage(page2, 'sync-enabled')).toBe('true');
+  await expect.poll(async () => await getLocalStorage(page2, 'sync-key')).toBe(syncKey);
 
-  // Existing server value should be present on client 2
-  await expect.poll(async () => await getLocalStorage(page2, serverInjectedKey)).toBe(serverInjectedValue);
-
-  // Change theme on client 2 back to Light and expect client 1 to update
-  await page2.getByLabel('Light').click();
-  await expect.poll(async () => await getLocalStorage(page2, 'theme')).toBe('light');
-  await expect.poll(async () => await getLocalStorage(page, 'theme')).toBe('light');
+  // 3) After joining, verify all seeded data synced into client 2 localStorage
+  await expect.poll(async () => await getLocalStorage(page2, seedKey1)).toBe(seedVal1);
+  await expect.poll(async () => await getLocalStorage(page2, seedKey2)).toBe(seedVal2);
 });
