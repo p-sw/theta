@@ -148,59 +148,61 @@ export function ToolUseCard({
           )}
         </CardAction>
       </CardHeader>
-      <CardFooter className="grid grid-cols-2 grid-rows-2 gap-2 sm:hidden">
-        {advanced.showToolDetails && (
-          <>
-            {message.done ? (
-              message.granted ? (
-                message.isError ? (
-                  <p className="text-destructive text-sm inline-block col-span-2 text-center">
-                    Execution failed
-                  </p>
+      {(advanced.showToolDetails || (!message.done && !message.granted)) && (
+        <CardFooter className="grid grid-cols-2 grid-rows-2 gap-2 sm:hidden">
+          {advanced.showToolDetails && (
+            <>
+              {message.done ? (
+                message.granted ? (
+                  message.isError ? (
+                    <p className="text-destructive text-sm inline-block col-span-2 text-center">
+                      Execution failed
+                    </p>
+                  ) : (
+                    <p className="text-green-500 text-sm inline-block col-span-2 text-center">
+                      Done
+                    </p>
+                  )
                 ) : (
-                  <p className="text-green-500 text-sm inline-block col-span-2 text-center">
-                    Done
+                  <p className="text-destructive text-sm inline-block col-span-2 text-center">
+                    Execution rejected
                   </p>
                 )
-              ) : (
-                <p className="text-destructive text-sm inline-block col-span-2 text-center">
-                  Execution rejected
+              ) : message.granted ? (
+                <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
+                  Tool is executing...
                 </p>
-              )
-            ) : message.granted ? (
-              <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
-                Tool is executing...
-              </p>
-            ) : null}
-          </>
-        )}
-        {!message.done && !message.granted && (
-          <>
-            <Button onClick={onGrant}>
-              <LucideCheck className="w-4 h-4" />
-              Grant
-            </Button>
-            <Button variant="destructive" onClick={onReject}>
-              <LucideCircleMinus className="w-4 h-4" />
-              Reject
-            </Button>
-          </>
-        )}
-        {advanced.showToolDetails && (
-          <DetailDialog
-            provider={provider}
-            tool={tool}
-            message={message}
-            onGrant={onGrant}
-            onReject={onReject}
-          >
-            <Button variant="secondary" className="col-span-2">
-              <LucideMoveDiagonal className="w-4 h-4" />
-              Show details
-            </Button>
-          </DetailDialog>
-        )}
-      </CardFooter>
+              ) : null}
+            </>
+          )}
+          {!message.done && !message.granted && (
+            <>
+              <Button onClick={onGrant}>
+                <LucideCheck className="w-4 h-4" />
+                Grant
+              </Button>
+              <Button variant="destructive" onClick={onReject}>
+                <LucideCircleMinus className="w-4 h-4" />
+                Reject
+              </Button>
+            </>
+          )}
+          {advanced.showToolDetails && (
+            <DetailDialog
+              provider={provider}
+              tool={tool}
+              message={message}
+              onGrant={onGrant}
+              onReject={onReject}
+            >
+              <Button variant="secondary" className="col-span-2">
+                <LucideMoveDiagonal className="w-4 h-4" />
+                Show details
+              </Button>
+            </DetailDialog>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 }
