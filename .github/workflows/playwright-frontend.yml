@@ -1,0 +1,33 @@
+name: E2E Frontend (Playwright)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'packages/frontend/**'
+
+jobs:
+  e2e:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Install Playwright browsers and OS deps
+        run: bunx playwright install --with-deps
+
+      - name: Run Playwright tests (frontend)
+        working-directory: packages/frontend
+        env:
+          CI: 'true'
+        run: bun run test:e2e

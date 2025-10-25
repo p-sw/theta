@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@catppuccin/highlightjs": "^1.0.1",
@@ -72,6 +75,7 @@
     "typescript-eslint": "^8.35.1",
     "unplugin-icons": "^22.1.0",
     "vfile": "^6.0.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "@playwright/test": "^1.48.2"
   }
 }
