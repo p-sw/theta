@@ -8,6 +8,7 @@ import type {
   IOpenAIModelConfig,
   IOpenAIOutputMessage,
   IOpenAIReasoning,
+  IOpenAIOutputResponseCompleted,
   IOpenAIToolSchema,
 } from "@/sdk/providers/openai.types";
 import type {
@@ -370,6 +371,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
+    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const modelInfo = this.getModelInfo(model)!;
@@ -518,6 +520,14 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                   message: "Assistant has finished its turn.",
                 });
                 await result(async (prev) => prev.push({ type: "end" }));
+                const payload = event as IOpenAIOutputResponseCompleted;
+                const usage = payload.response?.usage;
+                if (usage) {
+                  onUsage({
+                    inputTokensDelta: usage.input_tokens ?? 0,
+                    outputTokensDelta: usage.output_tokens ?? 0,
+                  });
+                }
                 break;
               }
               case "response.failed": {
@@ -891,5 +901,9 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
 
   getModelInfo(modelId: string) {
     return OpenAIModelRegistry.find((m) => m.id === modelId);
+  }
+
+  getModelContextWindow(modelId: string): number | undefined {
+    return this.getModelInfo(modelId)?.contextWindow;
   }
 }

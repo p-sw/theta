@@ -6,6 +6,7 @@ import { PATHS } from "@/lib/const.ts";
 import LucideArrowLeft from "~icons/lucide/arrow-left";
 import { Tools } from "@/components/block/settings/tools";
 import { SyncSettings } from "@/components/block/settings/sync";
+import { AdvancedSettings } from "@/components/block/settings/advanced";
 
 export default function Setting() {
   const [_, setPath] = usePath();
@@ -28,6 +29,7 @@ export default function Setting() {
         <Providers />
         <SyncSettings />
         <Tools />
+        <AdvancedSettings />
       </div>
     </main>
   );

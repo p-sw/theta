@@ -234,6 +234,19 @@ export class AISDK {
           saveSession();
         },
         toolRegistry.getEnabledTools(),
+        (delta) => {
+          const inputDelta = delta.inputTokensDelta ?? 0;
+          const outputDelta = delta.outputTokensDelta ?? 0;
+          const anyDelta = inputDelta !== 0 || outputDelta !== 0;
+          if (anyDelta) {
+            if (!session.tokenUsage) {
+              session.tokenUsage = { input: 0, output: 0 };
+            }
+            session.tokenUsage.input += inputDelta;
+            session.tokenUsage.output += outputDelta;
+            saveSession();
+          }
+        },
         abortController.signal
       );
     } catch (e) {
@@ -308,6 +321,17 @@ export class AISDK {
     }
 
     return this[provider].getModelConfigSchema(modelId);
+  }
+
+  getModelContextWindow(provider: IProvider, modelId: string) {
+    if (!this[provider]) return undefined;
+    // Providers implement getModelContextWindow
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const api = this[provider] as any;
+    if (typeof api.getModelContextWindow === "function") {
+      return api.getModelContextWindow(modelId) as number | undefined;
+    }
+    return undefined;
   }
 }
 

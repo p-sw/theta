@@ -8,6 +8,7 @@ import {
 } from "@/lib/const";
 import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
+import { ADVANCED_KEY, type IAdvancedSettings } from "@/lib/const";
 import { useCallback, useContext } from "react";
 import { sessionStorage } from "@/lib/storage";
 import { PathContext } from "@/page/context/Path";
@@ -37,6 +38,16 @@ export function useApiKey() {
 
 export function useSelectedModel() {
   return useStorage<[IProvider, string] | []>(SELECTED_MODEL, []);
+}
+
+export function useAdvanced() {
+  return useStorage<IAdvancedSettings>(
+    ADVANCED_KEY,
+    {
+      showTokenCount: false,
+      showToolDetails: true,
+    }
+  );
 }
 
 export function useSessionKeys({
