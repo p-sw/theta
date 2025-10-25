@@ -460,7 +460,17 @@ export class AnthropicProvider extends API<
               if (event.type === "ping") {
                 // no-op
               } else if (event.type === "message_start") {
+                // start of message and initial usage (if provided)
                 result(async (prev) => prev.push({ type: "start" }));
+                const usage = (
+                  event as IAnthropicMessageResultMessageStart
+                ).message.usage;
+                if (usage) {
+                  onUsage({
+                    inputTokensDelta: usage.input_tokens ?? 0,
+                    outputTokensDelta: usage.output_tokens ?? 0,
+                  });
+                }
               } else if (event.type === "message_stop") {
                 result(async (prev) => prev.push({ type: "end" }));
               } else if (event.type === "message_delta") {
@@ -567,20 +577,9 @@ export class AnthropicProvider extends API<
                 });
               } else if (event.type === "content_block_stop") {
                 // No action needed for content_block_stop events
-              } else if (event.type === "message_start") {
-                // Track initial usage published on message_start
-                const usage = (event as IAnthropicMessageResultMessageStart).message
-                  .usage;
-                if (usage) {
-                  onUsage({
-                    inputTokensDelta: usage.input_tokens ?? 0,
-                    outputTokensDelta: usage.output_tokens ?? 0,
-                  });
-                }
               } else {
-                throw new AnthropicUnexpectedMessageTypeError(
-                  (event as { type: string }).type
-                );
+                // Unexpected event type
+                throw new AnthropicUnexpectedMessageTypeError("unknown");
               }
             } catch (e) {
               console.error("JSON parse error:", e);

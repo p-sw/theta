@@ -520,8 +520,8 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                   message: "Assistant has finished its turn.",
                 });
                 await result(async (prev) => prev.push({ type: "end" }));
-                const payload = event as IOpenAIOutputResponseCompleted;
-                const usage = payload.response?.usage;
+                const payload = event as unknown as IOpenAIOutputResponseCompleted;
+                const usage = payload.response && (payload.response as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
                 if (usage) {
                   onUsage({
                     inputTokensDelta: usage.input_tokens ?? 0,
