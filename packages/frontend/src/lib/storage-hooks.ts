@@ -45,7 +45,7 @@ export function useAdvanced() {
     ADVANCED_KEY,
     {
       showTokenCount: false,
-      showToolDetails: true,
+      showToolDetails: false,
     }
   );
 }
