@@ -60,7 +60,7 @@ const fetchSchema = z
       ),
     method: FETCH_METHOD_SCHEMA.default("GET").describe("HTTP method to use."),
     headers: z
-      .record(z.string())
+      .record(z.string(), z.string())
       .default({})
       .describe("Optional HTTP headers to include in the request."),
     body: z
@@ -98,8 +98,6 @@ export class JavaScriptApiProvider
   > = {} as Record<keyof JavaScriptApiConfig, IConfigSchema>;
 
   private readonly configSchemaZod = CONFIG_SCHEMA_ZOD;
-
-  private config: JavaScriptApiConfig = {};
 
   private readonly toolsList: ITool[] = [
     {
@@ -188,8 +186,11 @@ export class JavaScriptApiProvider
         const { url, method, headers, body } = args;
         const fetchInit: RequestInit = {
           method,
-          headers: Object.keys(headers ?? {}).length > 0 ? headers : undefined,
         };
+
+        if (Object.keys(headers ?? {}).length > 0) {
+          fetchInit.headers = new Headers(headers);
+        }
 
         if (body && method !== "GET" && method !== "HEAD") {
           fetchInit.body = body;
@@ -261,7 +262,7 @@ export class JavaScriptApiProvider
 
   setup(config: JavaScriptApiConfig) {
     try {
-      this.config = this.configSchemaZod.parse(config);
+      this.configSchemaZod.parse(config);
     } catch (e) {
       if (e instanceof z.ZodError) {
         throw new ToolRegistryError(JSON.stringify(z.treeifyError(e)));
