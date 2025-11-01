@@ -26,6 +26,7 @@ import { ToolRegistryError } from "@/sdk/tools/errors";
 import { z } from "zod";
 import type { JSONSchema7 } from "json-schema";
 import { dispatchEvent } from "@/lib/utils";
+import { JavaScriptApiProvider } from "@/sdk/tools/providers/javascript-api";
 
 export class ToolRegistry implements IToolRegistry {
   private providers: Record<string, IToolProvider<Record<string, unknown>>> =
@@ -44,6 +45,7 @@ export class ToolRegistry implements IToolRegistry {
     this.registerProvider(new GoogleContactsProvider() as never);
     this.registerProvider(new GoogleDocsProvider() as never);
     this.registerProvider(new GoogleTasksProvider() as never);
+    this.registerProvider(new JavaScriptApiProvider() as never);
     this.initProviders();
   }
 
