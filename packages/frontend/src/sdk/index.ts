@@ -26,7 +26,7 @@ import { streamText, tool } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import type { ModelMessage } from "ai";
+import type { ModelMessage, TextPart, ToolCallPart } from "ai";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -400,40 +400,26 @@ export class AISDK {
           });
         }
       } else if (turn.type === "response") {
-        const assistantParts: Array<{ type: string; text?: string; toolCalls?: Array<{ toolCallId: string; toolName: string; args: unknown }> }> = [];
-        const toolCalls: Array<{ toolCallId: string; toolName: string; args: unknown }> = [];
-        
+        const turnContents: Array<TextPart | ToolCallPart> = [];
         for (const turnPartial of turn.message) {
           if (turnPartial.type === "text") {
-            assistantParts.push({ type: "text", text: turnPartial.text });
+            turnContents.push({
+              type: "text",
+              text: turnPartial.text,
+            })
           } else if (turnPartial.type === "tool_use") {
-            try {
-              toolCalls.push({
-                toolCallId: turnPartial.id,
-                toolName: turnPartial.name,
-                args: JSON.parse(turnPartial.input || "{}"),
-              });
-            } catch {
-              toolCalls.push({
-                toolCallId: turnPartial.id,
-                toolName: turnPartial.name,
-                args: {},
-              });
-            }
+            turnContents.push({
+              type: "tool-call",
+              toolCallId: turnPartial.id,
+              toolName: turnPartial.name,
+              input: JSON.parse(turnPartial.input)
+            })
           }
         }
-        
-        if (assistantParts.length > 0 || toolCalls.length > 0) {
-          // For assistant messages, ai-sdk handles tool calls separately
-          // We'll add the text content, and tool calls will be added as separate messages
-          if (assistantParts.length > 0) {
-            messages.push({
-              role: "assistant",
-              content: assistantParts.map(p => p.text || "").join("\n"),
-            });
-          }
-          // Note: Tool calls from previous turns are already handled as tool results
-        }
+        messages.push({
+          role: "assistant",
+          content: turnContents
+        })
       } else if (turn.type === "tool" && turn.done) {
         // Tool results are handled as tool results in ai-sdk
         messages.push({
