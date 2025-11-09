@@ -582,7 +582,6 @@ export class AISDK {
 
       // Handle streaming using fullStream to get everything in one unified stream
       let hasStarted = false;
-      const toolCallsMap = new Map<string, { id: string; name: string; input: string }>();
 
       for await (const chunk of result.fullStream) {
         if (!hasStarted) {
@@ -590,36 +589,28 @@ export class AISDK {
           await updateSession(async (prev) => prev.push({ type: "start" }));
         }
 
-        // Handle text deltas
+        // Handle text deltas - property is 'text', not 'textDelta'
         if (chunk.type === "text-delta") {
           await updateSession(async (prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.type === "text") {
-              lastItem.text += chunk.textDelta;
+              lastItem.text += chunk.text;
             } else {
-              prev.push({ type: "text", text: chunk.textDelta });
+              prev.push({ type: "text", text: chunk.text });
             }
           });
         }
 
-        // Handle tool call deltas - accumulate tool call data
+        // Handle tool calls - they come as complete objects
         if (chunk.type === "tool-call") {
-          const toolCallId = chunk.toolCallId;
-          if (!toolCallsMap.has(toolCallId)) {
-            toolCallsMap.set(toolCallId, {
-              id: toolCallId,
+          await updateSession(async (prev) => {
+            prev.push({
+              type: "tool_use",
+              id: chunk.toolCallId,
               name: chunk.toolName,
-              input: "",
+              input: JSON.stringify(chunk.args),
             });
-          }
-        }
-
-        if (chunk.type === "tool-call-delta") {
-          const toolCallId = chunk.toolCallId;
-          const toolCall = toolCallsMap.get(toolCallId);
-          if (toolCall) {
-            toolCall.input += chunk.argsTextDelta;
-          }
+          });
         }
 
         // Handle finish reason
@@ -642,30 +633,18 @@ export class AISDK {
             };
           }
         }
-
-        // Handle usage information
-        if (chunk.type === "usage") {
-          if (!session.tokenUsage) {
-            session.tokenUsage = { input: 0, output: 0 };
-          }
-          session.tokenUsage.input += chunk.promptTokens ?? 0;
-          session.tokenUsage.output += chunk.completionTokens ?? 0;
-        }
-      }
-
-      // Process accumulated tool calls
-      for (const toolCall of toolCallsMap.values()) {
-        await updateSession(async (prev) => {
-          prev.push({
-            type: "tool_use",
-            id: toolCall.id,
-            name: toolCall.name,
-            input: toolCall.input,
-          });
-        });
       }
 
       await updateSession(async (prev) => prev.push({ type: "end" }));
+      saveSession();
+
+      // Handle usage information - accessed from result after streaming completes
+      const usage = await result.usage;
+      if (!session.tokenUsage) {
+        session.tokenUsage = { input: 0, output: 0 };
+      }
+      session.tokenUsage.input += (usage as { promptTokens?: number }).promptTokens ?? usage.inputTokens ?? 0;
+      session.tokenUsage.output += (usage as { completionTokens?: number }).completionTokens ?? usage.outputTokens ?? 0;
       saveSession();
 
     } catch (e) {
