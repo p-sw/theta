@@ -23,7 +23,7 @@ import type {
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { proxyfetch } from "@/lib/proxy";
 import { streamText, tool } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { createAnthropic, type AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { ModelMessage, TextPart, ToolCallPart } from "ai";
@@ -578,6 +578,24 @@ export class AISDK {
         tools: toolsMap,
         abortSignal: abortController.signal,
         temperature: modelConfig.temperature as number,
+        providerOptions: {
+          openai: {
+            ...(modelConfig.reasoning ? {
+              reasoning: {
+                effort: modelConfig.reasoningEffort,
+                summary: 'auto'
+              }
+            } : {})
+          },
+          anthropic: {
+            ...(modelConfig.extendedThinking ? {
+              thinking: {
+                type: 'enabled',
+                budgetTokens: modelConfig.thinkingBudget
+              }
+            } : {})
+          } satisfies AnthropicProviderOptions
+        }
       });
 
       // Handle streaming
