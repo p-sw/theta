@@ -26,7 +26,7 @@ import { streamText, tool } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -382,8 +382,8 @@ export class AISDK {
     });
   }
 
-  private convertSessionToAISDKMessages(session: import("@/sdk/shared").SessionTurns): CoreMessage[] {
-    const messages: CoreMessage[] = [];
+  private convertSessionToAISDKMessages(session: import("@/sdk/shared").SessionTurns): ModelMessage[] {
+    const messages: ModelMessage[] = [];
 
     for (const turn of session) {
       if (turn.type === "request") {
@@ -440,7 +440,7 @@ export class AISDK {
           role: "tool",
           toolCallId: turn.useId,
           content: turn.responseContent,
-        } as unknown as CoreMessage);
+        } as unknown as ModelMessage);
       }
     }
 
