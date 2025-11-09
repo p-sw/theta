@@ -583,11 +583,6 @@ export class AISDK {
       // Handle streaming
       let hasStarted = false;
 
-      const reasonings = await result.reasoning;
-      for (const reasoning of reasonings) {
-        await updateSession(async (prev) => prev.push({ type: "thinking", thinking: reasoning.text }))
-      }
-
       for await (const chunk of result.textStream) {
         if (!hasStarted) {
           hasStarted = true;
