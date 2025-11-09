@@ -27,7 +27,7 @@ import { streamText, tool } from "ai";
 import { createAnthropic, type AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import type { ModelMessage, TextPart, ToolCallPart, StreamTextPart } from "ai";
+import type { ModelMessage, TextPart, ToolCallPart } from "ai";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -606,15 +606,18 @@ export class AISDK {
       let streamUsage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; cachedInputTokens?: number } | null = null;
 
       for await (const chunk of result.fullStream) {
+        // Use type assertion to handle runtime types that may not match TypeScript types
+        const chunkAny = chunk as any;
+        
         // Handle start chunk
-        if (chunk.type === "start") {
+        if (chunkAny.type === "start") {
           if (!hasStarted) {
             hasStarted = true;
             await updateSession(async (prev) => prev.push({ type: "start" }));
           }
         }
         // Handle text chunks
-        else if (chunk.type === "text") {
+        else if (chunkAny.type === "text") {
           if (!hasStarted) {
             hasStarted = true;
             await updateSession(async (prev) => prev.push({ type: "start" }));
@@ -622,14 +625,14 @@ export class AISDK {
           await updateSession(async (prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.type === "text") {
-              lastItem.text += chunk.text;
+              lastItem.text += chunkAny.text;
             } else {
-              prev.push({ type: "text", text: chunk.text });
+              prev.push({ type: "text", text: chunkAny.text });
             }
           });
         }
         // Handle reasoning chunks (for both Anthropic extended thinking and OpenAI reasoning)
-        else if (chunk.type === "reasoning") {
+        else if (chunkAny.type === "reasoning") {
           if (!hasStarted) {
             hasStarted = true;
             await updateSession(async (prev) => prev.push({ type: "start" }));
@@ -637,76 +640,76 @@ export class AISDK {
           await updateSession(async (prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.type === "thinking") {
-              lastItem.thinking += chunk.text;
+              lastItem.thinking += chunkAny.text;
             } else {
-              prev.push({ type: "thinking", thinking: chunk.text });
+              prev.push({ type: "thinking", thinking: chunkAny.text });
             }
           });
         }
         // Handle reasoning part finish (end of reasoning section)
-        else if (chunk.type === "reasoning-part-finish") {
+        else if (chunkAny.type === "reasoning-part-finish") {
           // No action needed, reasoning is already accumulated
         }
         // Handle tool call streaming start
-        else if (chunk.type === "tool-call-streaming-start") {
+        else if (chunkAny.type === "tool-call-streaming-start") {
           if (!hasStarted) {
             hasStarted = true;
             await updateSession(async (prev) => prev.push({ type: "start" }));
           }
           // Initialize tool call with empty input
-          toolCallsMap.set(chunk.toolCallId, {
-            toolCallId: chunk.toolCallId,
-            toolName: chunk.toolName,
+          toolCallsMap.set(chunkAny.toolCallId, {
+            toolCallId: chunkAny.toolCallId,
+            toolName: chunkAny.toolName,
             input: "",
           });
           await updateSession(async (prev) => {
             prev.push({
               type: "tool_use",
-              id: chunk.toolCallId,
-              name: chunk.toolName,
+              id: chunkAny.toolCallId,
+              name: chunkAny.toolName,
               input: "",
             });
           });
         }
         // Handle complete tool calls from stream
-        else if (chunk.type === "tool-call") {
+        else if (chunkAny.type === "tool-call") {
           if (!hasStarted) {
             hasStarted = true;
             await updateSession(async (prev) => prev.push({ type: "start" }));
           }
-          const inputString = JSON.stringify(chunk.input);
-          toolCallsMap.set(chunk.toolCallId, {
-            toolCallId: chunk.toolCallId,
-            toolName: chunk.toolName,
+          const inputString = JSON.stringify(chunkAny.input);
+          toolCallsMap.set(chunkAny.toolCallId, {
+            toolCallId: chunkAny.toolCallId,
+            toolName: chunkAny.toolName,
             input: inputString,
           });
           
           await updateSession(async (prev) => {
             const toolUseIndex = prev.findIndex(
-              (item) => item.type === "tool_use" && item.id === chunk.toolCallId
+              (item) => item.type === "tool_use" && item.id === chunkAny.toolCallId
             );
             if (toolUseIndex >= 0) {
               (prev[toolUseIndex] as IMessageResultToolUse).input = inputString;
             } else {
               prev.push({
                 type: "tool_use",
-                id: chunk.toolCallId,
-                name: chunk.toolName,
+                id: chunkAny.toolCallId,
+                name: chunkAny.toolName,
                 input: inputString,
               });
             }
           });
         }
         // Handle tool call deltas (for streaming tool arguments as text)
-        else if (chunk.type === "tool-call-delta") {
-          const existingToolCall = toolCallsMap.get(chunk.toolCallId);
+        else if (chunkAny.type === "tool-call-delta") {
+          const existingToolCall = toolCallsMap.get(chunkAny.toolCallId);
           if (existingToolCall) {
             // Append the text delta to the input string
-            existingToolCall.input += chunk.argsTextDelta;
+            existingToolCall.input += chunkAny.argsTextDelta;
             
             await updateSession(async (prev) => {
               const toolUseIndex = prev.findIndex(
-                (item) => item.type === "tool_use" && item.id === chunk.toolCallId
+                (item) => item.type === "tool_use" && item.id === chunkAny.toolCallId
               );
               if (toolUseIndex >= 0) {
                 (prev[toolUseIndex] as IMessageResultToolUse).input = existingToolCall.input;
@@ -715,28 +718,28 @@ export class AISDK {
           }
         }
         // Handle finish-step (contains usage info)
-        else if (chunk.type === "finish-step") {
-          streamFinishReason = chunk.finishReason;
-          streamUsage = chunk.usage;
+        else if (chunkAny.type === "finish-step") {
+          streamFinishReason = chunkAny.finishReason;
+          streamUsage = chunkAny.usage;
         }
         // Handle finish (final chunk)
-        else if (chunk.type === "finish") {
-          streamFinishReason = chunk.finishReason;
-          streamUsage = chunk.totalUsage;
+        else if (chunkAny.type === "finish") {
+          streamFinishReason = chunkAny.finishReason;
+          streamUsage = chunkAny.totalUsage;
         }
         // Handle errors
-        else if (chunk.type === "error") {
+        else if (chunkAny.type === "error") {
           resultTurn.stop = {
             type: "message",
-            reason: chunk.error instanceof Error ? chunk.error.message : String(chunk.error),
+            reason: chunkAny.error instanceof Error ? chunkAny.error.message : String(chunkAny.error),
             level: "error",
           };
           await updateSession(async (prev) => prev.push({ type: "end" }));
           saveSession();
-          throw chunk.error;
+          throw chunkAny.error;
         }
         // Handle abort
-        else if (chunk.type === "abort") {
+        else if (chunkAny.type === "abort") {
           // Abort is handled by the abort controller, no action needed
         }
         // Ignore start-step and other metadata chunks
