@@ -604,11 +604,24 @@ export class AISDK {
         // Handle tool calls - they come as complete objects
         if (chunk.type === "tool-call") {
           await updateSession(async (prev) => {
+            // Tool calls may have 'input' property (for regular tool calls)
+            // Dynamic tool calls might have different structure
+            let toolInput: string;
+            // Use type assertion to access input property safely
+            const toolCallChunk = chunk as { toolCallId: string; toolName: string; input?: unknown };
+            if (toolCallChunk.input !== undefined && toolCallChunk.input !== null) {
+              toolInput = typeof toolCallChunk.input === 'string' 
+                ? toolCallChunk.input 
+                : JSON.stringify(toolCallChunk.input);
+            } else {
+              // For dynamic tool calls or when input is not available, use empty object
+              toolInput = JSON.stringify({});
+            }
             prev.push({
               type: "tool_use",
               id: chunk.toolCallId,
               name: chunk.toolName,
-              input: JSON.stringify(chunk.args),
+              input: toolInput,
             });
           });
         }
