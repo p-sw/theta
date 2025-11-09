@@ -444,6 +444,8 @@ export class AISDK {
       }
     }
 
+    console.debug("Translated ModelMessage:", messages)
+
     return messages;
   }
 
