@@ -21,6 +21,7 @@ import type {
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
+import { proxyfetch } from "@/lib/proxy";
 import { streamText, tool } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -219,13 +220,74 @@ const OpenAIModelRegistry: {
   },
 ];
 
+/**
+ * Adapter function to convert standard fetch API to proxyfetch format.
+ * This allows ai-sdk to use proxyfetch instead of window.fetch.
+ */
+function createProxyFetch(): typeof fetch {
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    // Extract URL from various input types
+    let url: string;
+    if (typeof input === "string") {
+      url = input;
+    } else if (input instanceof URL) {
+      url = input.toString();
+    } else if (input instanceof Request) {
+      url = input.url;
+    } else {
+      url = String(input);
+    }
+    
+    // Convert body to Record format for proxyfetch
+    // proxyfetch expects body as Record<string, unknown> which gets sent as JSON
+    let body: Record<string, unknown> | undefined;
+    if (init?.body) {
+      if (typeof init.body === "string") {
+        // Try to parse as JSON - ai-sdk typically sends JSON strings
+        try {
+          body = JSON.parse(init.body);
+        } catch {
+          // If parsing fails, wrap it as a raw string value
+          // This shouldn't happen with ai-sdk, but handle it gracefully
+          body = { _raw: init.body } as unknown as Record<string, unknown>;
+        }
+      } else if (init.body instanceof FormData) {
+        // Convert FormData to a plain object (proxyfetch expects JSON)
+        const formDataObj: Record<string, unknown> = {};
+        for (const [key, value] of init.body.entries()) {
+          formDataObj[key] = value instanceof File ? value.name : value;
+        }
+        body = formDataObj;
+      } else if (init.body instanceof Blob || init.body instanceof ArrayBuffer) {
+        // Blob/ArrayBuffer not directly supported by proxyfetch
+        // This shouldn't occur with ai-sdk API calls
+        throw new Error("proxyfetch only supports JSON request bodies");
+      } else {
+        // Already an object or other type
+        body = init.body as unknown as Record<string, unknown>;
+      }
+    }
+
+    return proxyfetch(url, {
+      method: init?.method || "GET",
+      headers: init?.headers as HeadersInit,
+      body,
+      signal: init?.signal || undefined,
+    });
+  };
+}
+
 export class AISDK {
   private anthropicApiKey: string | null = null;
   private openaiApiKey: string | null = null;
   /** Holds the abort controller for the currently streaming request (if any) */
   public currentAbortController: AbortController | null = null;
+  private proxyFetch: typeof fetch;
 
   constructor() {
+    // Create proxy fetch adapter
+    this.proxyFetch = createProxyFetch();
+    
     // Initialise providers from the current content of localStorage.
     this.initProviders();
 
@@ -474,11 +536,11 @@ export class AISDK {
         throw new Error(`Provider ${provider} API key not configured`);
       }
 
-      // Create model client
+      // Create model client with proxy fetch
       const modelClient =
         provider === "anthropic"
-          ? createAnthropic({ apiKey })
-          : createOpenAI({ apiKey });
+          ? createAnthropic({ apiKey, fetch: this.proxyFetch })
+          : createOpenAI({ apiKey, fetch: this.proxyFetch });
 
       // Get model config
       const modelConfig = this.getModelConfig(provider, model);
