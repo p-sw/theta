@@ -438,9 +438,15 @@ export class AISDK {
         // Tool results are handled as tool results in ai-sdk
         messages.push({
           role: "tool",
-          toolCallId: turn.useId,
-          content: turn.responseContent,
-        } as unknown as ModelMessage);
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: turn.useId,
+              toolName: turn.toolName,
+              output: { type: 'text', value: turn.responseContent }
+            }
+          ]
+        });
       }
     }
 
