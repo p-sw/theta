@@ -370,9 +370,8 @@ export class AISDK {
   private convertToolsToAISDK(tools: ReturnType<typeof toolRegistry.getEnabledTools>) {
     return tools.map((toolMeta) => {
       return tool({
-        
         description: toolMeta.description,
-        parameters: toolMeta.jsonSchema,
+        inputSchema: toolMeta.schema,
         execute: async (params: unknown) => {
           // Validate parameters
           const validatedParams = await toolMeta.schema.parseAsync(params);
