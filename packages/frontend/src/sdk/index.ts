@@ -13,6 +13,7 @@ import { toolRegistry } from "@/sdk/tools";
 import type {
   IMessageRequest,
   IMessageResult,
+  IMessageResultToolUse,
   IModelInfo,
   IProvider,
   IProviderInfo,
@@ -26,7 +27,7 @@ import { streamText, tool } from "ai";
 import { createAnthropic, type AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import type { ModelMessage, TextPart, ToolCallPart } from "ai";
+import type { ModelMessage, TextPart, ToolCallPart, StreamTextPart } from "ai";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -598,35 +599,104 @@ export class AISDK {
         }
       });
 
-      // Handle streaming
+      // Handle streaming using fullStream to support reasonings and other features
       let hasStarted = false;
+      const toolCallsMap = new Map<string, { toolCallId: string; toolName: string; input: unknown }>();
 
-      for await (const chunk of result.textStream) {
+      for await (const chunk of result.fullStream) {
         if (!hasStarted) {
           hasStarted = true;
           await updateSession(async (prev) => prev.push({ type: "start" }));
         }
-        await updateSession(async (prev) => {
-          const lastItem = prev[prev.length - 1];
-          if (lastItem && lastItem.type === "text") {
-            lastItem.text += chunk;
-          } else {
-            prev.push({ type: "text", text: chunk });
+
+        // Handle text deltas
+        if (chunk.type === "text-delta") {
+          await updateSession(async (prev) => {
+            const lastItem = prev[prev.length - 1];
+            if (lastItem && lastItem.type === "text") {
+              lastItem.text += chunk.textDelta;
+            } else {
+              prev.push({ type: "text", text: chunk.textDelta });
+            }
+          });
+        }
+        // Handle thinking deltas (Anthropic extended thinking)
+        else if (chunk.type === "thinking-delta") {
+          await updateSession(async (prev) => {
+            const lastItem = prev[prev.length - 1];
+            if (lastItem && lastItem.type === "thinking") {
+              lastItem.thinking += chunk.thinkingDelta;
+            } else {
+              prev.push({ type: "thinking", thinking: chunk.thinkingDelta });
+            }
+          });
+        }
+        // Handle reasoning deltas (OpenAI reasoning)
+        else if (chunk.type === "reasoning-delta") {
+          await updateSession(async (prev) => {
+            const lastItem = prev[prev.length - 1];
+            if (lastItem && lastItem.type === "thinking") {
+              lastItem.thinking += chunk.reasoningDelta;
+            } else {
+              prev.push({ type: "thinking", thinking: chunk.reasoningDelta });
+            }
+          });
+        }
+        // Handle tool calls from stream
+        else if (chunk.type === "tool-call") {
+          const toolCall = {
+            toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
+            input: chunk.args,
+          };
+          toolCallsMap.set(chunk.toolCallId, toolCall);
+          
+          await updateSession(async (prev) => {
+            prev.push({
+              type: "tool_use",
+              id: chunk.toolCallId,
+              name: chunk.toolName,
+              input: JSON.stringify(chunk.args),
+            });
+          });
+        }
+        // Handle tool call deltas (for streaming tool arguments)
+        else if (chunk.type === "tool-call-delta") {
+          const existingToolCall = toolCallsMap.get(chunk.toolCallId);
+          if (existingToolCall) {
+            // Update the tool call input as it streams
+            const currentInput = typeof existingToolCall.input === "string" 
+              ? JSON.parse(existingToolCall.input) 
+              : existingToolCall.input;
+            const updatedInput = { ...currentInput, ...chunk.argsDelta };
+            existingToolCall.input = updatedInput;
+            
+            await updateSession(async (prev) => {
+              const toolUseIndex = prev.findIndex(
+                (item) => item.type === "tool_use" && item.id === chunk.toolCallId
+              );
+              if (toolUseIndex >= 0) {
+                (prev[toolUseIndex] as IMessageResultToolUse).input = JSON.stringify(updatedInput);
+              }
+            });
           }
-        });
+        }
       }
 
-      // Handle tool calls
+      // Handle any remaining tool calls that weren't in the stream
       const toolCalls = await result.toolCalls;
       for (const toolCall of toolCalls) {
-        await updateSession(async (prev) => {
-          prev.push({
-            type: "tool_use",
-            id: toolCall.toolCallId,
-            name: toolCall.toolName,
-            input: JSON.stringify(toolCall.input),
+        // Only add if not already added from stream
+        if (!toolCallsMap.has(toolCall.toolCallId)) {
+          await updateSession(async (prev) => {
+            prev.push({
+              type: "tool_use",
+              id: toolCall.toolCallId,
+              name: toolCall.toolName,
+              input: JSON.stringify(toolCall.input),
+            });
           });
-        });
+        }
       }
 
       // Handle finish
