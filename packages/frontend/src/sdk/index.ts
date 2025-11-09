@@ -580,66 +580,92 @@ export class AISDK {
         temperature: modelConfig.temperature as number,
       });
 
-      // Handle streaming
+      // Handle streaming using fullStream to get everything in one unified stream
       let hasStarted = false;
+      const toolCallsMap = new Map<string, { id: string; name: string; input: string }>();
 
-      for await (const chunk of result.textStream) {
+      for await (const chunk of result.fullStream) {
         if (!hasStarted) {
           hasStarted = true;
           await updateSession(async (prev) => prev.push({ type: "start" }));
         }
-        await updateSession(async (prev) => {
-          const lastItem = prev[prev.length - 1];
-          if (lastItem && lastItem.type === "text") {
-            lastItem.text += chunk;
-          } else {
-            prev.push({ type: "text", text: chunk });
+
+        // Handle text deltas
+        if (chunk.type === "text-delta") {
+          await updateSession(async (prev) => {
+            const lastItem = prev[prev.length - 1];
+            if (lastItem && lastItem.type === "text") {
+              lastItem.text += chunk.textDelta;
+            } else {
+              prev.push({ type: "text", text: chunk.textDelta });
+            }
+          });
+        }
+
+        // Handle tool call deltas - accumulate tool call data
+        if (chunk.type === "tool-call") {
+          const toolCallId = chunk.toolCallId;
+          if (!toolCallsMap.has(toolCallId)) {
+            toolCallsMap.set(toolCallId, {
+              id: toolCallId,
+              name: chunk.toolName,
+              input: "",
+            });
           }
-        });
+        }
+
+        if (chunk.type === "tool-call-delta") {
+          const toolCallId = chunk.toolCallId;
+          const toolCall = toolCallsMap.get(toolCallId);
+          if (toolCall) {
+            toolCall.input += chunk.argsTextDelta;
+          }
+        }
+
+        // Handle finish reason
+        if (chunk.type === "finish") {
+          if (chunk.finishReason === "tool-calls") {
+            resultTurn.stop = { type: "tool_use" };
+          } else if (chunk.finishReason === "stop") {
+            resultTurn.stop = { type: "log", message: "Assistant has finished its turn." };
+          } else if (chunk.finishReason === "length") {
+            resultTurn.stop = {
+              type: "message",
+              reason: "The response reached the maximum number of tokens.",
+              level: "error",
+            };
+          } else if (chunk.finishReason === "error") {
+            resultTurn.stop = {
+              type: "message",
+              reason: "An error occurred during generation.",
+              level: "error",
+            };
+          }
+        }
+
+        // Handle usage information
+        if (chunk.type === "usage") {
+          if (!session.tokenUsage) {
+            session.tokenUsage = { input: 0, output: 0 };
+          }
+          session.tokenUsage.input += chunk.promptTokens ?? 0;
+          session.tokenUsage.output += chunk.completionTokens ?? 0;
+        }
       }
 
-      // Handle tool calls
-      const toolCalls = await result.toolCalls;
-      for (const toolCall of toolCalls) {
+      // Process accumulated tool calls
+      for (const toolCall of toolCallsMap.values()) {
         await updateSession(async (prev) => {
           prev.push({
             type: "tool_use",
-            id: toolCall.toolCallId,
-            name: toolCall.toolName,
-            input: JSON.stringify(toolCall.input),
+            id: toolCall.id,
+            name: toolCall.name,
+            input: toolCall.input,
           });
         });
       }
 
-      // Handle finish
-      const finishReason = await result.finishReason;
-      if (finishReason === "tool-calls") {
-        resultTurn.stop = { type: "tool_use" };
-      } else if (finishReason === "stop") {
-        resultTurn.stop = { type: "log", message: "Assistant has finished its turn." };
-      } else if (finishReason === "length") {
-        resultTurn.stop = {
-          type: "message",
-          reason: "The response reached the maximum number of tokens.",
-          level: "error",
-        };
-      } else if (finishReason === "error") {
-        resultTurn.stop = {
-          type: "message",
-          reason: "An error occurred during generation.",
-          level: "error",
-        };
-      }
       await updateSession(async (prev) => prev.push({ type: "end" }));
-      saveSession();
-
-      // Track usage
-      const usage = await result.usage;
-      if (!session.tokenUsage) {
-        session.tokenUsage = { input: 0, output: 0 };
-      }
-      session.tokenUsage.input += (usage as { promptTokens?: number }).promptTokens ?? usage.inputTokens ?? 0;
-      session.tokenUsage.output += (usage as { completionTokens?: number }).completionTokens ?? usage.outputTokens ?? 0;
       saveSession();
 
     } catch (e) {
