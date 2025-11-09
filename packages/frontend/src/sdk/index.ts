@@ -612,7 +612,7 @@ export class AISDK {
             type: "tool_use",
             id: toolCall.toolCallId,
             name: toolCall.toolName,
-            input: JSON.stringify((toolCall as { args?: unknown }).args || {}),
+            input: JSON.stringify(toolCall.input),
           });
         });
       }
