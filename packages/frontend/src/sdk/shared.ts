@@ -32,46 +32,6 @@ export interface ISystemPrompt {
   systemPrompts: string[];
 }
 
-export abstract class API<ProviderSession, ProviderToolSchema> {
-  protected abstract readonly API_BASE_URL: string;
-  protected apiKey!: string;
-
-  /**
-   * Update the API key for the provider instance at runtime.
-   * This enables hot-swapping credentials when the user edits them in settings.
-   */
-  public setApiKey(apiKey: string) {
-    this.apiKey = apiKey;
-  }
-
-  protected abstract buildAPIRequest(
-    method: RequestInit["method"]
-  ): Omit<RequestInit, "body"> & { body?: Record<string, unknown> };
-  protected abstract ensureSuccess(response: Response): Promise<void>;
-  protected abstract translateSession(session: SessionTurns): ProviderSession[];
-  protected abstract translateToolSchema(
-    schema: IToolMetaJson[]
-  ): ProviderToolSchema[];
-  abstract message(
-    session: SessionTurns,
-    model: string,
-    result: (
-      updator: (message: IMessageResult[]) => Promise<unknown>
-    ) => Promise<void>, // prev -> new
-    setStop: (stop: SessionTurnsResponse["stop"]) => void,
-    tools: IToolMetaJson[],
-    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
-    signal?: AbortSignal
-  ): Promise<void>;
-  abstract getModels(modelId: string): Promise<IModelInfo[]>;
-  abstract getDefaultModelConfig(modelId: string): object;
-  abstract getModelConfigSchema(
-    modelId: string
-  ): [Record<string, IConfigSchema>, z.ZodSchema];
-  protected abstract getModelConfig(modelId: string): object;
-  abstract getModelContextWindow(modelId: string): number | undefined;
-}
-
 export type IConfigSchema =
   | IConfigSchemaNumber
   | IConfigSchemaString

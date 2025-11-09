@@ -5,6 +5,7 @@ import { FormFactory } from "@/components/ui/form-factory";
 import { PER_MODEL_CONFIG_KEY } from "@/lib/const";
 import { useStorage } from "@/lib/utils";
 import { toast } from "sonner";
+import { z } from "zod";
 
 export function ModelConfigForm({
   provider,
@@ -19,7 +20,7 @@ export function ModelConfigForm({
   );
 
   const [schema, schemaZod] = useMemo(
-    () => AiSdk.getModelConfigSchema(provider, modelId),
+    () => AiSdk.getModelConfigSchema(provider, modelId) as [Record<string, import("@/sdk/shared").IConfigSchema>, z.ZodSchema<typeof config>],
     [provider, modelId]
   );
 
