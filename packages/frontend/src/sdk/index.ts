@@ -601,86 +601,145 @@ export class AISDK {
 
       // Handle streaming using fullStream to support reasonings and other features
       let hasStarted = false;
-      const toolCallsMap = new Map<string, { toolCallId: string; toolName: string; input: unknown }>();
+      const toolCallsMap = new Map<string, { toolCallId: string; toolName: string; input: string }>();
+      let streamFinishReason: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown" | null = null;
+      let streamUsage: { inputTokens?: number; outputTokens?: number; totalTokens?: number; reasoningTokens?: number; cachedInputTokens?: number } | null = null;
 
       for await (const chunk of result.fullStream) {
-        if (!hasStarted) {
-          hasStarted = true;
-          await updateSession(async (prev) => prev.push({ type: "start" }));
+        // Handle start chunk
+        if (chunk.type === "start") {
+          if (!hasStarted) {
+            hasStarted = true;
+            await updateSession(async (prev) => prev.push({ type: "start" }));
+          }
         }
-
-        // Handle text deltas
-        if (chunk.type === "text-delta") {
+        // Handle text chunks
+        else if (chunk.type === "text") {
+          if (!hasStarted) {
+            hasStarted = true;
+            await updateSession(async (prev) => prev.push({ type: "start" }));
+          }
           await updateSession(async (prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.type === "text") {
-              lastItem.text += chunk.textDelta;
+              lastItem.text += chunk.text;
             } else {
-              prev.push({ type: "text", text: chunk.textDelta });
+              prev.push({ type: "text", text: chunk.text });
             }
           });
         }
-        // Handle thinking deltas (Anthropic extended thinking)
-        else if (chunk.type === "thinking-delta") {
+        // Handle reasoning chunks (for both Anthropic extended thinking and OpenAI reasoning)
+        else if (chunk.type === "reasoning") {
+          if (!hasStarted) {
+            hasStarted = true;
+            await updateSession(async (prev) => prev.push({ type: "start" }));
+          }
           await updateSession(async (prev) => {
             const lastItem = prev[prev.length - 1];
             if (lastItem && lastItem.type === "thinking") {
-              lastItem.thinking += chunk.thinkingDelta;
+              lastItem.thinking += chunk.text;
             } else {
-              prev.push({ type: "thinking", thinking: chunk.thinkingDelta });
+              prev.push({ type: "thinking", thinking: chunk.text });
             }
           });
         }
-        // Handle reasoning deltas (OpenAI reasoning)
-        else if (chunk.type === "reasoning-delta") {
-          await updateSession(async (prev) => {
-            const lastItem = prev[prev.length - 1];
-            if (lastItem && lastItem.type === "thinking") {
-              lastItem.thinking += chunk.reasoningDelta;
-            } else {
-              prev.push({ type: "thinking", thinking: chunk.reasoningDelta });
-            }
-          });
+        // Handle reasoning part finish (end of reasoning section)
+        else if (chunk.type === "reasoning-part-finish") {
+          // No action needed, reasoning is already accumulated
         }
-        // Handle tool calls from stream
-        else if (chunk.type === "tool-call") {
-          const toolCall = {
+        // Handle tool call streaming start
+        else if (chunk.type === "tool-call-streaming-start") {
+          if (!hasStarted) {
+            hasStarted = true;
+            await updateSession(async (prev) => prev.push({ type: "start" }));
+          }
+          // Initialize tool call with empty input
+          toolCallsMap.set(chunk.toolCallId, {
             toolCallId: chunk.toolCallId,
             toolName: chunk.toolName,
-            input: chunk.args,
-          };
-          toolCallsMap.set(chunk.toolCallId, toolCall);
-          
+            input: "",
+          });
           await updateSession(async (prev) => {
             prev.push({
               type: "tool_use",
               id: chunk.toolCallId,
               name: chunk.toolName,
-              input: JSON.stringify(chunk.args),
+              input: "",
             });
           });
         }
-        // Handle tool call deltas (for streaming tool arguments)
+        // Handle complete tool calls from stream
+        else if (chunk.type === "tool-call") {
+          if (!hasStarted) {
+            hasStarted = true;
+            await updateSession(async (prev) => prev.push({ type: "start" }));
+          }
+          const inputString = JSON.stringify(chunk.input);
+          toolCallsMap.set(chunk.toolCallId, {
+            toolCallId: chunk.toolCallId,
+            toolName: chunk.toolName,
+            input: inputString,
+          });
+          
+          await updateSession(async (prev) => {
+            const toolUseIndex = prev.findIndex(
+              (item) => item.type === "tool_use" && item.id === chunk.toolCallId
+            );
+            if (toolUseIndex >= 0) {
+              (prev[toolUseIndex] as IMessageResultToolUse).input = inputString;
+            } else {
+              prev.push({
+                type: "tool_use",
+                id: chunk.toolCallId,
+                name: chunk.toolName,
+                input: inputString,
+              });
+            }
+          });
+        }
+        // Handle tool call deltas (for streaming tool arguments as text)
         else if (chunk.type === "tool-call-delta") {
           const existingToolCall = toolCallsMap.get(chunk.toolCallId);
           if (existingToolCall) {
-            // Update the tool call input as it streams
-            const currentInput = typeof existingToolCall.input === "string" 
-              ? JSON.parse(existingToolCall.input) 
-              : existingToolCall.input;
-            const updatedInput = { ...currentInput, ...chunk.argsDelta };
-            existingToolCall.input = updatedInput;
+            // Append the text delta to the input string
+            existingToolCall.input += chunk.argsTextDelta;
             
             await updateSession(async (prev) => {
               const toolUseIndex = prev.findIndex(
                 (item) => item.type === "tool_use" && item.id === chunk.toolCallId
               );
               if (toolUseIndex >= 0) {
-                (prev[toolUseIndex] as IMessageResultToolUse).input = JSON.stringify(updatedInput);
+                (prev[toolUseIndex] as IMessageResultToolUse).input = existingToolCall.input;
               }
             });
           }
         }
+        // Handle finish-step (contains usage info)
+        else if (chunk.type === "finish-step") {
+          streamFinishReason = chunk.finishReason;
+          streamUsage = chunk.usage;
+        }
+        // Handle finish (final chunk)
+        else if (chunk.type === "finish") {
+          streamFinishReason = chunk.finishReason;
+          streamUsage = chunk.totalUsage;
+        }
+        // Handle errors
+        else if (chunk.type === "error") {
+          resultTurn.stop = {
+            type: "message",
+            reason: chunk.error instanceof Error ? chunk.error.message : String(chunk.error),
+            level: "error",
+          };
+          await updateSession(async (prev) => prev.push({ type: "end" }));
+          saveSession();
+          throw chunk.error;
+        }
+        // Handle abort
+        else if (chunk.type === "abort") {
+          // Abort is handled by the abort controller, no action needed
+        }
+        // Ignore start-step and other metadata chunks
       }
 
       // Handle any remaining tool calls that weren't in the stream
@@ -699,8 +758,8 @@ export class AISDK {
         }
       }
 
-      // Handle finish
-      const finishReason = await result.finishReason;
+      // Handle finish reason (use stream value if available, otherwise fall back to result)
+      const finishReason = streamFinishReason ?? await result.finishReason;
       if (finishReason === "tool-calls") {
         resultTurn.stop = { type: "tool_use" };
       } else if (finishReason === "stop") {
@@ -711,7 +770,7 @@ export class AISDK {
           reason: "The response reached the maximum number of tokens.",
           level: "error",
         };
-      } else if (finishReason === "error") {
+      } else if (finishReason === "error" || finishReason === "other" || finishReason === "unknown") {
         resultTurn.stop = {
           type: "message",
           reason: "An error occurred during generation.",
@@ -721,13 +780,13 @@ export class AISDK {
       await updateSession(async (prev) => prev.push({ type: "end" }));
       saveSession();
 
-      // Track usage
-      const usage = await result.usage;
+      // Track usage (use stream value if available, otherwise fall back to result)
+      const usage = streamUsage ?? await result.usage;
       if (!session.tokenUsage) {
         session.tokenUsage = { input: 0, output: 0 };
       }
-      session.tokenUsage.input += (usage as { promptTokens?: number }).promptTokens ?? usage.inputTokens ?? 0;
-      session.tokenUsage.output += (usage as { completionTokens?: number }).completionTokens ?? usage.outputTokens ?? 0;
+      session.tokenUsage.input += usage.inputTokens ?? (usage as { promptTokens?: number }).promptTokens ?? 0;
+      session.tokenUsage.output += usage.outputTokens ?? (usage as { completionTokens?: number }).completionTokens ?? 0;
       saveSession();
 
     } catch (e) {
