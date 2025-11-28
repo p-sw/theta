@@ -307,22 +307,6 @@ export class AISDK {
     flushSession();
   }
 
-  getDefaultModelConfig(provider: IProvider, modelId: string) {
-    if (!this[provider]) {
-      throw new Error(`Provider ${provider} not supported`);
-    }
-
-    return this[provider].getDefaultModelConfig(modelId);
-  }
-
-  getModelConfigSchema(provider: IProvider, modelId: string) {
-    if (!this[provider]) {
-      throw new Error(`Provider ${provider} not supported`);
-    }
-
-    return this[provider].getModelConfigSchema(modelId);
-  }
-
   getModelContextWindow(provider: IProvider, modelId: string) {
     if (!this[provider]) {
       throw new Error(`Provider ${provider} not supported`);

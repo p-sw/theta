@@ -5,22 +5,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetCloseIcon,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { useApiKey, useModels } from "@/lib/storage-hooks";
 import type { IModelInfo } from "@/sdk/shared";
 import { useRef, useState } from "react";
 import Anthropic from "~icons/ai-provider/anthropic";
-import LucideSettings from "~icons/lucide/settings";
 import LucideSave from "~icons/lucide/save";
-import { ModelConfigForm } from "@/components/block/settings/model-config";
 import OpenAI from "~icons/ai-provider/openai";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
@@ -41,26 +30,7 @@ function ModelItem({
         )}
         <p className="text-sm">{model.displayName}</p>
       </div>
-      <div className="flex flex-row gap-2 items-center">
-        <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="secondary" className="size-8">
-              <LucideSettings />
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="overflow-y-auto pb-4">
-            <SheetHeader className="sticky top-0 bg-background z-10">
-              <SheetTitle>Model Settings</SheetTitle>
-              <SheetDescription>
-                Configure settings for model {model.displayName}.
-              </SheetDescription>
-              <SheetCloseIcon />
-            </SheetHeader>
-            <ModelConfigForm provider={model.provider} modelId={model.id} />
-          </SheetContent>
-        </Sheet>
-      </div>
+      <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
     </div>
   );
 }

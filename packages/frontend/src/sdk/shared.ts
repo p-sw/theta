@@ -65,10 +65,6 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     signal?: AbortSignal
   ): Promise<void>;
   abstract getModels(modelId: string): Promise<IModelInfo[]>;
-  abstract getDefaultModelConfig(modelId: string): object;
-  abstract getModelConfigSchema(
-    modelId: string
-  ): [Record<string, IConfigSchema>, z.ZodSchema];
   protected abstract getModelConfig(modelId: string): object;
   abstract getModelContextWindow(modelId: string): number | undefined;
 }

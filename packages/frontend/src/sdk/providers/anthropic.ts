@@ -16,7 +16,6 @@ import type {
   IToolMetaJson,
   IMessageResultToolUse,
 } from "@/sdk/shared";
-import type { IConfigSchema } from "@/sdk/config-schema";
 import {
   API,
   ExpectedError,
@@ -25,7 +24,6 @@ import {
   type IMessageResultText,
   type SessionTurnsResponse,
 } from "@/sdk/shared";
-import z from "zod";
 
 const AnthropicModelRegistry: {
   id: string;
@@ -630,80 +628,6 @@ export class AnthropicProvider extends API<
       console.error("JSON parse error:", e);
       return this.getDefaultModelConfig(modelId);
     }
-  }
-
-  getModelConfigSchema(
-    modelId: string
-  ): [
-    Record<keyof IAnthropicModelConfig, IConfigSchema>,
-    z.ZodSchema<IAnthropicModelConfig>
-  ] {
-    const modelInfo = this.getModelInfo(modelId);
-    if (!modelInfo) {
-      throw new ExpectedError(404, "model_not_found", "Model not found");
-    }
-
-    return [
-      {
-        temperature: {
-          displayName: "Temperature",
-          description: "The temperature of the model.",
-          type: "number",
-          min: 0,
-          max: 1,
-          step: 0.01,
-          disabled: { $ref: "extendedThinking" },
-        },
-        maxOutput: {
-          displayName: "Max Output",
-          description: "The maximum number of tokens to output.",
-          type: "number",
-          min: 1024,
-          max: modelInfo.maxOutput,
-          step: 1,
-        },
-        stopSequences: {
-          displayName: "Stop Sequences",
-          description: "The stop sequences of the model.",
-          type: "array",
-          items: {
-            type: "string",
-          },
-        },
-        extendedThinking: {
-          displayName: "Extended Thinking",
-          description: "Whether to use thinking.",
-          type: "boolean",
-          disabled: !modelInfo.extendedThinking,
-        },
-        thinkingBudget: {
-          displayName: "Thinking Budget",
-          description:
-            "The token budget for extended thinking. Should be less than maxOutput.",
-          type: "number",
-          min: 1024,
-          max: { $ref: "maxOutput" },
-          step: 1,
-          disabled: { $ref: "extendedThinking", not: true },
-        },
-      },
-      z
-        .object({
-          temperature: z.number().min(0).max(1),
-          maxOutput: z.number().min(1024).max(modelInfo.maxOutput),
-          stopSequences: z.array(z.string()),
-          extendedThinking: z.boolean(),
-          thinkingBudget: z.number().min(512),
-        })
-        .refine(
-          (data) =>
-            data.extendedThinking ? data.thinkingBudget < data.maxOutput : true,
-          {
-            message: "Thinking budget must be less than maxOutput.",
-            path: ["thinkingBudget"],
-          }
-        ),
-    ];
   }
 
   getModelInfo(modelId: string) {

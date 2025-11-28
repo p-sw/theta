@@ -18,9 +18,6 @@ import type {
   IToolMetaJson,
   IMessageResultToolUse,
 } from "@/sdk/shared";
-import type {
-  IConfigSchema
-} from "@/sdk/config-schema"
 import {
   API,
   ExpectedError,
@@ -29,7 +26,6 @@ import {
   type IMessageResultText,
   type SessionTurnsResponse,
 } from "@/sdk/shared";
-import z from "zod";
 
 const OpenAIModelRegistry: {
   id: string;
@@ -840,65 +836,6 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
       console.error("JSON parse error:", e);
       return this.getDefaultModelConfig(modelId);
     }
-  }
-
-  getModelConfigSchema(
-    modelId: string
-  ): [
-    Record<keyof IOpenAIModelConfig, IConfigSchema>,
-    z.ZodSchema<IOpenAIModelConfig>
-  ] {
-    const modelInfo = this.getModelInfo(modelId);
-    if (!modelInfo) {
-      throw new ExpectedError(404, "model_not_found", "Model not found");
-    }
-
-    return [
-      {
-        temperature: {
-          displayName: "Temperature",
-          description: "The temperature of the model.",
-          type: "number",
-          min: 0,
-          max: 2,
-          step: 0.1,
-          disabled: { $ref: "reasoning" },
-        },
-        maxOutput: {
-          displayName: "Max Output",
-          description: "The maximum number of tokens to output.",
-          type: "number",
-          min: 2048,
-          max: modelInfo.maxOutput,
-          step: 1,
-        },
-        reasoning: {
-          displayName: "Reasoning",
-          description: "Whether to use reasoning (thinking).",
-          type: "boolean",
-          disabled: !modelInfo.reasoning,
-        },
-        reasoningEffort: {
-          displayName: "Reasoning Effort",
-          description: "The effort of the reasoning.",
-          type: "enum",
-          placeholder: "Select effort",
-          items: [
-            { name: "Minimal (fastest)", value: "minimal" },
-            { name: "Low (cost-effective)", value: "low" },
-            { name: "Medium (balanced)", value: "medium" },
-            { name: "High (expensive)", value: "high" },
-          ],
-          disabled: { $ref: "reasoning", not: true },
-        },
-      },
-      z.object({
-        temperature: z.number().min(0).max(2),
-        maxOutput: z.number().min(2048).max(modelInfo.maxOutput),
-        reasoning: z.boolean(),
-        reasoningEffort: z.enum(["minimal", "low", "medium", "high"]),
-      }),
-    ];
   }
 
   getModelInfo(modelId: string) {
