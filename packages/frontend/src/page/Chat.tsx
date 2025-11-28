@@ -356,12 +356,12 @@ export default function Chat() {
         );
         if (toolTurnIndex === -1) return newSession;
         newSession.turns[toolTurnIndex] = {
-          ...newSession.turns[toolTurnIndex],
+          ...newSession.turns[toolTurnIndex] as SessionTurnsTool,
           done: true,
           granted: false,
           isError: true,
           responseContent: "User rejected tool use",
-        };
+        } satisfies SessionTurnsTool;
         return newSession;
       });
     },
