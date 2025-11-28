@@ -21,7 +21,6 @@ import Anthropic from "~icons/ai-provider/anthropic";
 import LucideSettings from "~icons/lucide/settings";
 import LucideSave from "~icons/lucide/save";
 import { ModelConfigForm } from "@/components/block/settings/model-config";
-import { SystemPromptSection } from "@/components/block/settings/system-prompt";
 import OpenAI from "~icons/ai-provider/openai";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
@@ -182,7 +181,6 @@ export function Providers() {
     >
       <ModelSection />
       <ProviderSection />
-      <SystemPromptSection />
     </SettingsSection>
   );
 }
