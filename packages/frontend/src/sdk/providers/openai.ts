@@ -13,12 +13,14 @@ import type {
 } from "@/sdk/providers/openai.types";
 import type {
   IMessageResultThinking,
-  IConfigSchema,
   IModelInfo,
   SessionTurns,
   IToolMetaJson,
   IMessageResultToolUse,
 } from "@/sdk/shared";
+import type {
+  IConfigSchema
+} from "@/sdk/config-schema"
 import {
   API,
   ExpectedError,

@@ -1,8 +1,8 @@
 import {
-  type IConfigSchema,
   type IToolProvider,
   type ITool,
 } from "@/sdk/shared";
+import type { IConfigSchema } from "@/sdk/config-schema";
 import {
   ToolExecutionError,
   ToolParameterError,

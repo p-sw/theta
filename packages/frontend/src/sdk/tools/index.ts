@@ -1,11 +1,13 @@
 import type {
-  IConfigSchema,
   ITool,
   IToolMetaJson,
   IToolProvider,
   IToolProviderMeta,
   IToolRegistry,
 } from "@/sdk/shared";
+import type {
+  IConfigSchema
+} from "@/sdk/config-schema";
 import { OpenWeatherProvider } from "@/sdk/tools/providers/openweather";
 import { GoogleCalendarProvider } from "@/sdk/tools/providers/google-calendar";
 import { GoogleSheetsProvider } from "@/sdk/tools/providers/google-sheets";

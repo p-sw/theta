@@ -11,12 +11,14 @@ import type {
 } from "@/sdk/providers/anthropic.types";
 import type {
   IMessageResultThinking,
-  IConfigSchema,
   IModelInfo,
   SessionTurns,
   IToolMetaJson,
   IMessageResultToolUse,
 } from "@/sdk/shared";
+import type {
+  IConfigSchema
+} from "@/sdk/config-schema";
 import {
   API,
   ExpectedError,

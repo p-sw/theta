@@ -6,7 +6,7 @@ import type {
   IConfigSchema,
   IConfigSchemaEnum,
   IConfigSchemaEnumGroup,
-} from "@/sdk/shared";
+} from "@/sdk/config-schema";
 import { useCallback, useId } from "react";
 import {
   useForm,

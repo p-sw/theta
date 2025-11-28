@@ -1,5 +1,6 @@
 import type { JSONSchema7 } from "json-schema";
 import type z from "zod";
+import type { IConfigSchema } from "./config-schema";
 
 export type IProvider = "anthropic" | "openai";
 export interface IProviderInfo {
@@ -70,55 +71,6 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
   ): [Record<string, IConfigSchema>, z.ZodSchema];
   protected abstract getModelConfig(modelId: string): object;
   abstract getModelContextWindow(modelId: string): number | undefined;
-}
-
-export type IConfigSchema =
-  | IConfigSchemaNumber
-  | IConfigSchemaString
-  | IConfigSchemaBoolean
-  | IConfigSchemaArray
-  | IConfigSchemaEnum
-  | IConfigSchemaEnumGroup;
-
-export interface IConfigSchemaBase {
-  displayName: string;
-  description: string;
-  disabled?: boolean | { $ref: string; not?: boolean };
-}
-
-export interface IConfigSchemaNumber extends IConfigSchemaBase {
-  type: "number";
-  min: number | { $ref: string };
-  max: number | { $ref: string };
-  step: number;
-}
-
-export interface IConfigSchemaString extends IConfigSchemaBase {
-  type: "string" | "textarea";
-}
-
-export interface IConfigSchemaBoolean extends IConfigSchemaBase {
-  type: "boolean";
-}
-
-export interface IConfigSchemaArray extends IConfigSchemaBase {
-  type: "array";
-  items: Omit<IConfigSchema, "displayName" | "description">;
-}
-
-export interface IConfigSchemaEnum extends IConfigSchemaBase {
-  type: "enum";
-  placeholder: string;
-  items: { name: string; value: string }[];
-}
-
-export interface IConfigSchemaEnumGroup extends IConfigSchemaBase {
-  type: "enumgroup";
-  placeholder: string;
-  items: {
-    label: string;
-    items: { name: string; value: string }[];
-  }[];
 }
 
 export interface ITool extends IToolMeta {

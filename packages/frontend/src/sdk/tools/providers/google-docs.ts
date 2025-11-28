@@ -1,4 +1,5 @@
-import type { IConfigSchema, ITool, IToolProvider } from "@/sdk/shared";
+import type { ITool, IToolProvider } from "@/sdk/shared";
+import type { IConfigSchema } from "@/sdk/config-schema";
 import { ToolExecutionError, ToolParameterError, ToolRegistryError } from "@/sdk/tools/errors";
 import type { IGoogleDocsConfig } from "@/sdk/tools/providers/google-docs.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
