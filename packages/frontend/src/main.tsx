@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "@catppuccin/highlightjs/css/catppuccin-frappe.css";
 import App from "./App.tsx";
-import { ConnectivityProvider } from "@/page/context/Connectivity";
-import { PathProvider } from "@/page/context/Path";
+import { ConnectivityProvider } from "@/page/context/ConnectivityProvider";
+import { PathProvider } from "@/page/context/PathProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
