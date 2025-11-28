@@ -16,9 +16,7 @@ import type {
   IToolMetaJson,
   IMessageResultToolUse,
 } from "@/sdk/shared";
-import type {
-  IConfigSchema
-} from "@/sdk/config-schema";
+import type { IConfigSchema } from "@/sdk/config-schema";
 import {
   API,
   ExpectedError,
@@ -296,18 +294,21 @@ export class AnthropicProvider extends API<
               });
               break;
             case "tool_use":
-              let toolInput: object;
               try {
-                toolInput = JSON.parse(turnPartial.input);
-              } catch (e) {
-                toolInput = {};
+                message.content.push({
+                  type: "tool_use",
+                  id: turnPartial.id,
+                  input: JSON.parse(turnPartial.input),
+                  name: turnPartial.name,
+                });
+              } catch {
+                message.content.push({
+                  type: "tool_use",
+                  id: turnPartial.id,
+                  input: {},
+                  name: turnPartial.name,
+                });
               }
-              message.content.push({
-                type: "tool_use",
-                id: turnPartial.id,
-                input: toolInput,
-                name: turnPartial.name,
-              });
               break;
             case "start":
             case "end":
@@ -353,7 +354,10 @@ export class AnthropicProvider extends API<
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
-    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
+    onUsage: (delta: {
+      inputTokensDelta?: number;
+      outputTokensDelta?: number;
+    }) => void,
     signal?: AbortSignal
   ): Promise<void> {
     const messages = this.translateSession(session);
@@ -464,9 +468,8 @@ export class AnthropicProvider extends API<
               } else if (event.type === "message_start") {
                 // start of message and initial usage (if provided)
                 result(async (prev) => prev.push({ type: "start" }));
-                const usage = (
-                  event as IAnthropicMessageResultMessageStart
-                ).message.usage;
+                const usage = (event as IAnthropicMessageResultMessageStart)
+                  .message.usage;
                 if (usage) {
                   onUsage({
                     inputTokensDelta: usage.input_tokens ?? 0,
