@@ -238,8 +238,6 @@ export class AISDK {
         (delta) => {
           const inputDelta = delta.inputTokensDelta ?? 0;
           const outputDelta = delta.outputTokensDelta ?? 0;
-          if (inputDelta > 0) console.trace("input delta: ", inputDelta)
-          if (outputDelta > 0) console.trace("output delta: ", outputDelta)
           const anyDelta = inputDelta !== 0 || outputDelta !== 0;
           if (anyDelta) {
             newContextWindowUsage = newContextWindowUsage + inputDelta + outputDelta
