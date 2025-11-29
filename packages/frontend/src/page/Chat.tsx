@@ -67,7 +67,7 @@ export default function Chat() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       typing: "",
-      tokenUsage: { input: 0, output: 0 },
+      contextWindowUsage: 0,
     },
     undefined,
     {
@@ -185,7 +185,7 @@ export default function Chat() {
       sessionId,
       isPermanentSession,
       setSession,
-      isOnline
+      isOnline,
     ]
   );
 
@@ -356,7 +356,7 @@ export default function Chat() {
         );
         if (toolTurnIndex === -1) return newSession;
         newSession.turns[toolTurnIndex] = {
-          ...newSession.turns[toolTurnIndex] as SessionTurnsTool,
+          ...(newSession.turns[toolTurnIndex] as SessionTurnsTool),
           done: true,
           granted: false,
           isError: true,
@@ -557,19 +557,9 @@ export default function Chat() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {!(session.provider && session.modelId) && (
-                  <ModelSelector
-                    provider={provider}
-                    modelId={modelId}
-                    setModelId={setModelId}
-                  />
-                )}
                 {advanced.showTokenCount && (
                   <p className="text-xs text-muted-foreground">
                     {(() => {
-                      const input = session.tokenUsage?.input ?? 0;
-                      const output = session.tokenUsage?.output ?? 0;
-                      const total = input + output;
                       const effectiveProvider = session.provider ?? provider;
                       const effectiveModelId = session.modelId ?? modelId;
                       const contextWindow =
@@ -579,13 +569,20 @@ export default function Chat() {
                               effectiveModelId
                             )
                           : undefined;
-                      return `Tokens: ${total.toLocaleString()}${
+                      return `Context Window: ${session.contextWindowUsage.toLocaleString()}${
                         contextWindow
-                          ? ` / Context window: ${contextWindow.toLocaleString()}`
+                          ? ` / ${contextWindow.toLocaleString()}`
                           : ""
                       }`;
                     })()}
                   </p>
+                )}
+                {!(session.provider && session.modelId) && (
+                  <ModelSelector
+                    provider={provider}
+                    modelId={modelId}
+                    setModelId={setModelId}
+                  />
                 )}
               </div>
             </TextareaContainer>

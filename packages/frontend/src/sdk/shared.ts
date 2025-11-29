@@ -256,13 +256,7 @@ export type ISessionBase = {
   createdAt: number;
   updatedAt: number;
   typing: string;
-  /**
-   * Cumulative token usage for this session
-   */
-  tokenUsage?: {
-    input: number;
-    output: number;
-  };
+  contextWindowUsage: number;
   /**
    * Saved on first message: the provider and model to be used for the rest of the session.
    * If absent, the UI should prompt for selection; once set, selection UI can be hidden.

@@ -224,6 +224,7 @@ export class AISDK {
       if (providerInstance === null) {
         throw new Error(`Provider ${provider} not supported`);
       }
+      let newContextWindowUsage = 0
       await providerInstance.message(
         session.turns.slice(0, -1),
         model,
@@ -237,13 +238,12 @@ export class AISDK {
         (delta) => {
           const inputDelta = delta.inputTokensDelta ?? 0;
           const outputDelta = delta.outputTokensDelta ?? 0;
+          if (inputDelta > 0) console.trace("input delta: ", inputDelta)
+          if (outputDelta > 0) console.trace("output delta: ", outputDelta)
           const anyDelta = inputDelta !== 0 || outputDelta !== 0;
           if (anyDelta) {
-            if (!session.tokenUsage) {
-              session.tokenUsage = { input: 0, output: 0 };
-            }
-            session.tokenUsage.input += inputDelta;
-            session.tokenUsage.output += outputDelta;
+            newContextWindowUsage = newContextWindowUsage + inputDelta + outputDelta
+            session.contextWindowUsage = newContextWindowUsage
             saveSession();
           }
         },
