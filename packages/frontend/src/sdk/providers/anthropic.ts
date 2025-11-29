@@ -605,10 +605,10 @@ export class AnthropicProvider extends API<
 
     return {
       temperature: 1,
-      maxOutput: 2048,
+      maxOutput: Math.floor(modelInfo.maxOutput / 4 * 3),
       stopSequences: [],
       extendedThinking: modelInfo.extendedThinking,
-      thinkingBudget: 1024,
+      thinkingBudget: Math.floor(modelInfo.maxOutput / 4),
     };
   }
 

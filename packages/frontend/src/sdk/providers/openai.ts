@@ -814,7 +814,7 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
 
     return {
       temperature: 1,
-      maxOutput: 16384,
+      maxOutput: modelInfo.maxOutput,
       reasoning: modelInfo.reasoning,
       reasoningEffort: "medium",
     };
