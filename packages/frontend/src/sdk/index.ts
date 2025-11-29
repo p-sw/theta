@@ -181,6 +181,12 @@ export class AISDK {
       }
     }
 
+    if (!session.provider || !session.modelId) {
+      session.provider = provider;
+      session.modelId = model;
+      saveSession(false);
+    }
+
     session.turns.push({
       type: "request",
       messageId: hyperidInstance(),
