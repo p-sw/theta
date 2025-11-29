@@ -5,6 +5,8 @@ import {
   MODELS,
   SELECTED_MODEL,
   THEME,
+  type IModelFavorite,
+  MODEL_FAVORITE_KEY
 } from "@/lib/const";
 import { useStorage, useStorageKey } from "@/lib/utils";
 import type { IModelInfo, IProvider, TemporarySession } from "@/sdk/shared";
@@ -76,4 +78,24 @@ export function useSessionCleanup() {
       }
     }
   }, []);
+}
+
+export function useModelFavorites() {
+  const [value, update] = useStorage<IModelFavorite>(
+    MODEL_FAVORITE_KEY,
+    [],
+  )
+
+  const toggleModel = useCallback((modelId: string) => {
+    update((prev) => {
+      const n: string[] = [];
+      if (prev.includes(modelId)) {
+        for (const m of prev) if (m !== modelId) n.push(m)
+      } else
+        n.push(...prev, modelId)
+      return n;
+    })
+  }, [update])
+
+  return [value, toggleModel] as const;
 }

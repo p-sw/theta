@@ -19,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useApiKey, useModels } from "@/lib/storage-hooks";
+import { useApiKey, useModelFavorites, useModels } from "@/lib/storage-hooks";
 import { providerRegistry } from "@/sdk";
 import type { IProvider } from "@/sdk/shared";
 
@@ -36,6 +36,8 @@ export function ModelSelector({
   const [keys] = useApiKey();
 
   const [open, setOpen] = React.useState(false);
+
+  const [favorites] = useModelFavorites();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -60,6 +62,41 @@ export function ModelSelector({
           <CommandInput placeholder="Search model..." />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
+            {
+              /* Favorites */
+              <CommandGroup key={"favorites"} heading={"Favorites"}>
+                {favorites.map((modelId) => {
+                  const model = models.find((value) => value.id === modelId);
+                  if (!model) return;
+                  return (
+                    <CommandItem
+                      key={model.id}
+                      value={model.id}
+                      onSelect={(currentValue) => {
+                        setModelId(
+                          currentValue === selectedModelId &&
+                            model.provider === selectedProvider
+                            ? []
+                            : [model.provider, currentValue]
+                        );
+                        setOpen(false);
+                      }}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 size-4",
+                          selectedModelId === model.id &&
+                            model.provider === selectedProvider
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {model.displayName}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            }
             {(
               Object.entries(keys) as unknown /* fuck */ as [
                 IProvider,

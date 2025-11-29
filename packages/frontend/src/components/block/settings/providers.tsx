@@ -5,12 +5,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useApiKey, useModels } from "@/lib/storage-hooks";
+import { useApiKey, useModelFavorites, useModels } from "@/lib/storage-hooks";
 import type { IModelInfo } from "@/sdk/shared";
 import { useRef, useState } from "react";
 import Anthropic from "~icons/ai-provider/anthropic";
 import LucideSave from "~icons/lucide/save";
 import OpenAI from "~icons/ai-provider/openai";
+import Star from "~icons/mdi/star";
+import StarOutline from "~icons/mdi/star-outline";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 
@@ -21,6 +23,8 @@ function ModelItem({
   model: IModelInfo;
   onDisableToggle: () => void;
 }) {
+  const [favorites, toggleModel] = useModelFavorites()
+
   return (
     <div className="flex flex-row justify-between rounded-md h-10 items-center px-2">
       <div className="flex flex-row gap-2 w-full items-center">
@@ -30,7 +34,14 @@ function ModelItem({
         )}
         <p className="text-sm">{model.displayName}</p>
       </div>
+      <div className="flex flex-row justify-center items-center gap-2">
       <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
+      <Button type="button" variant="secondary" size="icon" className="size-8" onClick={() => toggleModel(model.id)}>
+        {
+          favorites.includes(model.id) ? <Star /> : <StarOutline />
+        }
+      </Button>
+      </div>
     </div>
   );
 }
