@@ -1,8 +1,6 @@
 import { SettingsSection, SettingsSubSection } from "@/components/layout/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { SYNC_ENABLED_KEY, SYNC_KEY_KEY } from "@/lib/const";
 import { useStorage } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
@@ -67,13 +65,6 @@ export function SyncSettings() {
       title="Sync"
       description="Keep your data synchronized across devices using a private Sync Key."
     >
-      <SettingsSubSection title="Status">
-        <div className="flex items-center gap-3">
-          <Switch checked={enabled} onCheckedChange={(c) => setEnabledStr(c ? "true" : "false")} />
-          <Label>{enabled ? "Enabled" : "Disabled"}</Label>
-        </div>
-      </SettingsSubSection>
-
       {!enabled && (
         <SettingsSubSection title="Enable Sync">
           <div className="flex flex-col gap-3">
