@@ -370,11 +370,12 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
     onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
+    overrideConfigs?: Partial<IOpenAIModelConfig & { system: string }>,
     signal?: AbortSignal
   ): Promise<void> {
     const modelInfo = this.getModelInfo(model)!;
     const messages = this.translateSession(session);
-    const modelConfig = this.getModelConfig(model);
+    const modelConfig = { ...this.getModelConfig(model), ...overrideConfigs };
 
     // Get system prompts from localStorage
     const systemPrompts = [
@@ -383,6 +384,12 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
         text: "Today's datetime is " + new Date().toISOString(),
       },
     ];
+    if (overrideConfigs?.system) {
+      systemPrompts.push({
+        type: "text" as const,
+        text: overrideConfigs.system
+      })
+    }
 
     try {
       const systemPromptsString = localStorage.getItem(SYSTEM_PROMPTS_KEY);

@@ -62,6 +62,7 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
     onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
+    overrideConfigs?: unknown,
     signal?: AbortSignal
   ): Promise<void>;
   abstract getModels(modelId: string): Promise<IModelInfo[]>;

@@ -251,6 +251,7 @@ export class AISDK {
             saveSession();
           }
         },
+        undefined,
         abortController.signal
       );
     } catch (e) {

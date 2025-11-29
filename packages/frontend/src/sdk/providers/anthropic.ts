@@ -356,10 +356,11 @@ export class AnthropicProvider extends API<
       inputTokensDelta?: number;
       outputTokensDelta?: number;
     }) => void,
+    overrideConfigs?: Partial<IAnthropicModelConfig & { system: string }>,
     signal?: AbortSignal
   ): Promise<void> {
     const messages = this.translateSession(session);
-    const modelConfig = this.getModelConfig(model);
+    const modelConfig = { ...this.getModelConfig(model), ...overrideConfigs };
 
     // Get system prompts from localStorage
     const systemPrompts = [
@@ -368,6 +369,12 @@ export class AnthropicProvider extends API<
         text: "Today's datetime is " + new Date().toISOString(),
       },
     ];
+    if (overrideConfigs?.system) {
+      systemPrompts.push({
+        type: "text" as const,
+        text: overrideConfigs?.system
+      })
+    }
 
     try {
       const systemPromptsString = localStorage.getItem(SYSTEM_PROMPTS_KEY);
