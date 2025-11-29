@@ -26,3 +26,5 @@ dist-ssr
 # E2E artifacts and local dev db
 test-results/
 sync.db
+
+.env
