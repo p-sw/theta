@@ -26,7 +26,6 @@ import CreationOutline from "~icons/mdi/creation-outline";
 import Loading from "~icons/mdi/loading";
 import { simpleTitleWrite } from "@/sdk/simple-title-writer";
 import { sessionStorage } from "@/lib/storage";
-import type { TemporarySession } from "@/sdk/shared";
 import { useState } from "react";
 
 export interface SaveSessionForm {
@@ -91,24 +90,8 @@ export function SaveSessionItem({
                           type="button"
                           size="icon"
                           onClick={async () => {
-                            // get first request message by session id
-                            const session = JSON.parse(
-                              sessionStorage.getItem(
-                                SESSION_STORAGE_KEY(sessionId)
-                              )!
-                            ) as TemporarySession;
-                            const firstRequest = session.turns.find(
-                              (value) => value.type === "request"
-                            );
-                            if (!firstRequest) return;
-                            let firstMessage = "";
-                            for (const message of firstRequest.message.filter(
-                              (v) => v.type === "text"
-                            )) {
-                              firstMessage = firstMessage + message.text + "\n";
-                            }
                             setGeneration(true);
-                            const title = await simpleTitleWrite(firstMessage);
+                            const title = await simpleTitleWrite(SESSION_STORAGE_KEY(sessionId), sessionStorage);
                             if (!title) return;
                             form.setValue("title", title, {
                               shouldDirty: true,

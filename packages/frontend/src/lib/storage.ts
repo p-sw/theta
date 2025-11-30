@@ -12,7 +12,7 @@ import {
 } from "@/lib/const";
 import { dispatchEvent } from "@/lib/utils";
 
-class StorageWrapper implements Storage {
+export class StorageWrapper implements Storage {
   private storage: Storage;
   private keys: Set<string>;
 
