@@ -58,10 +58,16 @@ export function SaveSessionItem({
     });
   };
 
-  const [generatingTitle, setGeneration] = useState(false)
+  const [generatingTitle, setGeneration] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(open: boolean) => {
+        onOpenChange?.(open);
+        form.reset();
+      }}
+    >
       <DialogContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
@@ -80,30 +86,45 @@ export function SaveSessionItem({
                   <FormControl>
                     <div className="flex flex-row justify-center items-center w-full gap-2">
                       <Input {...field} />
-                      {
-                        sessionId && (<Button type="button" size="icon" onClick={async () => {
-                        // get first request message by session id
-                        const session = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY(sessionId))!) as TemporarySession
-                        const firstRequest = session.turns.find((value) => value.type === "request")
-                        if (!firstRequest) return;
-                        let firstMessage = "";
-                        for (const message of firstRequest.message.filter((v) => v.type === "text")) {
-                          firstMessage = firstMessage + message.text + "\n";
-                        }
-                        setGeneration(true)
-                        const title = await simpleTitleWrite(firstMessage)
-                        if (!title) return;
-                        form.setValue("title", title, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-                        setGeneration(false)
-                      }}>
-                        {
-                          generatingTitle
-                            ? <Loading className="animate-spin" />
-                            : <CreationOutline />
-                        }
-                      </Button>)
-                      }
-                      
+                      {sessionId && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          onClick={async () => {
+                            // get first request message by session id
+                            const session = JSON.parse(
+                              sessionStorage.getItem(
+                                SESSION_STORAGE_KEY(sessionId)
+                              )!
+                            ) as TemporarySession;
+                            const firstRequest = session.turns.find(
+                              (value) => value.type === "request"
+                            );
+                            if (!firstRequest) return;
+                            let firstMessage = "";
+                            for (const message of firstRequest.message.filter(
+                              (v) => v.type === "text"
+                            )) {
+                              firstMessage = firstMessage + message.text + "\n";
+                            }
+                            setGeneration(true);
+                            const title = await simpleTitleWrite(firstMessage);
+                            if (!title) return;
+                            form.setValue("title", title, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                              shouldValidate: true,
+                            });
+                            setGeneration(false);
+                          }}
+                        >
+                          {generatingTitle ? (
+                            <Loading className="animate-spin" />
+                          ) : (
+                            <CreationOutline />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />
