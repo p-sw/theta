@@ -52,7 +52,6 @@ export function SaveSessionItem({
     resolver: zodResolver(formSchema),
   });
   const onSubmit = (data: SaveSessionForm) => {
-    console.log(data.title);
     dispatchEvent(SAVE_SESSION_EVENT, {
       detail: { title: data.title, sessionId },
     });
