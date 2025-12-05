@@ -307,12 +307,18 @@ function CompactSessionItem({
   highlight,
   onSave,
 }: SessionItemProps) {
+  const [openDropdown, setOpenDropdown] = useState(false);
+
   return (
     <Button
       asChild
       variant={highlight ? "default" : "ghost"}
       className="rounded-md flex flex-row justify-between items-center gap-2 w-full group"
       onClick={onOpen}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setOpenDropdown(true);
+      }}
     >
       <div>
         <span
@@ -322,7 +328,7 @@ function CompactSessionItem({
         >
           {title}
         </span>
-        <DropdownMenu>
+        <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
           <DropdownMenuTrigger asChild>
             <Button
               variant={"ghost"}
