@@ -52,9 +52,12 @@ export function SaveSessionItem({
     resolver: zodResolver(formSchema),
   });
   const onSubmit = (data: SaveSessionForm) => {
+    console.log(data.title);
     dispatchEvent(SAVE_SESSION_EVENT, {
       detail: { title: data.title, sessionId },
     });
+    onOpenChange?.(false);
+    form.reset();
   };
 
   const [generatingTitle, setGeneration] = useState(false);
@@ -64,7 +67,6 @@ export function SaveSessionItem({
       open={open}
       onOpenChange={(open: boolean) => {
         onOpenChange?.(open);
-        form.reset();
       }}
     >
       <DialogContent>
@@ -91,7 +93,10 @@ export function SaveSessionItem({
                           size="icon"
                           onClick={async () => {
                             setGeneration(true);
-                            const title = await simpleTitleWrite(SESSION_STORAGE_KEY(sessionId), sessionStorage);
+                            const title = await simpleTitleWrite(
+                              SESSION_STORAGE_KEY(sessionId),
+                              sessionStorage
+                            );
                             if (!title) return;
                             form.setValue("title", title, {
                               shouldDirty: true,
@@ -118,11 +123,9 @@ export function SaveSessionItem({
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <DialogClose asChild>
-                <Button type="submit" disabled={!form.formState.isValid}>
-                  Save
-                </Button>
-              </DialogClose>
+              <Button type="submit" disabled={!form.formState.isValid}>
+                Save
+              </Button>
             </DialogFooter>
           </form>
         </Form>
