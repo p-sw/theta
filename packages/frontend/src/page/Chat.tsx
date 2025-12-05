@@ -41,7 +41,6 @@ import { ConnectivityContext } from "./context/Connectivity";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
-import { toolRegistry } from "@/sdk/tools";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
 
 export default function Chat() {
@@ -77,7 +76,6 @@ export default function Chat() {
   const [advanced] = useAdvanced();
 
   const [isStreaming, setIsStreaming] = useState(false);
-  const [autoContinue, setAutoContinue] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -141,7 +139,6 @@ export default function Chat() {
         message: "",
       });
       setIsStreaming(true);
-      setAutoContinue(true);
       AiSdk.message(
         sessionId,
         isPermanentSession,
@@ -152,7 +149,6 @@ export default function Chat() {
         toast.error(`${e.name ?? "Error"}: ${e.message}`);
         console.error(e);
         setIsStreaming(false);
-        setAutoContinue(false);
 
         const sessionRef = JSON.parse(
           (isPermanentSession ? localStorage : sessionStorage).getItem(
@@ -189,70 +185,9 @@ export default function Chat() {
     ]
   );
 
-  useEffect(() => {
-    //// if all tools are done, send message to ai
-    const lastAssistantTurn = session.turns.reduce<SessionTurnsResponse | null>(
-      (prev, turn) => (turn.type === "response" ? turn : prev),
-      null
-    );
-    if (!lastAssistantTurn || lastAssistantTurn.stop?.type !== "tool_use")
-      return;
-    const lastAssistantToolUseId = lastAssistantTurn.message
-      .filter((message) => message.type === "tool_use")
-      .map((message) => message.id);
-    const usedTools = session.turns.filter(
-      (turn): turn is SessionTurnsTool =>
-        turn.type === "tool" && lastAssistantToolUseId.includes(turn.useId)
-    );
-    if (
-      autoContinue &&
-      isOnline &&
-      usedTools.length > 0 &&
-      usedTools.every((tool) => tool.done) &&
-      session.turns.at(-1)!.type === "tool"
-    ) {
-      const effectiveProvider =
-        (session as TemporarySession).provider ?? provider;
-      const effectiveModelId = (session as TemporarySession).modelId ?? modelId;
-      AiSdk.message(
-        sessionId,
-        isPermanentSession,
-        effectiveProvider!,
-        effectiveModelId!,
-        []
-      ).catch((e) => {
-        toast.error(`${e.name ?? "Error"}: ${e.message}`);
-        console.error(e);
-        setIsStreaming(false);
-        setAutoContinue(false);
-        setSession((prev) => {
-          const newSession = { ...prev };
-          const lastTurn = newSession.turns.at(-1);
-          if (lastTurn?.type === "response") {
-            const lastTurnDisplayables =
-              parseResponseSessionDisplayables(lastTurn);
-            if (lastTurnDisplayables.message.length === 0) {
-              newSession.turns.pop(); // remove unfinished response
-            }
-          }
-          return newSession;
-        });
-      });
-    }
-  }, [
-    session.turns,
-    sessionId,
-    isPermanentSession,
-    provider,
-    modelId,
-    session,
-    isOnline,
-  ]);
-
   const handlePause = useCallback(() => {
     AiSdk.abortCurrent();
     setIsStreaming(false);
-    setAutoContinue(false);
     setSession((prev) => {
       const newSession = { ...prev } as typeof prev;
       newSession.turns = newSession.turns.map((turn) => {
@@ -384,65 +319,6 @@ export default function Chat() {
       hasPendingTool || assistantStillStreaming || assistantUsingTool
     );
   }, [session.turns, isStreaming]);
-
-  // Auto-execute tools that are granted but not done yet
-  useEffect(() => {
-    const toolTurns = session.turns.filter(
-      (turn): turn is SessionTurnsTool => turn.type === "tool"
-    );
-    if (toolTurns.length === 0) return;
-
-    const executeGrantedTools = async () => {
-      for (const toolTurn of toolTurns) {
-        // Execute tools that are granted but not done yet
-        // This includes whitelisted tools (auto-granted) and manually granted tools
-        const toolTurnIndex = session.turns.findIndex(
-          (turn) => turn.type === "tool" && turn.useId === toolTurn.useId
-        );
-        if (toolTurnIndex === -1) continue;
-
-        if (!toolTurn.done && toolTurn.granted) {
-          console.log("Executing granted tool:", toolTurn.toolName);
-          // Small delay to ensure the UI has rendered
-          try {
-            const toolResult = await toolRegistry.execute(
-              toolTurn.toolName,
-              JSON.parse(toolTurn.requestContent)
-            );
-            setSession((prev) => {
-              const newSession = { ...prev };
-              newSession.turns[toolTurnIndex] = {
-                ...toolTurn,
-                done: true,
-                granted: true,
-                isError: false,
-                responseContent: toolResult,
-              };
-              return newSession;
-            });
-          } catch (e) {
-            setSession((prev) => {
-              const newSession = { ...prev };
-              newSession.turns[toolTurnIndex] = {
-                ...toolTurn,
-                done: true,
-                granted: true,
-                isError: true,
-                responseContent:
-                  (e as Error).message ??
-                  "Unexpected error while executing tool",
-              };
-              return newSession;
-            });
-            return;
-          }
-          break; // Execute one at a time to avoid race conditions
-        }
-      }
-    };
-
-    executeGrantedTools();
-  }, [session.turns, onToolGrant]);
 
   // Trigger auto-scroll when session turns change (new messages)
   useEffect(() => {
