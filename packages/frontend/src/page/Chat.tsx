@@ -23,7 +23,6 @@ import {
 } from "@/lib/const";
 import type {
   PermanentSession,
-  SessionTurnsResponse,
   SessionTurnsTool,
   TemporarySession,
 } from "@/sdk/shared";
@@ -145,32 +144,34 @@ export default function Chat() {
         effectiveProvider!,
         effectiveModelId!,
         [{ type: "text", text: data.message }]
-      ).catch((e) => {
-        toast.error(`${e.name ?? "Error"}: ${e.message}`);
-        console.error(e);
-        setIsStreaming(false);
+      )
+        .then(() => setIsStreaming(false))
+        .catch((e) => {
+          toast.error(`${e.name ?? "Error"}: ${e.message}`);
+          console.error(e);
+          setIsStreaming(false);
 
-        const sessionRef = JSON.parse(
-          (isPermanentSession ? localStorage : sessionStorage).getItem(
-            SESSION_STORAGE_KEY(sessionId)
-          ) ?? "{}"
-        ) as TemporarySession;
-        const lastTurn = sessionRef.turns.at(-1);
-        if (lastTurn?.type === "response") {
-          const lastTurnDisplayables =
-            parseResponseSessionDisplayables(lastTurn);
-          if (lastTurnDisplayables.message.length === 0) {
-            form.setValue("message", data.message);
-            sessionRef.turns.pop();
-            sessionRef.turns.pop();
+          const sessionRef = JSON.parse(
+            (isPermanentSession ? localStorage : sessionStorage).getItem(
+              SESSION_STORAGE_KEY(sessionId)
+            ) ?? "{}"
+          ) as TemporarySession;
+          const lastTurn = sessionRef.turns.at(-1);
+          if (lastTurn?.type === "response") {
+            const lastTurnDisplayables =
+              parseResponseSessionDisplayables(lastTurn);
+            if (lastTurnDisplayables.message.length === 0) {
+              form.setValue("message", data.message);
+              sessionRef.turns.pop();
+              sessionRef.turns.pop();
 
-            (isPermanentSession ? localStorage : sessionStorage).setItem(
-              SESSION_STORAGE_KEY(sessionId),
-              JSON.stringify(sessionRef)
-            );
+              (isPermanentSession ? localStorage : sessionStorage).setItem(
+                SESSION_STORAGE_KEY(sessionId),
+                JSON.stringify(sessionRef)
+              );
+            }
           }
-        }
-      });
+        });
     },
     [
       session,
@@ -302,23 +303,6 @@ export default function Chat() {
     },
     [setSession]
   );
-
-  // Update streaming state based on session turns
-  useEffect(() => {
-    if (!isStreaming) return;
-    const hasPendingTool = session.turns.some(
-      (t): t is SessionTurnsTool => t.type === "tool" && !t.done
-    );
-    const lastAssistant = [...session.turns]
-      .reverse()
-      .find((t): t is SessionTurnsResponse => t.type === "response");
-    const assistantStillStreaming = lastAssistant ? !lastAssistant.stop : false;
-    const assistantUsingTool = lastAssistant?.stop?.type === "tool_use";
-
-    setIsStreaming(
-      hasPendingTool || assistantStillStreaming || assistantUsingTool
-    );
-  }, [session.turns, isStreaming]);
 
   // Trigger auto-scroll when session turns change (new messages)
   useEffect(() => {
