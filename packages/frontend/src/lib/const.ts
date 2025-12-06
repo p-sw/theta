@@ -63,6 +63,11 @@ export const TOOL_PROVIDER_AVAILABILITY_KEY = "tool-provider-availability";
 export const TOOL_ENABLED_KEY = "tool-enabled";
 export const TOOL_WHITELISTED_KEY = "tool-whitelisted";
 export const TOOL_PROVIDER_SEPARATOR = "__";
+export const TOOL_PROVIDER_MODEL_KEY = "tool-provider-model";
+export type IToolProviderModel = Record<
+  string,
+  [IProvider, string] | null | undefined
+>;
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
 export const SESSION_STORAGE_ID = (key: string) =>
@@ -92,7 +97,7 @@ export const SYNC_INTERVAL_MS = 5000;
 
 // model favorites
 export const MODEL_FAVORITE_KEY = "model-favorite";
-export type IModelFavorite = string[]
+export type IModelFavorite = string[];
 
 /*
  * ADVANCED SETTINGS

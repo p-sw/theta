@@ -6,9 +6,11 @@ import {
   TOOL_PROVIDER_CONFIG_KEY,
   TOOL_PROVIDER_ENABLED_KEY,
   TOOL_PROVIDER_SEPARATOR,
+  type IToolProviderModel,
+  TOOL_PROVIDER_MODEL_KEY,
 } from "@/lib/const";
 import { dispatchEvent, useStorage } from "@/lib/utils";
-import type { IToolMetaJson, IToolProviderMeta } from "@/sdk/shared";
+import type { IProvider, IToolMetaJson, IToolProviderMeta } from "@/sdk/shared";
 import { toolRegistry } from "@/sdk/tools";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -92,6 +94,8 @@ export function useProviderToolEnabled() {
     TOOL_WHITELISTED_KEY,
     []
   );
+  const [toolProviderModels, setToolProviderModels] =
+    useStorage<IToolProviderModel>(TOOL_PROVIDER_MODEL_KEY, {});
 
   const isProviderEnabled = useCallback(
     (providerId: string) => {
@@ -116,6 +120,13 @@ export function useProviderToolEnabled() {
       );
     },
     [whitelistedTools]
+  );
+
+  const toolProviderModel = useCallback(
+    (toolProviderId: string) => {
+      return toolProviderModels[toolProviderId];
+    },
+    [toolProviderModels]
   );
 
   const toggleProviderEnabled = useCallback(
@@ -160,13 +171,22 @@ export function useProviderToolEnabled() {
     [setWhitelistedTools]
   );
 
+  const setProviderModel = useCallback(
+    (toolProviderId: string, value: [IProvider, string] | null | undefined) => {
+      setToolProviderModels((prev) => ({ ...prev, [toolProviderId]: value }));
+    },
+    [setToolProviderModels]
+  );
+
   return {
     isProviderEnabled,
     isToolEnabled,
     isToolWhitelisted,
+    toolProviderModel,
     toggleProviderEnabled,
     toggleToolEnabled,
     toggleToolWhitelisted,
+    setProviderModel,
   };
 }
 

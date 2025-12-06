@@ -61,7 +61,6 @@ export function ModelSelector({
         <Command>
           <CommandInput placeholder="Search model..." />
           <CommandList>
-            <CommandEmpty>No model found.</CommandEmpty>
             {
               /* Favorites */
               <CommandGroup key={"favorites"} heading={"Favorites"}>
@@ -139,6 +138,7 @@ export function ModelSelector({
                     ))}
                 </CommandGroup>
               ))}
+            <CommandEmpty>No model found.</CommandEmpty>
           </CommandList>
         </Command>
       </PopoverContent>

@@ -44,6 +44,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ModelSelector } from "../chat/model-selector";
 
 function ToolItems({
   providerId,
@@ -148,11 +149,17 @@ function ToolItems({
   );
 }
 
-function ToolProviderConfig({ provider }: { provider: IToolProviderMeta }) {
+function ToolProviderConfig({
+  provider,
+  buttonClass,
+}: {
+  provider: IToolProviderMeta;
+  buttonClass?: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className={buttonClass}>
           <LucideSettings />
         </Button>
       </SheetTrigger>
@@ -175,9 +182,11 @@ export function ToolsSection() {
     isProviderEnabled,
     isToolEnabled,
     isToolWhitelisted,
+    toolProviderModel,
     toggleProviderEnabled,
     toggleToolEnabled,
     toggleToolWhitelisted,
+    setProviderModel,
   } = useProviderToolEnabled();
   const providers = useToolProvidersMeta();
 
@@ -212,7 +221,7 @@ export function ToolsSection() {
                 toggleWhitelisted={toggleToolWhitelisted}
               />
             </CardContent>
-            <CardFooter className="justify-between gap-4">
+            <CardFooter className="grid grid-rows-2 grid-cols-2 gap-4">
               <Tooltip>
                 <TooltipTriggerDisabled>
                   <div className="flex items-center gap-2">
@@ -222,9 +231,7 @@ export function ToolsSection() {
                       onCheckedChange={() => toggleProviderEnabled(provider.id)}
                       disabled={!provider.available}
                     />
-                    <Label
-                      htmlFor={`${id}-provider-${provider.id}-enabled-mobile`}
-                    >
+                    <Label htmlFor={`${id}-provider-${provider.id}-enabled`}>
                       Enabled
                     </Label>
                   </div>
@@ -233,7 +240,36 @@ export function ToolsSection() {
                   Cannot setup provider. Please check your provider settings.
                 </TooltipContent>
               </Tooltip>
-              <ToolProviderConfig provider={provider} />
+              <ToolProviderConfig
+                provider={provider}
+                buttonClass="justify-self-end"
+              />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id={`${id}-provider-${provider.id}-model-inherit`}
+                    checked={toolProviderModel(provider.id) === undefined}
+                    onCheckedChange={(checked) =>
+                      setProviderModel(provider.id, checked ? undefined : null)
+                    }
+                  />
+                  <Label
+                    htmlFor={`${id}-provider-${provider.id}-model-inherit`}
+                  >
+                    Auto
+                  </Label>
+                </div>
+                <ModelSelector
+                  provider={toolProviderModel(provider.id)?.[0]}
+                  modelId={toolProviderModel(provider.id)?.[1]}
+                  setModelId={(value) =>
+                    setProviderModel(
+                      provider.id,
+                      value.length === 0 ? null : value
+                    )
+                  }
+                />
+              </div>
             </CardFooter>
           </Card>
         );
