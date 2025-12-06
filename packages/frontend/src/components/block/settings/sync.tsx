@@ -1,4 +1,7 @@
-import { SettingsSection, SettingsSubSection } from "@/components/layout/settings";
+import {
+  SettingsSection,
+  SettingsSubSection,
+} from "@/components/layout/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SYNC_ENABLED_KEY, SYNC_KEY_KEY } from "@/lib/const";
@@ -8,7 +11,10 @@ import { enableSyncWithExisting, generateNewSyncKey } from "@/lib/sync";
 import { toast } from "sonner";
 
 export function SyncSettings() {
-  const [enabledStr, setEnabledStr] = useStorage<string>(SYNC_ENABLED_KEY, "false");
+  const [enabledStr, setEnabledStr] = useStorage<string>(
+    SYNC_ENABLED_KEY,
+    "false"
+  );
   const enabled = enabledStr === "true";
   const [syncKey, setSyncKey] = useStorage<string>(SYNC_KEY_KEY, "");
   const [existingKeyInput, setExistingKeyInput] = useState("");
@@ -43,6 +49,8 @@ export function SyncSettings() {
       setSyncKey(key);
       setEnabledStr("true");
       toast.success("Synced from existing key and enabled");
+      // refresh page to reload all state
+      window.location.reload();
     } catch (e) {
       console.error(e);
       toast.error("Failed to join with existing sync key");
@@ -101,7 +109,8 @@ export function SyncSettings() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Keep this key private. Anyone with this key can read and update your synced data.
+              Keep this key private. Anyone with this key can read and update
+              your synced data.
             </p>
           </div>
         </SettingsSubSection>
