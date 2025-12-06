@@ -64,8 +64,11 @@ export function ModelSelector({
             {
               /* Favorites */
               <CommandGroup key={"favorites"} heading={"Favorites"}>
-                {favorites.map((modelId) => {
-                  const model = models.find((value) => value.id === modelId);
+                {favorites.map(([providerId, modelId]) => {
+                  const model = models.find(
+                    (value) =>
+                      value.provider === providerId && value.id === modelId
+                  );
                   if (!model) return;
                   return (
                     <CommandItem
@@ -74,9 +77,9 @@ export function ModelSelector({
                       onSelect={(currentValue) => {
                         setModelId(
                           currentValue === selectedModelId &&
-                            model.provider === selectedProvider
+                            providerId === selectedProvider
                             ? []
-                            : [model.provider, currentValue]
+                            : [providerId, currentValue]
                         );
                         setOpen(false);
                       }}

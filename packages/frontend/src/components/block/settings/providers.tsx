@@ -23,7 +23,7 @@ function ModelItem({
   model: IModelInfo;
   onDisableToggle: () => void;
 }) {
-  const [favorites, toggleModel] = useModelFavorites()
+  const [favorites, toggleModel] = useModelFavorites();
 
   return (
     <div className="flex flex-row justify-between rounded-md h-10 items-center px-2">
@@ -35,12 +35,22 @@ function ModelItem({
         <p className="text-sm">{model.displayName}</p>
       </div>
       <div className="flex flex-row justify-center items-center gap-2">
-      <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
-      <Button type="button" variant="secondary" size="icon" className="size-8" onClick={() => toggleModel(model.id)}>
-        {
-          favorites.includes(model.id) ? <Star /> : <StarOutline />
-        }
-      </Button>
+        <Switch checked={!model.disabled} onCheckedChange={onDisableToggle} />
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="size-8"
+          onClick={() => toggleModel(model.provider, model.id)}
+        >
+          {favorites.find(
+            ([p, m]) => p === model.provider && m === model.id
+          ) ? (
+            <Star />
+          ) : (
+            <StarOutline />
+          )}
+        </Button>
       </div>
     </div>
   );

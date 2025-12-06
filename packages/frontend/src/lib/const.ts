@@ -97,7 +97,7 @@ export const SYNC_INTERVAL_MS = 5000;
 
 // model favorites
 export const MODEL_FAVORITE_KEY = "model-favorite";
-export type IModelFavorite = string[];
+export type IModelFavorite = [IProvider, string][];
 
 /*
  * ADVANCED SETTINGS
