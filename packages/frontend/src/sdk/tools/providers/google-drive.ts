@@ -8,6 +8,7 @@ import {
 import type { IGoogleDriveConfig } from "@/sdk/tools/providers/google-drive.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
 const DRIVE_SCOPE_READONLY = "https://www.googleapis.com/auth/drive.readonly";
 const DRIVE_SCOPE_FULL = "https://www.googleapis.com/auth/drive";
@@ -23,7 +24,10 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
+export class GoogleDriveProvider
+  extends ToolProviderBase
+  implements IToolProvider<IGoogleDriveConfig>
+{
   static id = "google-drive";
   id = "google-drive";
   displayName = "Google Drive";
@@ -48,6 +52,10 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleDriveProvider.id);
+  }
 
   setup(config: IGoogleDriveConfig) {
     try {
@@ -82,7 +90,8 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
         {
           id: "list-files",
           displayName: "List Files",
-          description: "List files in Google Drive with optional query and paging",
+          description:
+            "List files in Google Drive with optional query and paging",
           schema: z.object({
             q: z
               .string()
@@ -98,7 +107,10 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
               .max(1000)
               .optional()
               .describe("Maximum number of files to return"),
-            pageToken: z.string().optional().describe("Page token for next page"),
+            pageToken: z
+              .string()
+              .optional()
+              .describe("Page token for next page"),
             orderBy: z
               .string()
               .optional()
@@ -131,7 +143,8 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
             if (params.q) url.searchParams.set("q", params.q);
             if (params.pageSize)
               url.searchParams.set("pageSize", String(params.pageSize));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
             if (params.orderBy) url.searchParams.set("orderBy", params.orderBy);
             if (params.spaces) url.searchParams.set("spaces", params.spaces);
             if (params.includeItemsFromAllDrives !== undefined)
@@ -251,7 +264,8 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
                 `${res.status} ${res.statusText}: ${await res.text()}`
               );
             }
-            const mimeType = res.headers.get("content-type") ?? "application/octet-stream";
+            const mimeType =
+              res.headers.get("content-type") ?? "application/octet-stream";
             const buf = await res.arrayBuffer();
             const base64 = arrayBufferToBase64(buf);
             return JSON.stringify({ fileId: params.fileId, mimeType, base64 });
@@ -431,7 +445,8 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
             );
             if (params.pageSize)
               url.searchParams.set("pageSize", String(params.pageSize));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
             const res = await fetch(url.toString(), {
               headers: { Authorization: `Bearer ${accessToken}` },
             });
@@ -461,7 +476,14 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
           schema: z.object({
             fileId: z.string().nonempty(),
             role: z
-              .enum(["owner", "organizer", "fileOrganizer", "writer", "commenter", "reader"])
+              .enum([
+                "owner",
+                "organizer",
+                "fileOrganizer",
+                "writer",
+                "commenter",
+                "reader",
+              ])
               .describe("Access role for the grantee"),
             type: z
               .enum(["user", "group", "domain", "anyone"])
@@ -471,7 +493,10 @@ export class GoogleDriveProvider implements IToolProvider<IGoogleDriveConfig> {
               .email()
               .optional()
               .describe("Required if type is 'user' or 'group'"),
-            domain: z.string().optional().describe("Required if type is 'domain'"),
+            domain: z
+              .string()
+              .optional()
+              .describe("Required if type is 'domain'"),
             allowFileDiscovery: z
               .boolean()
               .optional()

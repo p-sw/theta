@@ -8,6 +8,7 @@ import {
 import type { IGoogleContactsConfig } from "@/sdk/tools/providers/google-contacts.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
 const CONTACTS_SCOPE_READONLY =
   "https://www.googleapis.com/auth/contacts.readonly";
@@ -55,6 +56,7 @@ const personFieldsArraySchema = z
   );
 
 export class GoogleContactsProvider
+  extends ToolProviderBase
   implements IToolProvider<IGoogleContactsConfig>
 {
   static id = "google-contacts";
@@ -81,6 +83,10 @@ export class GoogleContactsProvider
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleContactsProvider.id);
+  }
 
   setup(config: IGoogleContactsConfig) {
     try {
@@ -124,7 +130,9 @@ export class GoogleContactsProvider
               .min(1)
               .max(2000)
               .optional()
-              .describe("Max number of results to return (default 100, max 2000)"),
+              .describe(
+                "Max number of results to return (default 100, max 2000)"
+              ),
             pageToken: z.string().optional(),
             sortOrder: z
               .enum(["FIRST_NAME_ASCENDING", "LAST_NAME_ASCENDING"]) // per API docs

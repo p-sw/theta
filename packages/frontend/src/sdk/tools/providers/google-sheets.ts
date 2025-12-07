@@ -8,11 +8,14 @@ import {
 import type { IGoogleSheetsConfig } from "@/sdk/tools/providers/google-sheets.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
-const SHEETS_SCOPE_READONLY = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const SHEETS_SCOPE_READONLY =
+  "https://www.googleapis.com/auth/spreadsheets.readonly";
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
 export class GoogleSheetsProvider
+  extends ToolProviderBase
   implements IToolProvider<IGoogleSheetsConfig>
 {
   static id = "google-sheets";
@@ -39,6 +42,10 @@ export class GoogleSheetsProvider
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleSheetsProvider.id);
+  }
 
   setup(config: IGoogleSheetsConfig) {
     try {
@@ -69,7 +76,10 @@ export class GoogleSheetsProvider
   private _tools: ITool[] = [];
   get tools(): ITool[] {
     if (this._tools.length === 0) {
-      const rangeSchema = z.string().nonempty().describe("A1 notation range e.g. Sheet1!A1:C10");
+      const rangeSchema = z
+        .string()
+        .nonempty()
+        .describe("A1 notation range e.g. Sheet1!A1:C10");
 
       this._tools = [
         {
@@ -99,7 +109,10 @@ export class GoogleSheetsProvider
               )}/values/${encodeURIComponent(params.range)}`
             );
             if (params.valueRenderOption)
-              url.searchParams.set("valueRenderOption", params.valueRenderOption);
+              url.searchParams.set(
+                "valueRenderOption",
+                params.valueRenderOption
+              );
             if (params.dateTimeRenderOption)
               url.searchParams.set(
                 "dateTimeRenderOption",
@@ -144,7 +157,9 @@ export class GoogleSheetsProvider
               .default("USER_ENTERED"),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([SHEETS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              SHEETS_SCOPE,
+            ]);
             const url = new URL(
               `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
                 params.spreadsheetId
@@ -193,7 +208,9 @@ export class GoogleSheetsProvider
               .default("USER_ENTERED"),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([SHEETS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              SHEETS_SCOPE,
+            ]);
             const url = new URL(
               `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
                 params.spreadsheetId
@@ -236,7 +253,9 @@ export class GoogleSheetsProvider
             range: rangeSchema,
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([SHEETS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              SHEETS_SCOPE,
+            ]);
             const url = new URL(
               `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
                 params.spreadsheetId
@@ -318,7 +337,9 @@ export class GoogleSheetsProvider
             title: z.string().optional().describe("Spreadsheet title"),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([SHEETS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              SHEETS_SCOPE,
+            ]);
             const body: Record<string, unknown> = {};
             if (params.title) {
               body.properties = { title: params.title };

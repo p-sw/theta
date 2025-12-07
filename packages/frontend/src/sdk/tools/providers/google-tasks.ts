@@ -8,12 +8,13 @@ import {
 import type { IGoogleTasksConfig } from "@/sdk/tools/providers/google-tasks.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
-const TASKS_SCOPE_READONLY =
-  "https://www.googleapis.com/auth/tasks.readonly";
+const TASKS_SCOPE_READONLY = "https://www.googleapis.com/auth/tasks.readonly";
 const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 
 export class GoogleTasksProvider
+  extends ToolProviderBase
   implements IToolProvider<IGoogleTasksConfig>
 {
   static id = "google-tasks";
@@ -40,6 +41,10 @@ export class GoogleTasksProvider
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleTasksProvider.id);
+  }
 
   setup(config: IGoogleTasksConfig) {
     try {
@@ -129,7 +134,9 @@ export class GoogleTasksProvider
             tasklist: z
               .string()
               .nonempty()
-              .describe("Task list ID (e.g., '@default' or from list-tasklists)"),
+              .describe(
+                "Task list ID (e.g., '@default' or from list-tasklists)"
+              ),
             maxResults: z
               .number()
               .int()
@@ -158,7 +165,9 @@ export class GoogleTasksProvider
             updatedMin: z
               .string()
               .optional()
-              .describe("Lower bound for a task's last modification time (RFC3339)"),
+              .describe(
+                "Lower bound for a task's last modification time (RFC3339)"
+              ),
             showCompleted: z.boolean().optional(),
             showDeleted: z.boolean().optional(),
             showHidden: z.boolean().optional(),
@@ -186,7 +195,10 @@ export class GoogleTasksProvider
             if (params.updatedMin)
               url.searchParams.set("updatedMin", params.updatedMin);
             if (params.showCompleted !== undefined)
-              url.searchParams.set("showCompleted", String(params.showCompleted));
+              url.searchParams.set(
+                "showCompleted",
+                String(params.showCompleted)
+              );
             if (params.showDeleted !== undefined)
               url.searchParams.set("showDeleted", String(params.showDeleted));
             if (params.showHidden !== undefined)
@@ -223,7 +235,9 @@ export class GoogleTasksProvider
             due: z
               .string()
               .optional()
-              .describe("Due date/time in RFC3339, e.g., 2025-08-12T09:00:00-07:00"),
+              .describe(
+                "Due date/time in RFC3339, e.g., 2025-08-12T09:00:00-07:00"
+              ),
             status: z
               .enum(["needsAction", "completed"]) // per Tasks API
               .optional(),
@@ -237,7 +251,9 @@ export class GoogleTasksProvider
               .describe("Previous sibling task ID to position after"),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([TASKS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              TASKS_SCOPE,
+            ]);
             const url = new URL(
               `https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(
                 params.tasklist
@@ -287,10 +303,7 @@ export class GoogleTasksProvider
             taskId: z.string().nonempty(),
             title: z.string().optional(),
             notes: z.string().optional(),
-            due: z
-              .string()
-              .optional()
-              .describe("Due date/time in RFC3339"),
+            due: z.string().optional().describe("Due date/time in RFC3339"),
             status: z.enum(["needsAction", "completed"]).optional(),
             completed: z
               .string()
@@ -300,7 +313,9 @@ export class GoogleTasksProvider
             hidden: z.boolean().optional(),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([TASKS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              TASKS_SCOPE,
+            ]);
             const url = new URL(
               `https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(
                 params.tasklist
@@ -350,7 +365,9 @@ export class GoogleTasksProvider
             taskId: z.string().nonempty(),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([TASKS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              TASKS_SCOPE,
+            ]);
             const url = new URL(
               `https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(
                 params.tasklist
@@ -400,7 +417,9 @@ export class GoogleTasksProvider
               message: "Provide at least one of parent or previous",
             }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([TASKS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              TASKS_SCOPE,
+            ]);
             const url = new URL(
               `https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(
                 params.tasklist
@@ -439,7 +458,9 @@ export class GoogleTasksProvider
             tasklist: z.string().nonempty(),
           }),
           execute: async (params) => {
-            const accessToken = await googleAuth.ensureAccessToken([TASKS_SCOPE]);
+            const accessToken = await googleAuth.ensureAccessToken([
+              TASKS_SCOPE,
+            ]);
             const url = new URL(
               `https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(
                 params.tasklist

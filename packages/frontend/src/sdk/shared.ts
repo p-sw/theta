@@ -1,6 +1,11 @@
 import type { JSONSchema7 } from "json-schema";
-import type z from "zod";
+import z from "zod";
 import type { IConfigSchema } from "./config-schema";
+import {
+  TOOL_ENABLED_KEY,
+  TOOL_PROVIDER_ENABLED_KEY,
+  TOOL_PROVIDER_SEPARATOR,
+} from "@/lib/const";
 
 export type IProvider = "anthropic" | "openai";
 export interface IProviderInfo {
@@ -61,7 +66,10 @@ export abstract class API<ProviderSession, ProviderToolSchema> {
     ) => Promise<void>, // prev -> new
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
-    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
+    onUsage: (delta: {
+      inputTokensDelta?: number;
+      outputTokensDelta?: number;
+    }) => void,
     overrideConfigs?: unknown,
     signal?: AbortSignal
   ): Promise<void>;
@@ -101,6 +109,81 @@ export interface IToolProvider<T> extends IToolProviderMeta {
   tools: ITool[];
   execute(toolId: string, parameters: unknown): Promise<string>;
 }
+
+export interface ToolProviderBase {
+  tools: ITool[];
+}
+export abstract class ToolProviderBase {
+  providerId: string;
+
+  constructor(providerId: string) {
+    this.providerId = providerId;
+  }
+
+  protected patchTool(tool: ITool): IToolMetaJson {
+    return {
+      id: tool.id,
+      displayName: tool.displayName,
+      description: tool.description,
+      schema: tool.schema,
+      jsonSchema: z.toJSONSchema(tool.schema) as JSONSchema7,
+    };
+  }
+
+  protected patchTools(tools: ITool[]): IToolMetaJson[] {
+    return tools.map((tool) => this.patchTool(tool));
+  }
+
+  getEnabledTools(): IToolMetaJson[] {
+    const tools: IToolMetaJson[] = [];
+
+    const enabledProvidersString = localStorage.getItem(
+      TOOL_PROVIDER_ENABLED_KEY
+    );
+    if (!enabledProvidersString) return [];
+    let enabledProviders: string[] = [];
+    try {
+      enabledProviders = JSON.parse(enabledProvidersString);
+    } catch (e) {
+      console.error(
+        `Unexpected error while parsing enabled tool provider list: ${enabledProvidersString}`,
+        e
+      );
+      return [];
+    }
+    if (!enabledProviders.includes(this.providerId)) return [];
+
+    const enabledToolsString = localStorage.getItem(TOOL_ENABLED_KEY);
+    if (!enabledToolsString) return [];
+    let enabledTools: string[] = [];
+    try {
+      enabledTools = JSON.parse(enabledToolsString);
+    } catch (e) {
+      console.error(
+        `Unexpected error while parsing enabled tool list: ${enabledToolsString}`,
+        e
+      );
+      return [];
+    }
+
+    for (const enabledTool of enabledTools) {
+      if (!enabledTool.startsWith(this.providerId + TOOL_PROVIDER_SEPARATOR))
+        continue;
+      const itool = this.tools.find(
+        (v) => v.id === enabledTool.split(TOOL_PROVIDER_SEPARATOR)[1]
+      );
+      if (!itool) continue;
+
+      tools.push(this.patchTool(itool));
+    }
+
+    return tools;
+  }
+}
+
+export type IToolProviderClass<T> = {
+  id: string; // static
+} & (new () => ToolProviderBase & IToolProvider<T>);
 
 export interface IToolRegistry {
   get(providerToolId: string): IToolMetaJson | undefined;

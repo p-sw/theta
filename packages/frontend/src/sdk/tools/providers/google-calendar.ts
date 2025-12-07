@@ -8,12 +8,14 @@ import {
 import type { IGoogleCalendarConfig } from "@/sdk/tools/providers/google-calendar.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
 const CALENDAR_SCOPE_READONLY =
   "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_SCOPE_EVENTS = "https://www.googleapis.com/auth/calendar.events";
 
 export class GoogleCalendarProvider
+  extends ToolProviderBase
   implements IToolProvider<IGoogleCalendarConfig>
 {
   static id = "google-calendar";
@@ -40,6 +42,10 @@ export class GoogleCalendarProvider
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleCalendarProvider.id);
+  }
 
   setup(config: IGoogleCalendarConfig) {
     try {

@@ -67,7 +67,7 @@ export const TOOL_PROVIDER_SEPARATOR = "__";
 export const TOOL_PROVIDER_MODEL_KEY = "tool-provider-model";
 export type IToolProviderModel = Record<
   string,
-  [IProvider, string] | null | undefined
+  ISelectedModel | null | undefined
 >;
 
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;

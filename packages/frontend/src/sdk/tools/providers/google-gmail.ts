@@ -8,6 +8,7 @@ import {
 import type { IGoogleGmailConfig } from "@/sdk/tools/providers/google-gmail.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
 const GMAIL_SCOPE_READONLY = "https://www.googleapis.com/auth/gmail.readonly";
 const GMAIL_SCOPE_MODIFY = "https://www.googleapis.com/auth/gmail.modify";
@@ -35,14 +36,19 @@ function buildMimeMessage(params: {
   const lines: string[] = [];
 
   const toHeader = params.to.join(", ");
-  const ccHeader = params.cc && params.cc.length ? `\r\nCc: ${params.cc.join(", ")}` : "";
-  const bccHeader = params.bcc && params.bcc.length ? `\r\nBcc: ${params.bcc.join(", ")}` : "";
+  const ccHeader =
+    params.cc && params.cc.length ? `\r\nCc: ${params.cc.join(", ")}` : "";
+  const bccHeader =
+    params.bcc && params.bcc.length ? `\r\nBcc: ${params.bcc.join(", ")}` : "";
   const fromHeader = params.from ? `\r\nFrom: ${params.from}` : "";
   const replyToHeader = params.replyTo ? `\r\nReply-To: ${params.replyTo}` : "";
-  const referencesHeader = params.references && params.references.length
-    ? `\r\nReferences: ${params.references.join(" ")}`
+  const referencesHeader =
+    params.references && params.references.length
+      ? `\r\nReferences: ${params.references.join(" ")}`
+      : "";
+  const inReplyToHeader = params.inReplyTo
+    ? `\r\nIn-Reply-To: ${params.inReplyTo}`
     : "";
-  const inReplyToHeader = params.inReplyTo ? `\r\nIn-Reply-To: ${params.inReplyTo}` : "";
 
   // Additional custom headers
   let extraHeaders = "";
@@ -56,7 +62,9 @@ function buildMimeMessage(params: {
     const altBoundary = "alt_" + Math.random().toString(36).slice(2);
     lines.push(
       `To: ${toHeader}${ccHeader}${bccHeader}${fromHeader}${replyToHeader}\r\nSubject: ${params.subject}${referencesHeader}${inReplyToHeader}${extraHeaders}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"${altBoundary}\"\r\n\r\n` +
-        `--${altBoundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${params.bodyText ?? ""}\r\n\r\n` +
+        `--${altBoundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${
+          params.bodyText ?? ""
+        }\r\n\r\n` +
         `--${altBoundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${params.bodyHtml}\r\n\r\n` +
         `--${altBoundary}--`
     );
@@ -70,7 +78,10 @@ function buildMimeMessage(params: {
   return lines.join("\r\n");
 }
 
-export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
+export class GoogleGmailProvider
+  extends ToolProviderBase
+  implements IToolProvider<IGoogleGmailConfig>
+{
   static id = "google-gmail";
   id = "google-gmail";
   displayName = "Gmail";
@@ -95,6 +106,10 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleGmailProvider.id);
+  }
 
   setup(config: IGoogleGmailConfig) {
     try {
@@ -122,7 +137,10 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
   private _tools: ITool[] = [];
   get tools(): ITool[] {
     if (this._tools.length === 0) {
-      const messageIdSchema = z.string().nonempty().describe("Gmail message ID");
+      const messageIdSchema = z
+        .string()
+        .nonempty()
+        .describe("Gmail message ID");
       const threadIdSchema = z.string().nonempty().describe("Gmail thread ID");
       const labelIdSchema = z.string().nonempty().describe("Gmail label ID");
 
@@ -139,12 +157,19 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "List Gmail labels",
           schema: z.object({}),
           execute: async () => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_READONLY]);
-            const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/labels", {
-              headers: { Authorization: `Bearer ${token}` },
-            });
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_READONLY,
+            ]);
+            const res = await fetch(
+              "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
             if (!res.ok) {
-              throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             }
             return await res.text();
           },
@@ -152,7 +177,8 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             try {
               await this.schema.parseAsync(parameters);
             } catch (e) {
-              if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
               throw new ToolParameterError((e as Error).message);
             }
           },
@@ -162,27 +188,47 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           displayName: "List Messages",
           description: "List message IDs by query and/or labels",
           schema: listPaginationSchema.extend({
-            q: z.string().optional().describe("Gmail search query, e.g., 'from:me has:attachment'"),
+            q: z
+              .string()
+              .optional()
+              .describe("Gmail search query, e.g., 'from:me has:attachment'"),
             labelIds: z.array(z.string()).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_READONLY]);
-            const url = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_READONLY,
+            ]);
+            const url = new URL(
+              "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+            );
             if (params.q) url.searchParams.set("q", params.q);
-            if (params.labelIds) for (const l of params.labelIds) url.searchParams.append("labelIds", l);
-            if (params.maxResults) url.searchParams.set("maxResults", String(params.maxResults));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
+            if (params.labelIds)
+              for (const l of params.labelIds)
+                url.searchParams.append("labelIds", l);
+            if (params.maxResults)
+              url.searchParams.set("maxResults", String(params.maxResults));
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
             if (params.includeSpamTrash !== undefined)
-              url.searchParams.set("includeSpamTrash", String(params.includeSpamTrash));
-            const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+              url.searchParams.set(
+                "includeSpamTrash",
+                String(params.includeSpamTrash)
+              );
+            const res = await fetch(url.toString(), {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
             try {
               await this.schema.parseAsync(parameters);
             } catch (e) {
-              if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
               throw new ToolParameterError((e as Error).message);
             }
           },
@@ -196,23 +242,40 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             labelIds: z.array(z.string()).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_READONLY]);
-            const url = new URL("https://gmail.googleapis.com/gmail/v1/users/me/threads");
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_READONLY,
+            ]);
+            const url = new URL(
+              "https://gmail.googleapis.com/gmail/v1/users/me/threads"
+            );
             if (params.q) url.searchParams.set("q", params.q);
-            if (params.labelIds) for (const l of params.labelIds) url.searchParams.append("labelIds", l);
-            if (params.maxResults) url.searchParams.set("maxResults", String(params.maxResults));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
+            if (params.labelIds)
+              for (const l of params.labelIds)
+                url.searchParams.append("labelIds", l);
+            if (params.maxResults)
+              url.searchParams.set("maxResults", String(params.maxResults));
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
             if (params.includeSpamTrash !== undefined)
-              url.searchParams.set("includeSpamTrash", String(params.includeSpamTrash));
-            const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+              url.searchParams.set(
+                "includeSpamTrash",
+                String(params.includeSpamTrash)
+              );
+            const res = await fetch(url.toString(), {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
             try {
               await this.schema.parseAsync(parameters);
             } catch (e) {
-              if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
               throw new ToolParameterError((e as Error).message);
             }
           },
@@ -226,24 +289,40 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Fetch a message with selectable format",
           schema: z.object({
             id: messageIdSchema,
-            format: z.enum(["full", "metadata", "raw", "minimal"]).optional().default("full"),
+            format: z
+              .enum(["full", "metadata", "raw", "minimal"])
+              .optional()
+              .default("full"),
             metadataHeaders: z.array(z.string()).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_READONLY]);
-            const url = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}`);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_READONLY,
+            ]);
+            const url = new URL(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}`
+            );
             if (params.format) url.searchParams.set("format", params.format);
             if (params.metadataHeaders)
-              for (const h of params.metadataHeaders) url.searchParams.append("metadataHeaders", h);
-            const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+              for (const h of params.metadataHeaders)
+                url.searchParams.append("metadataHeaders", h);
+            const res = await fetch(url.toString(), {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
             try {
               await this.schema.parseAsync(parameters);
             } catch (e) {
-              if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
               throw new ToolParameterError((e as Error).message);
             }
           },
@@ -254,19 +333,27 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Fetch a thread by ID",
           schema: z.object({ id: threadIdSchema }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_READONLY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_READONLY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(params.id)}`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(
+                params.id
+              )}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
             try {
               await this.schema.parseAsync(parameters);
             } catch (e) {
-              if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
               throw new ToolParameterError((e as Error).message);
             }
           },
@@ -282,7 +369,7 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             to: z.array(z.string().email()).nonempty(),
             cc: z.array(z.string().email()).optional(),
             bcc: z.array(z.string().email()).optional(),
-            subject: z.string().default("") ,
+            subject: z.string().default(""),
             bodyText: z.string().optional(),
             bodyHtml: z.string().optional(),
             headers: z.record(z.string(), z.string()).optional(),
@@ -293,22 +380,39 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             threadId: z.string().optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_SEND, GMAIL_SCOPE_COMPOSE]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_SEND,
+              GMAIL_SCOPE_COMPOSE,
+            ]);
             const mime = buildMimeMessage(params);
             const raw = base64UrlEncode(mime);
             const body: Record<string, unknown> = { raw };
             if (params.threadId) body.threadId = params.threadId;
-            const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            const res = await fetch(
+              "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+              }
+            );
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -319,7 +423,7 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             to: z.array(z.string().email()).nonempty(),
             cc: z.array(z.string().email()).optional(),
             bcc: z.array(z.string().email()).optional(),
-            subject: z.string().default("") ,
+            subject: z.string().default(""),
             bodyText: z.string().optional(),
             bodyHtml: z.string().optional(),
             headers: z.record(z.string(), z.string()).optional(),
@@ -330,22 +434,40 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             threadId: z.string().optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_COMPOSE]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_COMPOSE,
+            ]);
             const mime = buildMimeMessage(params);
             const raw = base64UrlEncode(mime);
             const body: Record<string, unknown> = { message: { raw } };
-            if (params.threadId) (body.message as Record<string, unknown>).threadId = params.threadId;
-            const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/drafts", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (params.threadId)
+              (body.message as Record<string, unknown>).threadId =
+                params.threadId;
+            const res = await fetch(
+              "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+              }
+            );
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -354,17 +476,33 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "List draft IDs",
           schema: listPaginationSchema,
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_COMPOSE]);
-            const url = new URL("https://gmail.googleapis.com/gmail/v1/users/me/drafts");
-            if (params.maxResults) url.searchParams.set("maxResults", String(params.maxResults));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
-            const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_COMPOSE,
+            ]);
+            const url = new URL(
+              "https://gmail.googleapis.com/gmail/v1/users/me/drafts"
+            );
+            if (params.maxResults)
+              url.searchParams.set("maxResults", String(params.maxResults));
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
+            const res = await fetch(url.toString(), {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -373,18 +511,35 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Send a draft by ID",
           schema: z.object({ id: z.string().nonempty() }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_SEND, GMAIL_SCOPE_COMPOSE]);
-            const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/drafts/send", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ id: params.id }),
-            });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_SEND,
+              GMAIL_SCOPE_COMPOSE,
+            ]);
+            const res = await fetch(
+              "https://gmail.googleapis.com/gmail/v1/users/me/drafts/send",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ id: params.id }),
+              }
+            );
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
       ];
@@ -396,17 +551,32 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Permanently delete a message",
           schema: z.object({ id: messageIdSchema }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}`,
-              { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return "";
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -415,17 +585,29 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Move a message to Trash",
           schema: z.object({ id: messageIdSchema }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}/trash`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}/trash`,
               { method: "POST", headers: { Authorization: `Bearer ${token}` } }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -434,17 +616,29 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Restore a message from Trash",
           schema: z.object({ id: messageIdSchema }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}/untrash`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}/untrash`,
               { method: "POST", headers: { Authorization: `Bearer ${token}` } }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -457,21 +651,39 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             removeLabelIds: z.array(z.string()).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}/modify`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}/modify`,
               {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ addLabelIds: params.addLabelIds ?? [], removeLabelIds: params.removeLabelIds ?? [] }),
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  addLabelIds: params.addLabelIds ?? [],
+                  removeLabelIds: params.removeLabelIds ?? [],
+                }),
               }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -484,46 +696,85 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             removeLabelIds: z.array(z.string()).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
-            const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ ids: params.ids, addLabelIds: params.addLabelIds ?? [], removeLabelIds: params.removeLabelIds ?? [] }),
-            });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
+            const res = await fetch(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  ids: params.ids,
+                  addLabelIds: params.addLabelIds ?? [],
+                  removeLabelIds: params.removeLabelIds ?? [],
+                }),
+              }
+            );
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return "";
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
           id: "move-message",
           displayName: "Move Message",
-          description: "Move a message by adding a destination label and removing INBOX",
+          description:
+            "Move a message by adding a destination label and removing INBOX",
           schema: z.object({
             id: messageIdSchema,
             destinationLabelId: labelIdSchema,
             removeFromInbox: z.boolean().optional().default(true),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const remove = params.removeFromInbox ? ["INBOX"] : [];
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(params.id)}/modify`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(
+                params.id
+              )}/modify`,
               {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ addLabelIds: [params.destinationLabelId], removeLabelIds: remove }),
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  addLabelIds: [params.destinationLabelId],
+                  removeLabelIds: remove,
+                }),
               }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
       ];
@@ -535,22 +786,44 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Create a new user label",
           schema: z.object({
             name: z.string().nonempty(),
-            labelListVisibility: z.enum(["labelShow", "labelShowIfUnread", "labelHide"]).optional(),
+            labelListVisibility: z
+              .enum(["labelShow", "labelShowIfUnread", "labelHide"])
+              .optional(),
             messageListVisibility: z.enum(["show", "hide"]).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
-            const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/labels", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ name: params.name, labelListVisibility: params.labelListVisibility, messageListVisibility: params.messageListVisibility }),
-            });
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
+            const res = await fetch(
+              "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  name: params.name,
+                  labelListVisibility: params.labelListVisibility,
+                  messageListVisibility: params.messageListVisibility,
+                }),
+              }
+            );
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -560,11 +833,15 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           schema: z.object({
             id: labelIdSchema,
             name: z.string().optional(),
-            labelListVisibility: z.enum(["labelShow", "labelShowIfUnread", "labelHide"]).optional(),
+            labelListVisibility: z
+              .enum(["labelShow", "labelShowIfUnread", "labelHide"])
+              .optional(),
             messageListVisibility: z.enum(["show", "hide"]).optional(),
           }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const body: Record<string, unknown> = {};
             if (params.name !== undefined) body.name = params.name;
             if (params.labelListVisibility !== undefined)
@@ -572,19 +849,32 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
             if (params.messageListVisibility !== undefined)
               body.messageListVisibility = params.messageListVisibility;
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/labels/${encodeURIComponent(params.id)}`,
+              `https://gmail.googleapis.com/gmail/v1/users/me/labels/${encodeURIComponent(
+                params.id
+              )}`,
               {
                 method: "PATCH",
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
                 body: JSON.stringify(body),
               }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return await res.text();
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
         {
@@ -593,17 +883,32 @@ export class GoogleGmailProvider implements IToolProvider<IGoogleGmailConfig> {
           description: "Delete a user label",
           schema: z.object({ id: labelIdSchema }),
           execute: async (params) => {
-            const token = await googleAuth.ensureAccessToken([GMAIL_SCOPE_MODIFY]);
+            const token = await googleAuth.ensureAccessToken([
+              GMAIL_SCOPE_MODIFY,
+            ]);
             const res = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/labels/${encodeURIComponent(params.id)}`,
-              { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+              `https://gmail.googleapis.com/gmail/v1/users/me/labels/${encodeURIComponent(
+                params.id
+              )}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              }
             );
-            if (!res.ok) throw new ToolExecutionError(`${res.status} ${res.statusText}: ${await res.text()}`);
+            if (!res.ok)
+              throw new ToolExecutionError(
+                `${res.status} ${res.statusText}: ${await res.text()}`
+              );
             return "";
           },
           async ensureParameters(parameters) {
-            try { await this.schema.parseAsync(parameters); }
-            catch (e) { if (e instanceof z.ZodError) throw new ToolParameterError(JSON.stringify(z.treeifyError(e))); throw new ToolParameterError((e as Error).message); }
+            try {
+              await this.schema.parseAsync(parameters);
+            } catch (e) {
+              if (e instanceof z.ZodError)
+                throw new ToolParameterError(JSON.stringify(z.treeifyError(e)));
+              throw new ToolParameterError((e as Error).message);
+            }
           },
         },
       ];

@@ -1,15 +1,25 @@
 import type { ITool, IToolProvider } from "@/sdk/shared";
 import type { IConfigSchema } from "@/sdk/config-schema";
-import { ToolExecutionError, ToolParameterError, ToolRegistryError } from "@/sdk/tools/errors";
+import {
+  ToolExecutionError,
+  ToolParameterError,
+  ToolRegistryError,
+} from "@/sdk/tools/errors";
 import type { IGoogleDocsConfig } from "@/sdk/tools/providers/google-docs.types";
 import { googleAuth } from "@/sdk/tools/providers/google-auth";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
-const DOCS_SCOPE_READONLY = "https://www.googleapis.com/auth/documents.readonly";
+const DOCS_SCOPE_READONLY =
+  "https://www.googleapis.com/auth/documents.readonly";
 const DOCS_SCOPE_DOCUMENTS = "https://www.googleapis.com/auth/documents";
-const DRIVE_SCOPE_METADATA_READONLY = "https://www.googleapis.com/auth/drive.metadata.readonly";
+const DRIVE_SCOPE_METADATA_READONLY =
+  "https://www.googleapis.com/auth/drive.metadata.readonly";
 
-export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
+export class GoogleDocsProvider
+  extends ToolProviderBase
+  implements IToolProvider<IGoogleDocsConfig>
+{
   static id = "google-docs";
   id = "google-docs";
   displayName = "Google Docs";
@@ -34,6 +44,10 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
     clientId: z.string().nonempty(),
     apiKey: z.string().nonempty(),
   });
+
+  constructor() {
+    super(GoogleDocsProvider.id);
+  }
 
   setup(config: IGoogleDocsConfig) {
     try {
@@ -70,7 +84,10 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
           displayName: "List Google Docs",
           description: "List user's Google Docs via Drive API",
           schema: z.object({
-            q: z.string().optional().describe("Optional name substring to filter by"),
+            q: z
+              .string()
+              .optional()
+              .describe("Optional name substring to filter by"),
             pageSize: z
               .number()
               .int()
@@ -78,7 +95,10 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
               .max(100)
               .optional()
               .describe("Max results per page (default 100)"),
-            pageToken: z.string().optional().describe("Page token for pagination"),
+            pageToken: z
+              .string()
+              .optional()
+              .describe("Page token for pagination"),
           }),
           execute: async (params) => {
             const accessToken = await googleAuth.ensureAccessToken([
@@ -99,8 +119,10 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
               "nextPageToken, files(id,name,modifiedTime,webViewLink,owners(displayName,emailAddress))"
             );
             url.searchParams.set("orderBy", "modifiedTime desc");
-            if (params.pageSize) url.searchParams.set("pageSize", String(params.pageSize));
-            if (params.pageToken) url.searchParams.set("pageToken", params.pageToken);
+            if (params.pageSize)
+              url.searchParams.set("pageSize", String(params.pageSize));
+            if (params.pageToken)
+              url.searchParams.set("pageToken", params.pageToken);
             const res = await fetch(url.toString(), {
               headers: { Authorization: `Bearer ${accessToken}` },
             });
@@ -134,7 +156,9 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
               DOCS_SCOPE_READONLY,
             ]);
             const url = new URL(
-              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(params.documentId)}`
+              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(
+                params.documentId
+              )}`
             );
             const res = await fetch(url.toString(), {
               headers: { Authorization: `Bearer ${accessToken}` },
@@ -201,14 +225,19 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
           description: "Append text to the end of a document",
           schema: z.object({
             documentId: z.string().nonempty(),
-            text: z.string().nonempty().describe("Text to append at end of doc"),
+            text: z
+              .string()
+              .nonempty()
+              .describe("Text to append at end of doc"),
           }),
           execute: async (params) => {
             const accessToken = await googleAuth.ensureAccessToken([
               DOCS_SCOPE_DOCUMENTS,
             ]);
             const url = new URL(
-              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(params.documentId)}:batchUpdate`
+              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(
+                params.documentId
+              )}:batchUpdate`
             );
             const body = {
               requests: [
@@ -261,7 +290,9 @@ export class GoogleDocsProvider implements IToolProvider<IGoogleDocsConfig> {
               DOCS_SCOPE_DOCUMENTS,
             ]);
             const url = new URL(
-              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(params.documentId)}:batchUpdate`
+              `https://docs.googleapis.com/v1/documents/${encodeURIComponent(
+                params.documentId
+              )}:batchUpdate`
             );
             const body = {
               requests: [

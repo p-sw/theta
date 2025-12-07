@@ -1,7 +1,4 @@
-import {
-  type IToolProvider,
-  type ITool,
-} from "@/sdk/shared";
+import { type IToolProvider, type ITool } from "@/sdk/shared";
 import type { IConfigSchema } from "@/sdk/config-schema";
 import {
   ToolExecutionError,
@@ -10,6 +7,7 @@ import {
 } from "@/sdk/tools/errors";
 import type { IOpenWeatherConfig } from "@/sdk/tools/providers/openweather.types";
 import z from "zod";
+import { ToolProviderBase } from "../../shared";
 
 export const Country = [
   "AF",
@@ -463,7 +461,10 @@ class OpenWeatherOneWeather {
   }
 }
 
-export class OpenWeatherProvider implements IToolProvider<IOpenWeatherConfig> {
+export class OpenWeatherProvider
+  extends ToolProviderBase
+  implements IToolProvider<IOpenWeatherConfig>
+{
   static id = "openweather";
   id = "openweather";
   displayName = "OpenWeather API";
@@ -506,6 +507,10 @@ export class OpenWeatherProvider implements IToolProvider<IOpenWeatherConfig> {
     apiKey: z.string().nonempty(),
     units: z.enum(["metric", "imperial", "standard"]).default("standard"),
   });
+
+  constructor() {
+    super(OpenWeatherProvider.id);
+  }
 
   setup(config: IOpenWeatherConfig) {
     try {
