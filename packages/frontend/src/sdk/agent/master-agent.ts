@@ -138,7 +138,7 @@ export class MasterAgent {
               toolName: toolUse.name,
               turns: subsession,
             };
-            sessionTurns.push(toolTurn);
+            const insertedIndex = sessionTurns.push(toolTurn) - 1;
             saveSession();
 
             async function updateSubsession(
@@ -148,11 +148,17 @@ export class MasterAgent {
               await updateResult(resultMessage, updator);
             }
 
+            async function refreshSubsession(): Promise<SessionTurns> {
+              sessionTurns = await refreshSession();
+              return (sessionTurns[insertedIndex] as SessionTurnsSubSession)
+                .turns;
+            }
+
             await this.toolAgentManager.execute(
               toolUse.name,
               subsession,
               saveSession,
-              refreshSession,
+              refreshSubsession,
               updateSubsession,
               [
                 {
