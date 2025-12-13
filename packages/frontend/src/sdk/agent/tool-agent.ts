@@ -5,6 +5,7 @@ import {
   TOOL_PROVIDER_AVAILABILITY_KEY,
   TOOL_PROVIDER_CONFIG_KEY,
   TOOL_PROVIDER_MODEL_KEY,
+  TOOL_PROVIDER_SEPARATOR,
   TOOL_WHITELISTED_KEY,
   type IApiKey,
   type ISelectedModel,
@@ -279,7 +280,7 @@ export class ToolAgent {
           await Promise.all(
             shouldBeExecuteds.filter(([turnIndex, toolTurn]) =>
               this.toolProviderInstance!.execute(
-                toolTurn.toolName,
+                toolTurn.toolName.split(TOOL_PROVIDER_SEPARATOR)[1]!,
                 JSON.parse(toolTurn.requestContent)
               )
                 .then((toolResult) => {
