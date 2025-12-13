@@ -131,10 +131,14 @@ export class ToolRegistry implements IToolRegistry {
   get(providerId: string, toolId: string): IToolMetaJson | undefined;
   get(providerIdToolId: string, toolId?: string): IToolMetaJson | undefined {
     if (!toolId) {
-      const [providerId, toolId] = providerIdToolId.split(
+      const [providerId, _toolId] = providerIdToolId.split(
         TOOL_PROVIDER_SEPARATOR
       );
-      return this.get(providerId, toolId);
+      if (!_toolId)
+        throw new Error(
+          `Cannot get tool without toolId (only got ${providerIdToolId})`
+        );
+      return this.get(providerId, _toolId);
     }
     const provider = this.providers[providerIdToolId];
     if (!provider) {
