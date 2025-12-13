@@ -91,7 +91,7 @@ export class ToolAgent {
 
     const apiKey = apiKeyMap[selectedModel[0]];
     if (apiKey === null) {
-      onFail("No API key found for selected provider (${selectedModel[0]})");
+      onFail(`No API key found for selected provider (${selectedModel[0]})`);
       return;
     }
 
