@@ -131,11 +131,16 @@ export class MasterAgent {
 
         await Promise.all(
           toolUses.map(async (toolUse) => {
+            const prompt = (
+              await z.parseAsync(toolAgentSchema, JSON.parse(toolUse.input))
+            ).prompt;
+
             const subsession: SessionTurns = [];
             const toolTurn: SessionTurnsSubSession = {
               type: "subsession",
               useId: toolUse.id,
               toolName: toolUse.name,
+              prompt,
               turns: subsession,
             };
             const insertedIndex = sessionTurns.push(toolTurn) - 1;
@@ -163,12 +168,7 @@ export class MasterAgent {
               [
                 {
                   type: "text",
-                  text: (
-                    await z.parseAsync(
-                      toolAgentSchema,
-                      JSON.parse(toolUse.input)
-                    )
-                  ).prompt,
+                  text: prompt,
                 },
               ],
               () => {},

@@ -333,6 +333,7 @@ export type SessionTurnsSubSession = {
   type: "subsession";
   useId: string;
   toolName: string;
+  prompt: string;
   turns: SessionTurns;
 };
 
