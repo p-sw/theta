@@ -120,6 +120,7 @@ function SubsessionTurn({
         sessionId={sessionId}
         messageId={turn.messageId}
         messages={turn.message}
+        enableCheckout={false}
       />
     );
   }

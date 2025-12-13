@@ -10,10 +10,12 @@ export function UserMessage({
   sessionId,
   messageId,
   messages,
+  enableCheckout = true,
 }: {
   sessionId: string;
   messageId: string;
   messages: IMessageRequest[];
+  enableCheckout?: boolean;
 }) {
   return (
     <div
@@ -41,26 +43,28 @@ export function UserMessage({
             })}
           </CardContent>
         </Card>
-        <Button
-          variant="link"
-          size="sm"
-          onClick={() => {
-            const content = messages
-              .filter((msg) => msg.type === "text")
-              .map((msg) => (msg as { type: "text"; text: string }).text)
-              .join("\n\n");
-            dispatchEvent(CHECKOUT_MESSAGE_EVENT, {
-              detail: {
-                sessionId,
-                messageId,
-                content,
-              },
-            });
-          }}
-          className="self-end text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-        >
-          Checkout
-        </Button>
+        {enableCheckout && (
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => {
+              const content = messages
+                .filter((msg) => msg.type === "text")
+                .map((msg) => (msg as { type: "text"; text: string }).text)
+                .join("\n\n");
+              dispatchEvent(CHECKOUT_MESSAGE_EVENT, {
+                detail: {
+                  sessionId,
+                  messageId,
+                  content,
+                },
+              });
+            }}
+            className="self-end text-xs opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+          >
+            Checkout
+          </Button>
+        )}
       </div>
     </div>
   );
