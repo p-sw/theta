@@ -25,6 +25,7 @@ import type {
   PermanentSession,
   SessionTurnsTool,
   TemporarySession,
+  SessionTurns,
 } from "@/sdk/shared";
 import { UserMessage } from "@/components/block/chat/user-message";
 import { AssistantMessage } from "@/components/block/chat/assistant-message";
@@ -41,6 +42,37 @@ import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
 import { ToolUseCard } from "@/components/block/chat/tool-block";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
+import { Subsession } from "@/components/block/chat/subsession";
+
+function mapToolTurns(
+  turns: SessionTurns,
+  useId: string,
+  updater: (turn: SessionTurnsTool) => SessionTurnsTool
+): [SessionTurns, boolean] {
+  let mutated = false;
+  const nextTurns = turns.map((turn) => {
+    if (turn.type === "tool" && turn.useId === useId) {
+      mutated = true;
+      return updater(turn);
+    }
+
+    if (turn.type === "subsession") {
+      const [nestedTurns, nestedMutated] = mapToolTurns(
+        turn.turns,
+        useId,
+        updater
+      );
+      if (nestedMutated) {
+        mutated = true;
+        return { ...turn, turns: nestedTurns };
+      }
+    }
+
+    return turn;
+  });
+
+  return [mutated ? nextTurns : turns, mutated];
+}
 
 export default function Chat() {
   const {
@@ -260,45 +292,36 @@ export default function Chat() {
 
   const onToolGrant = useCallback(
     async (useId: string) => {
-      const toolTurnIndex = session.turns.findIndex(
-        (turn) => turn.type === "tool" && turn.useId === useId
-      );
-      if (toolTurnIndex === -1) return;
-      const turn = session.turns[toolTurnIndex] as SessionTurnsTool;
-      if (turn.done) return;
-
-      // Only set to pending state if not already granted (for manual grants)
-      if (!turn.granted) {
-        setSession((prev) => {
-          const newSession = { ...prev };
-          newSession.turns[toolTurnIndex] = {
+      setSession((prev) => {
+        const [turns, updated] = mapToolTurns(prev.turns, useId, (turn) => {
+          if (turn.done || turn.granted) return turn;
+          return {
             ...turn,
             granted: true,
             done: false,
           };
-          return newSession;
         });
-      }
+
+        if (!updated) return prev;
+        return { ...prev, turns };
+      });
     },
-    [session.turns, setSession]
+    [setSession]
   );
 
   const onToolReject = useCallback(
     (useId: string) => {
       setSession((prev) => {
-        const newSession = { ...prev };
-        const toolTurnIndex = newSession.turns.findIndex(
-          (turn) => turn.type === "tool" && turn.useId === useId
-        );
-        if (toolTurnIndex === -1) return newSession;
-        newSession.turns[toolTurnIndex] = {
-          ...(newSession.turns[toolTurnIndex] as SessionTurnsTool),
+        const [turns, updated] = mapToolTurns(prev.turns, useId, (turn) => ({
+          ...turn,
           done: true,
           granted: false,
           isError: true,
           responseContent: "User rejected tool use",
-        } satisfies SessionTurnsTool;
-        return newSession;
+        }));
+
+        if (!updated) return prev;
+        return { ...prev, turns };
       });
     },
     [setSession]
@@ -348,6 +371,16 @@ export default function Chat() {
                       messageId={message.messageId}
                       messages={message.message}
                       stop={message.stop}
+                    />
+                  );
+                } else if (message.type === "subsession") {
+                  return (
+                    <Subsession
+                      key={`${sessionId}-${message.useId}`}
+                      sessionId={sessionId}
+                      subsession={message}
+                      onToolGrant={onToolGrant}
+                      onToolReject={onToolReject}
                     />
                   );
                 }
