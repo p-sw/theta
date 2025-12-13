@@ -29,6 +29,7 @@ export class GoogleDriveProvider
   implements IToolProvider<IGoogleDriveConfig>
 {
   static id = "google-drive";
+  static displayName = "Google Drive";
   id = "google-drive";
   displayName = "Google Drive";
   description = "Access your Google Drive files";

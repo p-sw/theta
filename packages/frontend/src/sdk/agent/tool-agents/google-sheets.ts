@@ -19,6 +19,7 @@ export class GoogleSheetsProvider
   implements IToolProvider<IGoogleSheetsConfig>
 {
   static id = "google-sheets";
+  static displayName = "Google Sheets";
   id = "google-sheets";
   displayName = "Google Sheets";
   description = "Access and modify data in Google Sheets";

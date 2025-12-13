@@ -83,6 +83,7 @@ export class GoogleGmailProvider
   implements IToolProvider<IGoogleGmailConfig>
 {
   static id = "google-gmail";
+  static displayName = "Gmail";
   id = "google-gmail";
   displayName = "Gmail";
   description = "Read, send, draft, label, move, and manage Gmail";

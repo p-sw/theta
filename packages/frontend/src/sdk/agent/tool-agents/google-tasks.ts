@@ -18,6 +18,7 @@ export class GoogleTasksProvider
   implements IToolProvider<IGoogleTasksConfig>
 {
   static id = "google-tasks";
+  static displayName = "Google Tasks";
   id = "google-tasks";
   displayName = "Google Tasks";
   description = "Access your Google Tasks";

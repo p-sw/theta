@@ -62,6 +62,7 @@ export class GoogleContactsProvider
   static id = "google-contacts";
   id = "google-contacts";
   displayName = "Google Contacts";
+  static displayName = "Google Contacts";
   description = "Access your Google Contacts via People API";
 
   private configSchema: Record<keyof IGoogleContactsConfig, IConfigSchema> = {

@@ -466,6 +466,7 @@ export class OpenWeatherProvider
   implements IToolProvider<IOpenWeatherConfig>
 {
   static id = "openweather";
+  static displayName = "OpenWeather API";
   id = "openweather";
   displayName = "OpenWeather API";
   description = "Fetch weather data from OpenWeather API";

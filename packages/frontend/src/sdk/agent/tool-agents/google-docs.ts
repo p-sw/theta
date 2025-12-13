@@ -21,6 +21,7 @@ export class GoogleDocsProvider
   implements IToolProvider<IGoogleDocsConfig>
 {
   static id = "google-docs";
+  static displayName = "Google Docs";
   id = "google-docs";
   displayName = "Google Docs";
   description = "Access and edit your Google Docs";
