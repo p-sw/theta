@@ -164,7 +164,10 @@ export class MasterAgent {
                 {
                   type: "text",
                   text: (
-                    await z.parseAsync(toolAgentSchema, toolUse.input)
+                    await z.parseAsync(
+                      toolAgentSchema,
+                      JSON.parse(toolUse.input)
+                    )
                   ).prompt,
                 },
               ],
