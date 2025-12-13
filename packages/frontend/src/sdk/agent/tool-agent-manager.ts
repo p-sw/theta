@@ -75,6 +75,7 @@ export class ToolAgentManager {
     for (const providerId of enabledProviders) {
       const agent = this.toolAgents.get(providerId);
       if (!agent) continue;
+      if (!agent.toolProviderInstance) continue;
 
       tools.push({
         id:
