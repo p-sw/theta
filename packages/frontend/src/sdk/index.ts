@@ -1,28 +1,24 @@
 import {
   API_KEY,
   SESSION_STORAGE_KEY,
-  TOOL_WHITELISTED_KEY,
   STORAGE_CHANGE_EVENT,
   MODELS,
   type IApiKey,
 } from "@/lib/const";
-import { hyperidInstance, sleep } from "@/lib/utils";
+import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import { OpenAIProvider } from "@/sdk/providers/openai";
-import { toolRegistry } from "@/sdk/tools";
 import type {
-  API,
   IMessageRequest,
   IMessageResult,
   IModelInfo,
   IProvider,
   IProviderInfo,
   SessionTurnsResponse,
-  SessionTurnsTool,
-  SessionTurnsToolInProgress,
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
+import { MasterAgent } from "./agent/master-agent";
 
 export const providerRegistry: Record<IProvider, IProviderInfo> = {
   anthropic: {
@@ -145,7 +141,7 @@ export class AISDK {
         storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
       ) as TemporarySession;
     }
-    let session = await getSessionFromStorage()
+    let session = await getSessionFromStorage();
 
     // Saving the whole session (which grows over time) to storage on *every*
     // streamed token is expensive – the JSON.stringify call allocates a big
@@ -208,58 +204,47 @@ export class AISDK {
     session.turns.push(resultTurn);
     saveSession(false /* no throttle – second write */);
 
-    // Setup abort controller for this message stream
     const abortController = new AbortController();
-    // track the currently running stream so it can be aborted later
     this.currentAbortController = abortController;
 
     async function updateSession(
+      resultMessage: IMessageResult[],
       updator: (message: IMessageResult[]) => Promise<unknown>
     ) {
       await updator(resultMessage);
       session.updatedAt = Date.now();
-      // This path is hit by *every* streamed chunk – throttle it.
       saveSession();
     }
 
-    let providerInstance: API<unknown, unknown> | null = null;
-    switch (provider) {
-      case "anthropic":
-        providerInstance = this.anthropic;
-        break;
-      case "openai":
-        providerInstance = this.openai;
-        break;
+    async function refreshSession() {
+      session = await getSessionFromStorage();
+      return session.turns;
     }
-    if (providerInstance === null) {
-      throw new Error(`Provider ${provider} not supported`);
-    }
+
+    const masterAgent = new MasterAgent();
 
     while (true) {
       try {
-        let newContextWindowUsage = 0
-        await providerInstance.message(
+        let newContextWindowUsage = 0;
+        await masterAgent.message(
           session.turns.slice(0, -1),
-          model,
+          saveSession,
+          refreshSession,
           updateSession,
-          (stop) => {
-            if (resultTurn.stop !== undefined) return;
-            resultTurn.stop = stop;
-            saveSession();
-          },
-          toolRegistry.getEnabledTools(),
+          requestMessage,
           (delta) => {
             const inputDelta = delta.inputTokensDelta ?? 0;
             const outputDelta = delta.outputTokensDelta ?? 0;
             const anyDelta = inputDelta !== 0 || outputDelta !== 0;
             if (anyDelta) {
-              newContextWindowUsage = newContextWindowUsage + inputDelta + outputDelta
-              session.contextWindowUsage = newContextWindowUsage
+              newContextWindowUsage =
+                newContextWindowUsage + inputDelta + outputDelta;
+              session.contextWindowUsage = newContextWindowUsage;
               saveSession();
             }
           },
-          undefined,
-          abortController.signal
+          abortController,
+          async () => flushSession()
         );
       } catch (e) {
         if (e instanceof Error && e.name === "AbortError") {
@@ -268,106 +253,11 @@ export class AISDK {
           throw e;
         }
       }
-
-      // tool use handling
-      if (resultTurn.stop?.type === "tool_use") {
-        const toolUses = resultTurn.message.filter(
-          (message) => message.type === "tool_use"
-        );
-        // const toolUseResult: IMessageRequestToolResult[] = [];
-
-        // Check whitelisted tools
-        let whitelistedTools: string[] = [];
-        try {
-          const whitelistedData = localStorage.getItem(TOOL_WHITELISTED_KEY);
-          if (whitelistedData) {
-            whitelistedTools = JSON.parse(whitelistedData) as string[];
-          }
-        } catch (e) {
-          console.error("Error parsing whitelisted tools:", e);
-        }
-
-        toolUses.forEach((toolUse) => {
-          const isWhitelisted = whitelistedTools.includes(toolUse.name);
-          const toolTurn: SessionTurnsToolInProgress = {
-            type: "tool",
-            useId: toolUse.id,
-            toolName: toolUse.name,
-            granted: isWhitelisted, // Auto-grant if whitelisted
-            requestContent: toolUse.input !== "" ? toolUse.input : "{}",
-            done: false,
-          };
-          session.turns.push(toolTurn);
-          console.debug("Adding tool to run: ", toolTurn);
-          if (isWhitelisted) {
-            console.debug(
-              "Tool is whitelisted and will auto-execute:",
-              toolUse.name
-            );
-          }
-          saveSession();
-        });
-        
-
-        while (true) {
-          await sleep(500)
-          session = await getSessionFromStorage() // refresh session
-          const freshedTools = Array.from(session.turns.entries()).filter((turn) => turn[1].type === "tool") as [number, SessionTurnsTool][]
-          
-          // Execute tools that are granted but not done
-          const shouldBeExecuteds = freshedTools.filter((toolTurn) => toolTurn[1].granted && !toolTurn[1].done);
-          await Promise.all(shouldBeExecuteds.filter(([turnIndex, toolTurn]) => toolRegistry.execute(
-            toolTurn.toolName,
-            JSON.parse(toolTurn.requestContent)
-          ).then((toolResult) => {
-            session.turns[turnIndex] = {
-              ...toolTurn,
-              done: true,
-              isError: false,
-              responseContent: toolResult
-            };
-            saveSession()
-          }).catch((e) => {
-            session.turns[turnIndex] = {
-              ...toolTurn,
-              done: true,
-              isError: true,
-              responseContent:
-                (e as Error).message ??
-                "Unexpected error while executing tool"
-            };
-            saveSession();
-          })))
-
-          // Check if all tools are done
-          const waitingForGrants = freshedTools.filter((toolTurn) => !toolTurn[1].granted && !toolTurn[1].done);
-          if (shouldBeExecuteds.length === 0 && waitingForGrants.length === 0) break;
-        }
-
-        resultMessage = [];
-        resultTurn = {
-          type: "response" as const,
-          messageId: hyperidInstance(),
-          message: resultMessage,
-        };
-        session.turns.push(resultTurn);
-        saveSession();
-        continue;
-      }
-
-      break;
     }
 
-    
-
-    // Clear the abort controller reference when streaming is finished or aborted
     if (this.currentAbortController === abortController) {
       this.currentAbortController = null;
     }
-
-    // Make sure any pending throttled save is flushed when the stream ends so
-    // we don't lose the tail of the response.
-    flushSession();
   }
 
   getModelContextWindow(provider: IProvider, modelId: string) {
