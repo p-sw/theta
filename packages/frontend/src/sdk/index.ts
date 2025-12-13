@@ -5,7 +5,6 @@ import {
   MODELS,
   type IApiKey,
 } from "@/lib/const";
-import { hyperidInstance } from "@/lib/utils";
 import { AnthropicProvider } from "@/sdk/providers/anthropic";
 import { OpenAIProvider } from "@/sdk/providers/openai";
 import type {
@@ -14,7 +13,6 @@ import type {
   IModelInfo,
   IProvider,
   IProviderInfo,
-  SessionTurnsResponse,
   TemporarySession,
 } from "@/sdk/shared";
 import { localStorage, sessionStorage } from "@/lib/storage";
@@ -188,22 +186,6 @@ export class AISDK {
       saveSession(false);
     }
 
-    session.turns.push({
-      type: "request",
-      messageId: hyperidInstance(),
-      message: requestMessage,
-    });
-    saveSession(false /* no throttle – first write */);
-
-    let resultMessage: IMessageResult[] = [];
-    let resultTurn: SessionTurnsResponse = {
-      type: "response" as const,
-      messageId: hyperidInstance(),
-      message: resultMessage,
-    };
-    session.turns.push(resultTurn);
-    saveSession(false /* no throttle – second write */);
-
     const abortController = new AbortController();
     this.currentAbortController = abortController;
 
@@ -227,7 +209,7 @@ export class AISDK {
       try {
         let newContextWindowUsage = 0;
         await masterAgent.message(
-          session.turns.slice(0, -1),
+          session.turns,
           saveSession,
           refreshSession,
           updateSession,
