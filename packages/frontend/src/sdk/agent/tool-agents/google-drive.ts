@@ -30,9 +30,7 @@ export class GoogleDriveProvider
 {
   static id = "google-drive";
   static displayName = "Google Drive";
-  id = "google-drive";
-  displayName = "Google Drive";
-  description = "Access your Google Drive files";
+  static description = "Access your Google Drive files";
 
   private configSchema: Record<keyof IGoogleDriveConfig, IConfigSchema> = {
     clientId: {
@@ -55,7 +53,7 @@ export class GoogleDriveProvider
   });
 
   constructor() {
-    super(GoogleDriveProvider.id);
+    super(GoogleDriveProvider);
   }
 
   setup(config: IGoogleDriveConfig) {

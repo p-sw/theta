@@ -20,9 +20,7 @@ export class GoogleCalendarProvider
 {
   static id = "google-calendar";
   static displayName = "Google Calendar";
-  id = "google-calendar";
-  displayName = "Google Calendar";
-  description = "Access your Google Calendar data";
+  static description = "Access your Google Calendar data";
 
   private configSchema: Record<keyof IGoogleCalendarConfig, IConfigSchema> = {
     clientId: {
@@ -45,7 +43,7 @@ export class GoogleCalendarProvider
   });
 
   constructor() {
-    super(GoogleCalendarProvider.id);
+    super(GoogleCalendarProvider);
   }
 
   setup(config: IGoogleCalendarConfig) {

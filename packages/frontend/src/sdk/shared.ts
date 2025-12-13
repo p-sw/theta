@@ -114,15 +114,23 @@ export interface ToolProviderBase {
   tools: ITool[];
 }
 export abstract class ToolProviderBase {
-  providerId: string;
+  id: string;
+  displayName: string;
+  description: string;
 
-  constructor(providerId: string) {
-    this.providerId = providerId;
+  constructor(itself: {
+    id: string;
+    displayName: string;
+    description: string;
+  }) {
+    this.id = itself.id;
+    this.displayName = itself.displayName;
+    this.description = itself.description;
   }
 
   protected patchTool(tool: ITool): IToolMetaJson {
     return {
-      id: this.providerId + TOOL_PROVIDER_SEPARATOR + tool.id,
+      id: this.id + TOOL_PROVIDER_SEPARATOR + tool.id,
       displayName: tool.displayName,
       description: tool.description,
       schema: tool.schema,
@@ -151,7 +159,7 @@ export abstract class ToolProviderBase {
       );
       return [];
     }
-    if (!enabledProviders.includes(this.providerId)) return [];
+    if (!enabledProviders.includes(this.id)) return [];
 
     const enabledToolsString = localStorage.getItem(TOOL_ENABLED_KEY);
     if (!enabledToolsString) return [];
@@ -167,8 +175,7 @@ export abstract class ToolProviderBase {
     }
 
     for (const enabledTool of enabledTools) {
-      if (!enabledTool.startsWith(this.providerId + TOOL_PROVIDER_SEPARATOR))
-        continue;
+      if (!enabledTool.startsWith(this.id + TOOL_PROVIDER_SEPARATOR)) continue;
       const itool = this.tools.find(
         (v) => v.id === enabledTool.split(TOOL_PROVIDER_SEPARATOR)[1]
       );
@@ -184,6 +191,7 @@ export abstract class ToolProviderBase {
 export type IToolProviderClass<T> = {
   id: string; // static
   displayName: string;
+  description: string;
 } & (new () => ToolProviderBase & IToolProvider<T>);
 
 export interface IToolRegistry {

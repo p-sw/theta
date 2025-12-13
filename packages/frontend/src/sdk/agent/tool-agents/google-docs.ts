@@ -22,9 +22,7 @@ export class GoogleDocsProvider
 {
   static id = "google-docs";
   static displayName = "Google Docs";
-  id = "google-docs";
-  displayName = "Google Docs";
-  description = "Access and edit your Google Docs";
+  static description = "Access and edit your Google Docs";
 
   private configSchema: Record<keyof IGoogleDocsConfig, IConfigSchema> = {
     clientId: {
@@ -47,7 +45,7 @@ export class GoogleDocsProvider
   });
 
   constructor() {
-    super(GoogleDocsProvider.id);
+    super(GoogleDocsProvider);
   }
 
   setup(config: IGoogleDocsConfig) {

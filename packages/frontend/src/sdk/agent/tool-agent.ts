@@ -39,6 +39,7 @@ When you achieve the goal or cannot achieve the goal for some reason, you should
 export class ToolAgent {
   toolProviderId: string;
   toolProviderDisplayName: string;
+  toolProviderDescription: string;
 
   aiProvider: API<unknown, unknown> | null = null;
   selectedModel: string | null = null;
@@ -52,6 +53,7 @@ export class ToolAgent {
     this.toolProviderClass = toolProviderClass;
     this.toolProviderId = toolProviderClass.id;
     this.toolProviderDisplayName = toolProviderClass.displayName;
+    this.toolProviderDescription = toolProviderClass.description;
     this.initProvider();
     window.addEventListener(
       STORAGE_CHANGE_EVENT(SELECTED_MODEL),

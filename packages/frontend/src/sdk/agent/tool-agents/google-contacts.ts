@@ -60,10 +60,8 @@ export class GoogleContactsProvider
   implements IToolProvider<IGoogleContactsConfig>
 {
   static id = "google-contacts";
-  id = "google-contacts";
-  displayName = "Google Contacts";
   static displayName = "Google Contacts";
-  description = "Access your Google Contacts via People API";
+  static description = "Access your Google Contacts via People API";
 
   private configSchema: Record<keyof IGoogleContactsConfig, IConfigSchema> = {
     clientId: {
@@ -86,7 +84,7 @@ export class GoogleContactsProvider
   });
 
   constructor() {
-    super(GoogleContactsProvider.id);
+    super(GoogleContactsProvider);
   }
 
   setup(config: IGoogleContactsConfig) {

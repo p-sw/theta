@@ -19,9 +19,7 @@ export class GoogleTasksProvider
 {
   static id = "google-tasks";
   static displayName = "Google Tasks";
-  id = "google-tasks";
-  displayName = "Google Tasks";
-  description = "Access your Google Tasks";
+  static description = "Access your Google Tasks";
 
   private configSchema: Record<keyof IGoogleTasksConfig, IConfigSchema> = {
     clientId: {
@@ -44,7 +42,7 @@ export class GoogleTasksProvider
   });
 
   constructor() {
-    super(GoogleTasksProvider.id);
+    super(GoogleTasksProvider);
   }
 
   setup(config: IGoogleTasksConfig) {

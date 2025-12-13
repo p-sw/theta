@@ -20,9 +20,7 @@ export class GoogleSheetsProvider
 {
   static id = "google-sheets";
   static displayName = "Google Sheets";
-  id = "google-sheets";
-  displayName = "Google Sheets";
-  description = "Access and modify data in Google Sheets";
+  static description = "Access and modify data in Google Sheets";
 
   private configSchema: Record<keyof IGoogleSheetsConfig, IConfigSchema> = {
     clientId: {
@@ -45,7 +43,7 @@ export class GoogleSheetsProvider
   });
 
   constructor() {
-    super(GoogleSheetsProvider.id);
+    super(GoogleSheetsProvider);
   }
 
   setup(config: IGoogleSheetsConfig) {

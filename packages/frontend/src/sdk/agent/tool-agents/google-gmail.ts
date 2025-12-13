@@ -84,9 +84,7 @@ export class GoogleGmailProvider
 {
   static id = "google-gmail";
   static displayName = "Gmail";
-  id = "google-gmail";
-  displayName = "Gmail";
-  description = "Read, send, draft, label, move, and manage Gmail";
+  static description = "Read, send, draft, label, move, and manage Gmail";
 
   private configSchema: Record<keyof IGoogleGmailConfig, IConfigSchema> = {
     clientId: {
@@ -109,7 +107,7 @@ export class GoogleGmailProvider
   });
 
   constructor() {
-    super(GoogleGmailProvider.id);
+    super(GoogleGmailProvider);
   }
 
   setup(config: IGoogleGmailConfig) {

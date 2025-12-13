@@ -467,9 +467,7 @@ export class OpenWeatherProvider
 {
   static id = "openweather";
   static displayName = "OpenWeather API";
-  id = "openweather";
-  displayName = "OpenWeather API";
-  description = "Fetch weather data from OpenWeather API";
+  static description = "Fetch weather data from OpenWeather API";
 
   private apiGroup: {
     geocoding?: OpenWeatherGeocoding;
@@ -510,7 +508,7 @@ export class OpenWeatherProvider
   });
 
   constructor() {
-    super(OpenWeatherProvider.id);
+    super(OpenWeatherProvider);
   }
 
   setup(config: IOpenWeatherConfig) {

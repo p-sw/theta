@@ -54,6 +54,21 @@ export class ToolAgentManager {
     this.toolAgents.set(toolProviderClass.id, toolAgent);
   }
 
+  getMetadata(
+    agentExecutionId: string
+  ): { displayName: string; description: string } | undefined {
+    const [prefix, toolProviderId] = agentExecutionId.split(
+      TOOL_PROVIDER_SEPARATOR
+    );
+    if (prefix !== TOOL_AGENT_PATCH_PREFIX) return;
+    const agent = this.toolAgents.get(toolProviderId);
+    if (!agent) return;
+    return {
+      displayName: agent.toolProviderDisplayName,
+      description: agent.toolProviderDescription,
+    };
+  }
+
   getEnabledTools(): IToolMetaJson[] {
     const tools: IToolMetaJson[] = [];
 
@@ -127,3 +142,5 @@ export class ToolAgentManager {
     );
   }
 }
+
+export const toolAgentManager = new ToolAgentManager();
