@@ -335,6 +335,8 @@ export type SessionTurnsSubSession = {
   toolName: string;
   prompt: string;
   turns: SessionTurns;
+  isDone: boolean;
+  isError: boolean;
 };
 
 export type SessionTurns = (

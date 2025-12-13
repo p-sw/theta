@@ -150,6 +150,8 @@ export class MasterAgent {
               toolName: toolUse.name,
               prompt,
               turns: subsession,
+              isDone: false,
+              isError: false,
             };
             const insertedIndex = sessionTurns.push(toolTurn) - 1;
             saveSession();
@@ -183,8 +185,22 @@ export class MasterAgent {
               abortController,
               onFinish
             );
+
+            toolTurn.isDone = true;
+            saveSession();
           })
-        );
+        ).catch(() => {
+          // on error, set isError = true of subsessions not done yet
+          (
+            sessionTurns.filter(
+              (v) => v.type === "subsession" && !v.isDone
+            ) as SessionTurnsSubSession[]
+          ).forEach((v) => {
+            v.isDone = true;
+            v.isError = true;
+          });
+          saveSession();
+        });
 
         resultMessage = [];
         resultTurn = {
