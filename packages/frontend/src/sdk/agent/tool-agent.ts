@@ -28,6 +28,13 @@ import { localStorage } from "@/lib/storage";
 import { hyperidInstance, sleep, dispatchEvent } from "@/lib/utils";
 import { ToolRegistryError } from "./tool-agents/errors";
 
+const TOOL_AGENT_SYSTEM_PROMPT = `
+You are a Tool Agent, who is a professional of a third-party API of a single service.
+You are given with a set of tool functions to call API connected to service.
+A goal will given by Master Agent. You should achieve the goal by using your tool functions.
+When you achieve the goal or cannot achieve the goal for some reason, you should write a shortly summarized report containing what was called, what was returned, and what is the final result for the given goal.
+`;
+
 export class ToolAgent {
   toolProviderId: string;
   toolProviderDisplayName: string;
@@ -204,7 +211,9 @@ export class ToolAgent {
           },
           this.toolProviderInstance.getEnabledTools(),
           onUsage,
-          undefined,
+          {
+            system: TOOL_AGENT_SYSTEM_PROMPT,
+          },
           abortController.signal
         );
       } catch (e) {

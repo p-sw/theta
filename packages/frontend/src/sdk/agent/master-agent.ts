@@ -20,6 +20,12 @@ import { hyperidInstance } from "@/lib/utils";
 import { ToolAgentManager, toolAgentSchema } from "./tool-agent-manager";
 import z from "zod";
 
+const MASTER_AGENT_SYSTEM_PROMPT = `
+You are a Master Agent. Your mission is to achieve user's request with your available Tool Agent.
+Tool Agent is a professional of third-party API of a single service like Gmail of Google Calendar.
+You can call Tool Agent with a specific, conditional request to give them a goal and get a summarized report of what was called, what was returned, and what is final result.
+`;
+
 export class MasterAgent {
   toolAgentManager: ToolAgentManager;
   aiProvider: API<unknown, unknown> | null = null;
@@ -113,7 +119,9 @@ export class MasterAgent {
           },
           this.toolAgentManager.getEnabledTools(),
           onUsage,
-          undefined,
+          {
+            system: MASTER_AGENT_SYSTEM_PROMPT,
+          },
           abortController.signal
         );
       } catch (e) {
