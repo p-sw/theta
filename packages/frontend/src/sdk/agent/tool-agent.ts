@@ -144,15 +144,6 @@ export class ToolAgent {
     }
   }
 
-  /*
-   * Outside:
-   *
-   * async function updateResult(resultMessage: IMessageResult[], updator: (message: IMessageResult[]) => Promise<unknown>) {
-   *   await updator(resultMessage);
-   *   session.updatedAt = Date.now();
-   *   saveSession();
-   * }
-   */
   async message(
     sessionTurns: SessionTurns,
     saveSession: (throttle?: boolean) => void,
