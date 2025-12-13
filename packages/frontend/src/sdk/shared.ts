@@ -122,7 +122,7 @@ export abstract class ToolProviderBase {
 
   protected patchTool(tool: ITool): IToolMetaJson {
     return {
-      id: tool.id,
+      id: this.providerId + TOOL_PROVIDER_SEPARATOR + tool.id,
       displayName: tool.displayName,
       description: tool.description,
       schema: tool.schema,
