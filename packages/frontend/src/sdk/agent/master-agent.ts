@@ -20,13 +20,13 @@ import { hyperidInstance } from "@/lib/utils";
 import { ToolAgentManager, toolAgentSchema } from "./tool-agent-manager";
 import z from "zod";
 
-const toolAgentManager = new ToolAgentManager();
-
 export class MasterAgent {
+  toolAgentManager: ToolAgentManager;
   aiProvider: API<unknown, unknown> | null = null;
   selectedModel: string | null = null;
 
   constructor() {
+    this.toolAgentManager = new ToolAgentManager();
     this.initProvider();
     window.addEventListener(
       STORAGE_CHANGE_EVENT(SELECTED_MODEL),
@@ -111,7 +111,7 @@ export class MasterAgent {
             resultTurn.stop = stop;
             saveSession();
           },
-          toolAgentManager.getEnabledTools(),
+          this.toolAgentManager.getEnabledTools(),
           onUsage,
           undefined,
           abortController.signal
@@ -148,7 +148,7 @@ export class MasterAgent {
               await updateResult(resultMessage, updator);
             }
 
-            await toolAgentManager.execute(
+            await this.toolAgentManager.execute(
               toolUse.name,
               subsession,
               saveSession,
