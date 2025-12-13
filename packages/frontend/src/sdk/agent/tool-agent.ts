@@ -49,6 +49,7 @@ export class ToolAgent {
       STORAGE_CHANGE_EVENT(SELECTED_MODEL),
       this.initProvider
     );
+    window.addEventListener(STORAGE_CHANGE_EVENT(API_KEY), this.initProvider);
     window.addEventListener(
       TOOL_PROVIDER_CONFIG_KEY(this.toolProviderId),
       this.initProvider
