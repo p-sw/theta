@@ -261,21 +261,22 @@ export class AnthropicProvider extends API<
             );
           let lastSubturnText: IMessageResultText | null = null;
           const lastSubturn = turn.turns.at(-1);
-          if (lastSubturn?.type !== "response") continue;
-          for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
-            const lastSubturnItem = lastSubturn.message[i];
-            if (lastSubturnItem.type === "text")
-              lastSubturnText = lastSubturnItem;
+          if (lastSubturn?.type === "response") {
+            for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
+              const lastSubturnItem = lastSubturn.message[i];
+              if (lastSubturnItem.type === "text") {
+                lastSubturnText = lastSubturnItem;
+                break;
+              }
+            }
           }
-          if (!lastSubturnText)
-            throw new SessionTranslationError(
-              `Subsession ${turn.useId} does not have last report`
-            );
+          const fallbackMessage = `Subsession ${turn.useId} does not have last report`;
+          const content = lastSubturnText?.text ?? fallbackMessage;
           message.content.push({
             type: "tool_result",
             tool_use_id: turn.useId,
-            content: lastSubturnText.text,
-            is_error: turn.isError,
+            content,
+            is_error: turn.isError || lastSubturnText === null,
           });
         }
         if (turn.type === "request") {

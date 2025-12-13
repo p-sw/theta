@@ -225,20 +225,20 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
           );
         let lastSubturnText: IMessageResultText | null = null;
         const lastSubturn = turn.turns.at(-1);
-        if (lastSubturn?.type !== "response") continue;
-        for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
-          const lastSubturnItem = lastSubturn.message[i];
-          if (lastSubturnItem.type === "text")
-            lastSubturnText = lastSubturnItem;
+        if (lastSubturn?.type === "response") {
+          for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
+            const lastSubturnItem = lastSubturn.message[i];
+            if (lastSubturnItem.type === "text") {
+              lastSubturnText = lastSubturnItem;
+              break;
+            }
+          }
         }
-        if (!lastSubturnText)
-          throw new SessionTranslationError(
-            `Subsession ${turn.useId} does not have last report`
-          );
+        const fallbackMessage = `Subsession ${turn.useId} does not have last report`;
         messages.push({
           type: "function_call_output",
           call_id: turn.useId,
-          output: lastSubturnText.text,
+          output: lastSubturnText?.text ?? fallbackMessage,
         });
       }
       if (turn.type === "request") {
