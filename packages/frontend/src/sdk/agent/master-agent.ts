@@ -32,6 +32,7 @@ export class MasterAgent {
       STORAGE_CHANGE_EVENT(SELECTED_MODEL),
       this.initProvider
     );
+    window.addEventListener(STORAGE_CHANGE_EVENT(API_KEY), this.initProvider);
   }
 
   private async initProvider() {
