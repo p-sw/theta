@@ -13,12 +13,12 @@ import type {
   IMessageResult,
   SessionTurns,
   SessionTurnsResponse,
-  SessionTurnsTool,
-  SessionTurnsToolInProgress,
+  SessionTurnsSubSession,
 } from "../shared";
 import { localStorage } from "@/lib/storage";
-import { hyperidInstance, sleep } from "@/lib/utils";
-import { ToolAgentManager } from "./tool-agent-manager";
+import { hyperidInstance } from "@/lib/utils";
+import { ToolAgentManager, toolAgentSchema } from "./tool-agent-manager";
+import z from "zod";
 
 const toolAgentManager = new ToolAgentManager();
 
@@ -128,71 +128,45 @@ export class MasterAgent {
           (message) => message.type === "tool_use"
         );
 
-        toolUses.forEach((toolUse) => {
-          const toolTurn: SessionTurnsToolInProgress = {
-            type: "tool",
-            useId: toolUse.id,
-            toolName: toolUse.name,
-            granted: true, // always-run on MasterAgent calling other ToolAgent
-            requestContent: toolUse.input !== "" ? toolUse.input : "{}",
-            done: false,
-          };
-          sessionTurns.push(toolTurn);
-          saveSession();
-        });
+        await Promise.all(
+          toolUses.map(async (toolUse) => {
+            const subsession: SessionTurns = [];
+            const toolTurn: SessionTurnsSubSession = {
+              type: "subsession",
+              useId: toolUse.id,
+              toolName: toolUse.name,
+              turns: subsession,
+            };
+            sessionTurns.push(toolTurn);
+            saveSession();
 
-        while (true) {
-          await sleep(500);
-          sessionTurns = await refreshSession();
-
-          const freshedTools = Array.from(sessionTurns.entries()).filter(
-            (turn) => turn[1].type === "tool"
-          ) as [number, SessionTurnsTool][];
-
-          const shouldBeExecuted = freshedTools.find(
-            (toolTurn) => toolTurn[1].granted && !toolTurn[1].done
-          );
-
-          if (shouldBeExecuted) {
-            const [turnIndex, toolTurn] = shouldBeExecuted;
-            try {
-              await toolAgentManager.execute(
-                toolTurn.toolName,
-                sessionTurns,
-                saveSession,
-                refreshSession,
-                updateResult,
-                requestMessage,
-                onUsage,
-                abortController,
-                onFinish
-              );
-              sessionTurns[turnIndex] = {
-                ...toolTurn,
-                done: true,
-                isError: false,
-                responseContent: "Tool execution finished.",
-              };
-              saveSession();
-            } catch (e) {
-              sessionTurns[turnIndex] = {
-                ...toolTurn,
-                done: true,
-                isError: true,
-                responseContent:
-                  (e as Error).message ??
-                  "Unexpected error while executing tool",
-              };
-              saveSession();
+            async function updateSubsession(
+              resultMessage: IMessageResult[],
+              updator: (message: IMessageResult[]) => Promise<unknown>
+            ) {
+              await updateResult(resultMessage, updator);
             }
-          }
 
-          const waitingForGrants = freshedTools.some(
-            (toolTurn) => !toolTurn[1].granted && !toolTurn[1].done
-          );
-
-          if (!shouldBeExecuted && !waitingForGrants) break;
-        }
+            await toolAgentManager.execute(
+              toolUse.name,
+              subsession,
+              saveSession,
+              refreshSession,
+              updateSubsession,
+              [
+                {
+                  type: "text",
+                  text: (
+                    await z.parseAsync(toolAgentSchema, toolUse.input)
+                  ).prompt,
+                },
+              ],
+              () => {},
+              abortController,
+              onFinish
+            );
+          })
+        );
 
         resultMessage = [];
         resultTurn = {

@@ -329,10 +329,18 @@ export type SessionTurnsTool =
   | SessionTurnsToolInProgress
   | SessionTurnsToolDone;
 
+export type SessionTurnsSubSession = {
+  type: "subsession";
+  useId: string;
+  toolName: string;
+  turns: SessionTurns;
+};
+
 export type SessionTurns = (
   | SessionTurnsRequest
   | SessionTurnsResponse
   | SessionTurnsTool
+  | SessionTurnsSubSession
 )[];
 
 export type ISessionBase = {

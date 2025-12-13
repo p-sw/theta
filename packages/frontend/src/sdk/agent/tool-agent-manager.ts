@@ -24,7 +24,7 @@ import { z } from "zod";
 import type { JSONSchema7 } from "json-schema";
 import { ToolRegistryError } from "./tool-agents/errors";
 
-const toolAgentSchema = z.object({
+export const toolAgentSchema = z.object({
   prompt: z
     .string()
     .nonempty()
