@@ -4,6 +4,7 @@ import type {
   SessionTurns,
   SessionTurnsRequest,
   SessionTurnsResponse,
+  SessionTurnsSubSession,
   SessionTurnsTool,
 } from "@/sdk/shared";
 import { clsx, type ClassValue } from "clsx";
@@ -16,7 +17,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms))
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 interface IStorageOptions {
@@ -209,6 +210,7 @@ export function parseSessionDisplayables(sessionTurns: SessionTurns) {
     | SessionTurnsRequest
     | SessionTurnsResponse
     | SessionTurnsTool[]
+    | SessionTurnsSubSession
   )[] = [];
 
   for (const turn of sessionTurns) {
@@ -227,6 +229,8 @@ export function parseSessionDisplayables(sessionTurns: SessionTurns) {
       if (Array.isArray(turns.at(-1)))
         (turns.at(-1) as SessionTurnsTool[]).push(turn);
       else turns.push([turn]);
+    } else if (turn.type === "subsession") {
+      turns.push(turn);
     }
   }
   return turns;
