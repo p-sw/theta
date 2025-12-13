@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Item,
+  ItemMedia,
+  ItemTitle,
+  ItemDescription,
+  ItemContent,
+  ItemActions,
+} from "@/components/ui/item";
 import LucideLoaderCircle from "~icons/lucide/loader-circle";
 import type {
   SessionTurnsTool,
@@ -64,130 +64,57 @@ export function ToolUseCard({
   const [advanced] = useAdvanced();
 
   return (
-    <Card className="w-full mb-8" data-message-role="tool">
-      <CardHeader>
-        <CardTitle className="col-span-2 sm:col-span-1 flex items-center gap-1">
-          {message.done ? (
-            message.granted ? (
-              message.isError ? (
-                <LucideCircleAlert className="w-4 h-4 inline-block mr-2" />
-              ) : (
-                <LucideCheck className="w-4 h-4 inline-block mr-2" />
-              )
+    <Item className="w-full mb-8" data-message-role="tool" variant="muted">
+      <ItemMedia>
+        {message.done ? (
+          message.granted ? (
+            message.isError ? (
+              <LucideCircleAlert className="w-4 h-4 inline-block mr-2" />
             ) : (
-              <LucideCircleMinus className="w-4 h-4 inline-block mr-2" />
+              <LucideCheck className="w-4 h-4 inline-block mr-2" />
             )
           ) : (
-            <LucideLoaderCircle className="w-4 h-4 animate-spin inline-block mr-2" />
-          )}
-          <span>{tool?.displayName ?? "Unknown tool"}</span>
+            <LucideCircleMinus className="w-4 h-4 inline-block mr-2" />
+          )
+        ) : (
+          <LucideLoaderCircle className="w-4 h-4 animate-spin inline-block mr-2" />
+        )}
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>
+          {tool?.displayName ?? "Unknown tool"}
           {isWhitelisted && (
             <Badge variant="secondary" className="ml-2">
               Whitelisted
             </Badge>
           )}
-        </CardTitle>
-        <CardDescription>
+        </ItemTitle>
+        <ItemDescription>
           {provider?.displayName ?? "Unknown provider"}
-        </CardDescription>
-        <CardAction className="self-center gap-2 items-center hidden sm:flex">
-          {!message.done && !message.granted ? (
-            <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="default" onClick={onGrant}>
-                    <LucideCheck className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Grant</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="destructive" onClick={onReject}>
-                    <LucideCircleMinus className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reject</TooltipContent>
-              </Tooltip>
-            </>
-          ) : (
-            advanced.showToolDetails && (
-              <>
-                {message.done ? (
-                  message.granted ? (
-                    message.isError ? (
-                      <p className="text-destructive text-sm inline-block">
-                        Execution failed
-                      </p>
-                    ) : (
-                      <p className="text-green-500 text-sm inline-block">Done</p>
-                    )
-                  ) : (
-                    <p className="text-destructive text-sm inline-block">
-                      Execution rejected
-                    </p>
-                  )
-                ) : (
-                  <p className="text-muted-foreground text-sm inline-block">
-                    Executing...
-                  </p>
-                )}
-                <DetailDialog
-                  provider={provider}
-                  tool={tool}
-                  message={message}
-                  onGrant={onGrant}
-                  onReject={onReject}
-                >
-                  <Button variant="secondary" size="icon" className="ml-4">
-                    <LucideMoveDiagonal className="w-4 h-4" />
-                  </Button>
-                </DetailDialog>
-              </>
-            )
-          )}
-        </CardAction>
-      </CardHeader>
-      {(advanced.showToolDetails || (!message.done && !message.granted)) && (
-        <CardFooter className="grid grid-cols-2 grid-rows-2 gap-2 sm:hidden">
-          {advanced.showToolDetails && (
-            <>
-              {message.done ? (
-                message.granted ? (
-                  message.isError ? (
-                    <p className="text-destructive text-sm inline-block col-span-2 text-center">
-                      Execution failed
-                    </p>
-                  ) : (
-                    <p className="text-green-500 text-sm inline-block col-span-2 text-center">
-                      Done
-                    </p>
-                  )
-                ) : (
-                  <p className="text-destructive text-sm inline-block col-span-2 text-center">
-                    Execution rejected
-                  </p>
-                )
-              ) : message.granted ? (
-                <p className="text-muted-foreground text-sm inline-block col-span-2 text-center">
-                  Tool is executing...
-                </p>
-              ) : null}
-            </>
-          )}
-          {!message.done && !message.granted && (
-            <>
-              <Button onClick={onGrant}>
-                <LucideCheck className="w-4 h-4" />
-                Grant
-              </Button>
-              <Button variant="destructive" onClick={onReject}>
-                <LucideCircleMinus className="w-4 h-4" />
-                Reject
-              </Button>
-            </>
-          )}
-          {advanced.showToolDetails && (
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        {!message.done && !message.granted ? (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="default" onClick={onGrant}>
+                  <LucideCheck className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Grant</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="destructive" onClick={onReject}>
+                  <LucideCircleMinus className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reject</TooltipContent>
+            </Tooltip>
+          </>
+        ) : (
+          advanced.showToolDetails && (
             <DetailDialog
               provider={provider}
               tool={tool}
@@ -195,15 +122,14 @@ export function ToolUseCard({
               onGrant={onGrant}
               onReject={onReject}
             >
-              <Button variant="secondary" className="col-span-2">
+              <Button variant="secondary" size="icon" className="ml-4">
                 <LucideMoveDiagonal className="w-4 h-4" />
-                Show details
               </Button>
             </DetailDialog>
-          )}
-        </CardFooter>
-      )}
-    </Card>
+          )
+        )}
+      </ItemActions>
+    </Item>
   );
 }
 
