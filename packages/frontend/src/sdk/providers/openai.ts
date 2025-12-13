@@ -218,6 +218,29 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
           output: turn.responseContent,
         });
       }
+      if (turn.type === "subsession") {
+        if (!turn.isDone)
+          throw new SessionTranslationError(
+            `Subsession is not done: ${turn.useId}`
+          );
+        let lastSubturnText: IMessageResultText | null = null;
+        const lastSubturn = turn.turns.at(-1);
+        if (lastSubturn?.type !== "response") continue;
+        for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
+          const lastSubturnItem = lastSubturn.message[i];
+          if (lastSubturnItem.type === "text")
+            lastSubturnText = lastSubturnItem;
+        }
+        if (!lastSubturnText)
+          throw new SessionTranslationError(
+            `Subsession ${turn.useId} does not have last report`
+          );
+        messages.push({
+          type: "function_call_output",
+          call_id: turn.useId,
+          output: lastSubturnText.text,
+        });
+      }
       if (turn.type === "request") {
         const message: IOpenAIInputMessage = {
           type: "message",
@@ -369,7 +392,10 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     ) => Promise<void>,
     setStop: (stop: SessionTurnsResponse["stop"]) => void,
     tools: IToolMetaJson[],
-    onUsage: (delta: { inputTokensDelta?: number; outputTokensDelta?: number }) => void,
+    onUsage: (delta: {
+      inputTokensDelta?: number;
+      outputTokensDelta?: number;
+    }) => void,
     overrideConfigs?: Partial<IOpenAIModelConfig & { system: string }>,
     signal?: AbortSignal
   ): Promise<void> {
@@ -387,8 +413,8 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
     if (overrideConfigs?.system) {
       systemPrompts.push({
         type: "text" as const,
-        text: overrideConfigs.system
-      })
+        text: overrideConfigs.system,
+      });
     }
 
     try {
@@ -525,8 +551,15 @@ export class OpenAIProvider extends API<IOpenAIInput, IOpenAIToolSchema> {
                   message: "Assistant has finished its turn.",
                 });
                 await result(async (prev) => prev.push({ type: "end" }));
-                const payload = event as unknown as IOpenAIOutputResponseCompleted;
-                const usage = payload.response && (payload.response as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+                const payload =
+                  event as unknown as IOpenAIOutputResponseCompleted;
+                const usage =
+                  payload.response &&
+                  (
+                    payload.response as {
+                      usage?: { input_tokens?: number; output_tokens?: number };
+                    }
+                  ).usage;
                 if (usage) {
                   onUsage({
                     inputTokensDelta: usage.input_tokens ?? 0,

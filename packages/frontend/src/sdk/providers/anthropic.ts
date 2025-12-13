@@ -226,7 +226,11 @@ export class AnthropicProvider extends API<
     const messages: IAnthropicMessage[] = [];
 
     for (const turn of session) {
-      if (turn.type === "tool" || turn.type === "request") {
+      if (
+        turn.type === "tool" ||
+        turn.type === "request" ||
+        turn.type === "subsession"
+      ) {
         const lastMessage = messages.at(-1);
         let message: IAnthropicMessage;
         if (lastMessage?.role === "user") {
@@ -247,6 +251,30 @@ export class AnthropicProvider extends API<
             type: "tool_result",
             tool_use_id: turn.useId,
             content: turn.responseContent,
+            is_error: turn.isError,
+          });
+        }
+        if (turn.type === "subsession") {
+          if (!turn.isDone)
+            throw new SessionTranslationError(
+              `Subsession is not done: ${turn.useId}`
+            );
+          let lastSubturnText: IMessageResultText | null = null;
+          const lastSubturn = turn.turns.at(-1);
+          if (lastSubturn?.type !== "response") continue;
+          for (let i = lastSubturn.message.length - 1; i >= 0; i--) {
+            const lastSubturnItem = lastSubturn.message[i];
+            if (lastSubturnItem.type === "text")
+              lastSubturnText = lastSubturnItem;
+          }
+          if (!lastSubturnText)
+            throw new SessionTranslationError(
+              `Subsession ${turn.useId} does not have last report`
+            );
+          message.content.push({
+            type: "tool_result",
+            tool_use_id: turn.useId,
+            content: lastSubturnText.text,
             is_error: turn.isError,
           });
         }
@@ -372,8 +400,8 @@ export class AnthropicProvider extends API<
     if (overrideConfigs?.system) {
       systemPrompts.push({
         type: "text" as const,
-        text: overrideConfigs?.system
-      })
+        text: overrideConfigs?.system,
+      });
     }
 
     try {
@@ -612,7 +640,7 @@ export class AnthropicProvider extends API<
 
     return {
       temperature: 1,
-      maxOutput: Math.floor(modelInfo.maxOutput / 4 * 3),
+      maxOutput: Math.floor((modelInfo.maxOutput / 4) * 3),
       stopSequences: [],
       extendedThinking: modelInfo.extendedThinking,
       thinkingBudget: Math.floor(modelInfo.maxOutput / 4),
