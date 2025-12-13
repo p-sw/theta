@@ -64,6 +64,7 @@ export const TOOL_PROVIDER_AVAILABILITY_KEY = "tool-provider-availability";
 export const TOOL_ENABLED_KEY = "tool-enabled";
 export const TOOL_WHITELISTED_KEY = "tool-whitelisted";
 export const TOOL_PROVIDER_SEPARATOR = "__";
+export const TOOL_AGENT_PATCH_PREFIX = "tool-agent";
 export const TOOL_PROVIDER_MODEL_KEY = "tool-provider-model";
 export type IToolProviderModel = Record<
   string,

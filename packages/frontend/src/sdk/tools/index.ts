@@ -5,17 +5,15 @@ import type {
   IToolProviderMeta,
   IToolRegistry,
 } from "@/sdk/shared";
-import type {
-  IConfigSchema
-} from "@/sdk/config-schema";
-import { OpenWeatherProvider } from "@/sdk/tools/providers/openweather";
-import { GoogleCalendarProvider } from "@/sdk/tools/providers/google-calendar";
-import { GoogleSheetsProvider } from "@/sdk/tools/providers/google-sheets";
-import { GoogleDriveProvider } from "@/sdk/tools/providers/google-drive";
-import { GoogleContactsProvider } from "@/sdk/tools/providers/google-contacts";
-import { GoogleDocsProvider } from "@/sdk/tools/providers/google-docs";
-import { GoogleTasksProvider } from "@/sdk/tools/providers/google-tasks";
-import { GoogleGmailProvider } from "@/sdk/tools/providers/google-gmail";
+import type { IConfigSchema } from "@/sdk/config-schema";
+import { OpenWeatherProvider } from "@/sdk/agent/tool-agents/openweather";
+import { GoogleCalendarProvider } from "@/sdk/agent/tool-agents/google-calendar";
+import { GoogleSheetsProvider } from "@/sdk/agent/tool-agents/google-sheets";
+import { GoogleDriveProvider } from "@/sdk/agent/tool-agents/google-drive";
+import { GoogleContactsProvider } from "@/sdk/agent/tool-agents/google-contacts";
+import { GoogleDocsProvider } from "@/sdk/agent/tool-agents/google-docs";
+import { GoogleTasksProvider } from "@/sdk/agent/tool-agents/google-tasks";
+import { GoogleGmailProvider } from "@/sdk/agent/tool-agents/google-gmail";
 import { localStorage } from "@/lib/storage";
 import {
   TOOL_ENABLED_KEY,
@@ -24,7 +22,7 @@ import {
   TOOL_PROVIDER_ENABLED_KEY,
   TOOL_PROVIDER_SEPARATOR,
 } from "@/lib/const";
-import { ToolRegistryError } from "@/sdk/tools/errors";
+import { ToolRegistryError } from "@/sdk/agent/tool-agents/errors";
 import { z } from "zod";
 import type { JSONSchema7 } from "json-schema";
 import { dispatchEvent } from "@/lib/utils";

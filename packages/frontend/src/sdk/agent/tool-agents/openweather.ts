@@ -4,8 +4,8 @@ import {
   ToolExecutionError,
   ToolParameterError,
   ToolRegistryError,
-} from "@/sdk/tools/errors";
-import type { IOpenWeatherConfig } from "@/sdk/tools/providers/openweather.types";
+} from "@/sdk/agent/tool-agents/errors";
+import type { IOpenWeatherConfig } from "@/sdk/agent/tool-agents/openweather.types";
 import z from "zod";
 import { ToolProviderBase } from "../../shared";
 

@@ -4,9 +4,9 @@ import {
   ToolExecutionError,
   ToolParameterError,
   ToolRegistryError,
-} from "@/sdk/tools/errors";
-import type { IGoogleGmailConfig } from "@/sdk/tools/providers/google-gmail.types";
-import { googleAuth } from "@/sdk/tools/providers/google-auth";
+} from "@/sdk/agent/tool-agents/errors";
+import type { IGoogleGmailConfig } from "@/sdk/agent/tool-agents/google-gmail.types";
+import { googleAuth } from "@/sdk/agent/tool-agents/google-auth";
 import z from "zod";
 import { ToolProviderBase } from "../../shared";
 

@@ -4,9 +4,9 @@ import {
   ToolExecutionError,
   ToolParameterError,
   ToolRegistryError,
-} from "@/sdk/tools/errors";
-import type { IGoogleSheetsConfig } from "@/sdk/tools/providers/google-sheets.types";
-import { googleAuth } from "@/sdk/tools/providers/google-auth";
+} from "@/sdk/agent/tool-agents/errors";
+import type { IGoogleSheetsConfig } from "@/sdk/agent/tool-agents/google-sheets.types";
+import { googleAuth } from "@/sdk/agent/tool-agents/google-auth";
 import z from "zod";
 import { ToolProviderBase } from "../../shared";
 

@@ -4,9 +4,9 @@ import {
   ToolExecutionError,
   ToolParameterError,
   ToolRegistryError,
-} from "@/sdk/tools/errors";
-import type { IGoogleCalendarConfig } from "@/sdk/tools/providers/google-calendar.types";
-import { googleAuth } from "@/sdk/tools/providers/google-auth";
+} from "@/sdk/agent/tool-agents/errors";
+import type { IGoogleCalendarConfig } from "@/sdk/agent/tool-agents/google-calendar.types";
+import { googleAuth } from "@/sdk/agent/tool-agents/google-auth";
 import z from "zod";
 import { ToolProviderBase } from "../../shared";
 
@@ -19,6 +19,7 @@ export class GoogleCalendarProvider
   implements IToolProvider<IGoogleCalendarConfig>
 {
   static id = "google-calendar";
+  static displayName = "Google Calendar";
   id = "google-calendar";
   displayName = "Google Calendar";
   description = "Access your Google Calendar data";

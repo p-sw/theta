@@ -183,6 +183,7 @@ export abstract class ToolProviderBase {
 
 export type IToolProviderClass<T> = {
   id: string; // static
+  displayName: string;
 } & (new () => ToolProviderBase & IToolProvider<T>);
 
 export interface IToolRegistry {

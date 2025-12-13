@@ -26,10 +26,11 @@ import type {
 } from "../shared";
 import { localStorage } from "@/lib/storage";
 import { hyperidInstance, sleep, dispatchEvent } from "@/lib/utils";
-import { ToolRegistryError } from "../tools/errors";
+import { ToolRegistryError } from "./tool-agents/errors";
 
 export class ToolAgent {
   toolProviderId: string;
+  toolProviderDisplayName: string;
 
   aiProvider: API<unknown, unknown> | null = null;
   selectedModel: string | null = null;
@@ -42,6 +43,7 @@ export class ToolAgent {
   constructor(toolProviderClass: IToolProviderClass<Record<string, unknown>>) {
     this.toolProviderClass = toolProviderClass;
     this.toolProviderId = toolProviderClass.id;
+    this.toolProviderDisplayName = toolProviderClass.displayName;
     this.initProvider();
     window.addEventListener(
       STORAGE_CHANGE_EVENT(SELECTED_MODEL),
