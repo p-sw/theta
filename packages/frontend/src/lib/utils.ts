@@ -205,13 +205,14 @@ export function parseResponseSessionDisplayables(
   };
 }
 
+type SessionTurnsParsed =
+  | SessionTurnsRequest
+  | SessionTurnsResponse
+  | SessionTurnsTool[]
+  | (Omit<SessionTurnsSubSession, "turns"> & { turns: SessionTurnsParsed[] });
+
 export function parseSessionDisplayables(sessionTurns: SessionTurns) {
-  const turns: (
-    | SessionTurnsRequest
-    | SessionTurnsResponse
-    | SessionTurnsTool[]
-    | SessionTurnsSubSession
-  )[] = [];
+  const turns: (SessionTurnsParsed)[] = [];
 
   for (const turn of sessionTurns) {
     if (turn.type === "request") {
@@ -230,7 +231,10 @@ export function parseSessionDisplayables(sessionTurns: SessionTurns) {
         (turns.at(-1) as SessionTurnsTool[]).push(turn);
       else turns.push([turn]);
     } else if (turn.type === "subsession") {
-      turns.push(turn);
+      turns.push({
+        ...turn,
+        turns: parseSessionDisplayables(turn.turns),
+      });
     }
   }
   return turns;
