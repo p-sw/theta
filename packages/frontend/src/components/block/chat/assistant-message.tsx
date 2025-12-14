@@ -16,14 +16,18 @@ import LucideLoaderCircle from "~icons/lucide/loader-circle";
 export function AssistantMessage({
   sessionId,
   messageId,
+  isStreaming,
   messages,
   stop,
 }: {
   sessionId: string;
   messageId: string;
+  isStreaming: boolean;
   messages: IMessageResult[];
   stop?: SessionTurnsResponseStop;
 }) {
+  if (messages.length === 0 && !isStreaming) return null;
+
   return (
     <div
       className={`flex flex-col items-start gap-2 w-full mb-8 ${
