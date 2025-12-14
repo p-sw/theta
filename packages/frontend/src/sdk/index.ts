@@ -205,35 +205,33 @@ export class AISDK {
 
     const masterAgent = new MasterAgent();
 
-    while (true) {
-      try {
-        let newContextWindowUsage = 0;
-        await masterAgent.message(
-          session.turns,
-          saveSession,
-          refreshSession,
-          updateSession,
-          requestMessage,
-          (delta) => {
-            const inputDelta = delta.inputTokensDelta ?? 0;
-            const outputDelta = delta.outputTokensDelta ?? 0;
-            const anyDelta = inputDelta !== 0 || outputDelta !== 0;
-            if (anyDelta) {
-              newContextWindowUsage =
-                newContextWindowUsage + inputDelta + outputDelta;
-              session.contextWindowUsage = newContextWindowUsage;
-              saveSession();
-            }
-          },
-          abortController,
-          async () => flushSession()
-        );
-      } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") {
-          break;
-        } else {
-          throw e;
-        }
+    try {
+      let newContextWindowUsage = 0;
+      await masterAgent.message(
+        session.turns,
+        saveSession,
+        refreshSession,
+        updateSession,
+        requestMessage,
+        (delta) => {
+          const inputDelta = delta.inputTokensDelta ?? 0;
+          const outputDelta = delta.outputTokensDelta ?? 0;
+          const anyDelta = inputDelta !== 0 || outputDelta !== 0;
+          if (anyDelta) {
+            newContextWindowUsage =
+              newContextWindowUsage + inputDelta + outputDelta;
+            session.contextWindowUsage = newContextWindowUsage;
+            saveSession();
+          }
+        },
+        abortController,
+        async () => flushSession()
+      );
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        // no-op
+      } else {
+        throw e;
       }
     }
 
