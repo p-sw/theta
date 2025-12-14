@@ -144,7 +144,7 @@ export class MasterAgent {
             ).prompt;
 
             const subsession: SessionTurns = [];
-            const toolTurn: SessionTurnsSubSession = {
+            let toolTurn: SessionTurnsSubSession = {
               type: "subsession",
               useId: toolUse.id,
               toolName: toolUse.name,
@@ -165,8 +165,8 @@ export class MasterAgent {
 
             async function refreshSubsession(): Promise<SessionTurns> {
               sessionTurns = await refreshSession();
-              return (sessionTurns[insertedIndex] as SessionTurnsSubSession)
-                .turns;
+              toolTurn = sessionTurns[insertedIndex] as SessionTurnsSubSession;
+              return toolTurn.turns;
             }
 
             await this.toolAgentManager.execute(
