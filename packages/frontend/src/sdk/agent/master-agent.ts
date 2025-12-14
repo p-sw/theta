@@ -183,11 +183,11 @@ export class MasterAgent {
               ],
               () => {},
               abortController,
-              onFinish
+              async () => {
+                toolTurn.isDone = true;
+                saveSession();
+              }
             );
-
-            toolTurn.isDone = true;
-            saveSession();
           })
         ).catch(() => {
           // on error, set isError = true of subsessions not done yet
