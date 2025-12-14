@@ -74,6 +74,51 @@ function mapToolTurns(
   return [mutated ? nextTurns : turns, mutated];
 }
 
+function pruneEmptyResponsePairs(
+  turns: SessionTurns,
+  isRoot = false
+): { mutated: boolean; removedRootRequest: boolean } {
+  let mutated = false;
+  let removedRootRequest = false;
+
+  while (turns.length > 0) {
+    const lastTurn = turns.at(-1);
+    if (!lastTurn) break;
+
+    if (lastTurn.type === "response") {
+      const lastTurnDisplayables = parseResponseSessionDisplayables(lastTurn);
+      if (lastTurnDisplayables.message.length === 0) {
+        turns.pop();
+        mutated = true;
+        const maybeRequest = turns.at(-1);
+        if (maybeRequest?.type === "request") {
+          turns.pop();
+          if (isRoot) {
+            removedRootRequest = true;
+          }
+        }
+        continue;
+      }
+      break;
+    }
+
+    if (lastTurn.type === "subsession") {
+      const nestedResult = pruneEmptyResponsePairs(lastTurn.turns, false);
+      mutated = mutated || nestedResult.mutated;
+      if (lastTurn.turns.length === 0) {
+        turns.pop();
+        mutated = true;
+        continue;
+      }
+      break;
+    }
+
+    break;
+  }
+
+  return { mutated, removedRootRequest };
+}
+
 export default function Chat() {
   const {
     sessionId,
@@ -177,32 +222,33 @@ export default function Chat() {
         effectiveModelId!,
         [{ type: "text", text: data.message }]
       )
-        .then(() => setIsStreaming(false))
         .catch((e) => {
           toast.error(`${e.name ?? "Error"}: ${e.message}`);
           console.error(e);
+        })
+        .finally(() => {
           setIsStreaming(false);
 
+          const storage = isPermanentSession ? localStorage : sessionStorage;
           const sessionRef = JSON.parse(
-            (isPermanentSession ? localStorage : sessionStorage).getItem(
-              SESSION_STORAGE_KEY(sessionId)
-            ) ?? "{}"
+            storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
           ) as TemporarySession;
-          const lastTurn = sessionRef.turns.at(-1);
-          if (lastTurn?.type === "response") {
-            const lastTurnDisplayables =
-              parseResponseSessionDisplayables(lastTurn);
-            if (lastTurnDisplayables.message.length === 0) {
-              form.setValue("message", data.message);
-              sessionRef.turns.pop();
-              sessionRef.turns.pop();
 
-              (isPermanentSession ? localStorage : sessionStorage).setItem(
-                SESSION_STORAGE_KEY(sessionId),
-                JSON.stringify(sessionRef)
-              );
-            }
+          const { mutated, removedRootRequest } = pruneEmptyResponsePairs(
+            sessionRef.turns,
+            true
+          );
+
+          if (!mutated) return;
+
+          if (removedRootRequest) {
+            form.setValue("message", data.message);
           }
+
+          storage.setItem(
+            SESSION_STORAGE_KEY(sessionId),
+            JSON.stringify(sessionRef)
+          );
         });
     },
     [
