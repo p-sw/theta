@@ -15,9 +15,68 @@ import { dispatchEvent } from "@/lib/utils";
 export class StorageWrapper implements Storage {
   private storage: Storage;
   private keys: Set<string>;
+  private bufferTargets: Set<string>;
+  private bufferValues: Map<string, string | null>;
+
+  public readonly Buffer: {
+    target: (key: string) => void;
+    finish: (key?: string) => void;
+  };
 
   private isLocal(): boolean {
     return this.storage === window.localStorage;
+  }
+
+  private isBufferTarget(key: string): boolean {
+    return this.bufferTargets.has(key);
+  }
+
+  private ensureBuffered(key: string): void {
+    if (key === VERSION_KEY) return;
+    if (this.bufferTargets.has(key)) return;
+    this.bufferTargets.add(key);
+    if (!this.bufferValues.has(key)) {
+      this.bufferValues.set(key, this.storage.getItem(key));
+    }
+  }
+
+  private finishBuffered(key?: string): void {
+    const now = Date.now();
+    const targets = key ? [key] : Array.from(this.bufferTargets);
+
+    for (const targetKey of targets) {
+      if (!this.bufferTargets.has(targetKey)) continue;
+      const bufferedValue = this.bufferValues.has(targetKey)
+        ? (this.bufferValues.get(targetKey) ?? null)
+        : this.storage.getItem(targetKey);
+      const underlyingValue = this.storage.getItem(targetKey);
+      const changed = underlyingValue !== bufferedValue;
+
+      if (changed) {
+        if (bufferedValue === null) {
+          this.storage.removeItem(targetKey);
+        } else {
+          this.storage.setItem(targetKey, bufferedValue);
+        }
+      }
+
+      this.bufferTargets.delete(targetKey);
+      this.bufferValues.delete(targetKey);
+
+      if (changed) {
+        this.touchVersion(targetKey, now);
+      }
+    }
+  }
+
+  private getEffectiveItem(key: string): string | null {
+    if (this.isBufferTarget(key)) {
+      if (this.bufferValues.has(key)) {
+        return this.bufferValues.get(key) ?? null;
+      }
+      return this.storage.getItem(key);
+    }
+    return this.storage.getItem(key);
   }
 
   private readVersionMap(): IVersionMap {
@@ -39,6 +98,7 @@ export class StorageWrapper implements Storage {
   private touchVersion(key: string, timestamp?: number): void {
     if (!this.isLocal()) return;
     if (key === VERSION_KEY) return; // never version VERSION_KEY itself
+    if (this.isBufferTarget(key)) return; // defer when buffered
     const map = this.readVersionMap();
     map[key] = timestamp ?? Date.now();
     this.writeVersionMap(map);
@@ -62,9 +122,9 @@ export class StorageWrapper implements Storage {
 
   private getStorageEventDelta(
     key: string,
-    newValue: string | null
+    newValue: string | null,
+    previousValue: string | null
   ): IStorageChangeEventDelta {
-    const previousValue = this.storage.getItem(key);
     const isNew = previousValue === null;
     const isRemoved = newValue === null;
     const isChanged = !isNew && !isRemoved && previousValue !== newValue; // string -> string
@@ -102,28 +162,43 @@ export class StorageWrapper implements Storage {
   constructor(storage: Storage) {
     this.storage = storage;
     this.keys = new Set(Object.keys(storage));
+    this.bufferTargets = new Set();
+    this.bufferValues = new Map();
     // Ensure version map exists for local storage
     if (this.isLocal() && this.storage.getItem(VERSION_KEY) === null) {
       this.storage.setItem(VERSION_KEY, JSON.stringify({} satisfies IVersionMap));
     }
+
+    this.Buffer = {
+      target: (key: string) => {
+        this.ensureBuffered(key);
+      },
+      finish: (key?: string) => {
+        this.finishBuffered(key);
+      },
+    };
   }
 
   get length(): number {
-    return this.storage.length;
+    return this.keys.size;
   }
 
   clear(): void {
+    if (this.bufferTargets.size > 0) {
+      this.finishBuffered();
+    }
+
     const now = Date.now();
     const keysToClear = Array.from(this.keys).filter(
       (k) => !(this.isLocal() && k === VERSION_KEY)
     );
     const delta = keysToClear.map((key) => {
       // do not fire event
-      const previousValue = this.storage.getItem(key);
+      const previousValue = this.getEffectiveItem(key);
       this.storage.removeItem(key);
       this.keys.delete(key);
       this.touchVersion(key, now);
-      return this.getStorageEventDelta(key, previousValue);
+      return this.getStorageEventDelta(key, null, previousValue);
     });
     const hadKeys = delta.length > 0;
 
@@ -148,11 +223,11 @@ export class StorageWrapper implements Storage {
   }
 
   getItem(key: string): string | null {
-    return this.storage.getItem(key);
+    return this.getEffectiveItem(key);
   }
 
   key(index: number): string | null {
-    return this.storage.key(index);
+    return Array.from(this.keys)[index] ?? null;
   }
 
   getKeys(): string[] {
@@ -160,36 +235,47 @@ export class StorageWrapper implements Storage {
   }
 
   removeItem(key: string): void {
-    const hadKey = this.keys.has(key);
-    this.storage.removeItem(key);
+    const previousValue = this.getEffectiveItem(key);
+    const hadKey = previousValue !== null;
+    if (!hadKey) return;
 
-    if (hadKey) {
-      this.keys.delete(key);
+    if (this.isBufferTarget(key)) {
+      this.bufferValues.set(key, null);
+    } else {
+      this.storage.removeItem(key);
       this.touchVersion(key);
-      const detail: IStorageChangeEventStorage = {
-        ...this.getStorageEventBase(),
-        hasRemoved: true,
-        delta: [this.getStorageEventDelta(key, null)],
-      };
-
-      dispatchEvent<StorageChangeEventAllBody>(STORAGE_CHANGE_EVENT_ALL, {
-        detail,
-      });
-      dispatchEvent<StorageChangeEventKeyBody>(STORAGE_CHANGE_EVENT_KEY, {
-        detail,
-      });
-      dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
-        detail,
-      });
     }
+
+    this.keys.delete(key);
+
+    const detail: IStorageChangeEventStorage = {
+      ...this.getStorageEventBase(),
+      hasRemoved: true,
+      delta: [this.getStorageEventDelta(key, null, previousValue)],
+    };
+
+    dispatchEvent<StorageChangeEventAllBody>(STORAGE_CHANGE_EVENT_ALL, {
+      detail,
+    });
+    dispatchEvent<StorageChangeEventKeyBody>(STORAGE_CHANGE_EVENT_KEY, {
+      detail,
+    });
+    dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
+      detail,
+    });
   }
 
   setItem(key: string, value: string): void {
-    const delta = [this.getStorageEventDelta(key, value)];
+    const previousValue = this.getEffectiveItem(key);
+    const delta = [this.getStorageEventDelta(key, value, previousValue)];
 
     const isNewKey = !this.keys.has(key);
-    this.storage.setItem(key, value);
-    this.touchVersion(key);
+    if (this.isBufferTarget(key)) {
+      this.bufferValues.set(key, value);
+    } else {
+      this.storage.setItem(key, value);
+      this.touchVersion(key);
+    }
 
     if (isNewKey) {
       this.keys.add(key);

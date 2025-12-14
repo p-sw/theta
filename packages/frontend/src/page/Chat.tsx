@@ -235,6 +235,11 @@ export default function Chat() {
         message: "",
       });
       setIsStreaming(true);
+
+      const storage = isPermanentSession ? localStorage : sessionStorage;
+      const sessionKey = SESSION_STORAGE_KEY(sessionId);
+      storage.Buffer.target(sessionKey);
+
       AiSdk.message(
         sessionId,
         isPermanentSession,
@@ -247,27 +252,29 @@ export default function Chat() {
           console.error(e);
         })
         .finally(() => {
-          setIsStreaming(false);
+          try {
+            setIsStreaming(false);
 
-          const storage = isPermanentSession ? localStorage : sessionStorage;
-          const sessionRef = JSON.parse(
-            storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
-          ) as TemporarySession;
+            const sessionRef = JSON.parse(
+              storage.getItem(sessionKey) ?? "{}"
+            ) as TemporarySession;
 
-          const { mutated: pruned, removedRootRequest } =
-            pruneEmptyResponsePairs(sessionRef.turns, true);
-          const subsessionUpdated = failInProgressSubsessions(sessionRef.turns);
+            const { mutated: pruned, removedRootRequest } =
+              pruneEmptyResponsePairs(sessionRef.turns, true);
+            const subsessionUpdated = failInProgressSubsessions(
+              sessionRef.turns
+            );
 
-          if (!pruned && !subsessionUpdated) return;
+            if (!pruned && !subsessionUpdated) return;
 
-          if (removedRootRequest) {
-            form.setValue("message", data.message);
+            if (removedRootRequest) {
+              form.setValue("message", data.message);
+            }
+
+            storage.setItem(sessionKey, JSON.stringify(sessionRef));
+          } finally {
+            storage.Buffer.finish(sessionKey);
           }
-
-          storage.setItem(
-            SESSION_STORAGE_KEY(sessionId),
-            JSON.stringify(sessionRef)
-          );
         });
     },
     [
