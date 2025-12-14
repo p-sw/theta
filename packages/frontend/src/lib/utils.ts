@@ -22,6 +22,7 @@ export async function sleep(ms: number) {
 
 interface IStorageOptions {
   temp?: boolean;
+  deferMs?: number;
 }
 
 const deferredEvents = new Map<
@@ -117,6 +118,7 @@ export function useStorage<T>(
     () => (options?.temp ? sessionStorage : localStorage),
     [options?.temp]
   );
+  const [_key, _setKey] = useState(key);
   const getParse = useMemo(
     () =>
       parse?.get ?? typeof fallbackValue === "object"
@@ -167,6 +169,16 @@ export function useStorage<T>(
   /* key change event, re-initialize */
   useEffect(() => {
     setValue(initKey());
+    // finish old key deferring
+    storage.Defer.finish(_key);
+
+    // start deferring new key
+    const deferMs = options?.deferMs;
+    if (deferMs && Number.isInteger(deferMs) && deferMs > 0)
+      storage.Defer.target(key, deferMs);
+
+    _setKey(key);
+
     // listen to key change event
     window.addEventListener(STORAGE_CHANGE_EVENT(key), updateFromStorage);
     return () => {
@@ -238,7 +250,7 @@ type SessionTurnsParsed =
   | (Omit<SessionTurnsSubSession, "turns"> & { turns: SessionTurnsParsed[] });
 
 export function parseSessionDisplayables(sessionTurns: SessionTurns) {
-  const turns: (SessionTurnsParsed)[] = [];
+  const turns: SessionTurnsParsed[] = [];
 
   for (const turn of sessionTurns) {
     if (turn.type === "request") {

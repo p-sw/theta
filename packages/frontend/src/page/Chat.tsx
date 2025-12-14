@@ -20,6 +20,7 @@ import {
   SAVE_SESSION_EVENT,
   SESSION_STORAGE_KEY,
   CHECKOUT_MESSAGE_EVENT,
+  SESSION_TYPING_KEY,
 } from "@/lib/const";
 import type {
   PermanentSession,
@@ -161,12 +162,20 @@ export default function Chat() {
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      typing: "",
       contextWindowUsage: 0,
     },
     undefined,
     {
       temp: !isPermanentSession,
+    }
+  );
+  const [typing, setTyping] = useStorage<string>(
+    SESSION_TYPING_KEY(sessionId),
+    "",
+    undefined,
+    {
+      temp: true,
+      deferMs: 100,
     }
   );
   const [advanced] = useAdvanced();
@@ -175,7 +184,7 @@ export default function Chat() {
 
   const form = useForm({
     defaultValues: {
-      message: session.typing ?? "",
+      message: typing ?? "",
     },
     resetOptions: {
       keepDefaultValues: true,
@@ -185,9 +194,9 @@ export default function Chat() {
   // when session changes, reset form
   useEffect(() => {
     form.reset({
-      message: session.typing ?? "",
+      message: typing ?? "",
     });
-  }, [session.typing, form.reset]);
+  }, [typing, form.reset]);
 
   useEffect(() => {
     const callback = form.subscribe({
@@ -195,7 +204,7 @@ export default function Chat() {
         values: true,
       },
       callback: ({ values }) => {
-        setSession((prev) => ({ ...prev, typing: values.message }));
+        setTyping(values.message);
       },
     });
     return () => {

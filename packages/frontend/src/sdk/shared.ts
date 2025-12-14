@@ -359,7 +359,6 @@ export type ISessionBase = {
   turns: SessionTurns;
   createdAt: number;
   updatedAt: number;
-  typing: string;
   contextWindowUsage: number;
   /**
    * Saved on first message: the provider and model to be used for the rest of the session.

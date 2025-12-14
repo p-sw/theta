@@ -17,10 +17,20 @@ export class StorageWrapper implements Storage {
   private keys: Set<string>;
   private bufferTargets: Set<string>;
   private bufferValues: Map<string, string | null>;
+  private deferTargets: Map<string, number>;
+  private deferDelayedUntil: Map<string, number>;
+  private deferPendingValues: Map<string, string>;
+  private deferTimers: Map<string, number>;
 
   public readonly Buffer: {
     target: (key: string) => void;
     finish: (key?: string) => void;
+  };
+
+  public readonly Defer: {
+    target: (key: string, delayMs?: number) => void;
+    finish: (key?: string) => void;
+    clear: (key?: string) => void;
   };
 
   private isLocal(): boolean {
@@ -69,12 +79,92 @@ export class StorageWrapper implements Storage {
     }
   }
 
+  private isDeferTarget(key: string): boolean {
+    return this.deferTargets.has(key);
+  }
+
+  private isDeferDelayed(key: string, now = Date.now()): boolean {
+    const until = this.deferDelayedUntil.get(key);
+    return typeof until === "number" && now < until;
+  }
+
+  private cancelDefer(key: string): void {
+    const timer = this.deferTimers.get(key);
+    if (typeof timer === "number") {
+      clearTimeout(timer);
+    }
+    this.deferTimers.delete(key);
+    this.deferDelayedUntil.delete(key);
+    this.deferPendingValues.delete(key);
+  }
+
+  private cancelDeferTimer(key: string): void {
+    const timer = this.deferTimers.get(key);
+    if (typeof timer === "number") {
+      clearTimeout(timer);
+    }
+    this.deferTimers.delete(key);
+    this.deferDelayedUntil.delete(key);
+  }
+
+  private flushDeferred(key: string): void {
+    const pendingValue = this.deferPendingValues.get(key);
+    this.cancelDefer(key);
+    if (pendingValue === undefined) return;
+
+    const previousValue = this.storage.getItem(key);
+    const delta = [this.getStorageEventDelta(key, pendingValue, previousValue)];
+
+    const isNewKey = !this.keys.has(key);
+    this.storage.setItem(key, pendingValue);
+    this.touchVersion(key);
+
+    if (isNewKey) {
+      this.keys.add(key);
+    }
+
+    const detail: IStorageChangeEventStorage = {
+      ...this.getStorageEventBase(),
+      hasNew: isNewKey,
+      hasChanged: !isNewKey,
+      delta,
+    };
+
+    dispatchEvent<StorageChangeEventAllBody>(STORAGE_CHANGE_EVENT_ALL, {
+      detail,
+    });
+    if (isNewKey) {
+      dispatchEvent<StorageChangeEventKeyBody>(STORAGE_CHANGE_EVENT_KEY, {
+        detail,
+      });
+    }
+    dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
+      detail,
+    });
+  }
+
+  private startDeferWindow(key: string, delayMs: number): void {
+    const now = Date.now();
+    this.deferDelayedUntil.set(key, now + delayMs);
+    const existing = this.deferTimers.get(key);
+    if (typeof existing === "number") {
+      clearTimeout(existing);
+    }
+    const handle = window.setTimeout(() => {
+      this.flushDeferred(key);
+    }, delayMs);
+    this.deferTimers.set(key, handle);
+  }
+
   private getEffectiveItem(key: string): string | null {
     if (this.isBufferTarget(key)) {
       if (this.bufferValues.has(key)) {
         return this.bufferValues.get(key) ?? null;
       }
       return this.storage.getItem(key);
+    }
+    if (this.isDeferTarget(key) && this.deferPendingValues.has(key)) {
+      return this.deferPendingValues.get(key) ?? null;
     }
     return this.storage.getItem(key);
   }
@@ -164,6 +254,10 @@ export class StorageWrapper implements Storage {
     this.keys = new Set(Object.keys(storage));
     this.bufferTargets = new Set();
     this.bufferValues = new Map();
+    this.deferTargets = new Map();
+    this.deferDelayedUntil = new Map();
+    this.deferPendingValues = new Map();
+    this.deferTimers = new Map();
     // Ensure version map exists for local storage
     if (this.isLocal() && this.storage.getItem(VERSION_KEY) === null) {
       this.storage.setItem(VERSION_KEY, JSON.stringify({} satisfies IVersionMap));
@@ -177,6 +271,26 @@ export class StorageWrapper implements Storage {
         this.finishBuffered(key);
       },
     };
+
+    this.Defer = {
+      target: (key: string, delayMs = 150) => {
+        if (key === VERSION_KEY) return;
+        this.deferTargets.set(key, delayMs);
+      },
+      finish: (key?: string) => {
+        const targets = key ? [key] : Array.from(this.deferTargets.keys());
+        for (const targetKey of targets) {
+          this.flushDeferred(targetKey);
+        }
+      },
+      clear: (key?: string) => {
+        const targets = key ? [key] : Array.from(this.deferTargets.keys());
+        for (const targetKey of targets) {
+          this.cancelDefer(targetKey);
+          this.deferTargets.delete(targetKey);
+        }
+      },
+    };
   }
 
   get length(): number {
@@ -184,6 +298,10 @@ export class StorageWrapper implements Storage {
   }
 
   clear(): void {
+    // Prevent delayed flushes from resurrecting cleared data
+    for (const key of Array.from(this.deferTargets.keys())) {
+      this.cancelDeferTimer(key);
+    }
     if (this.bufferTargets.size > 0) {
       this.finishBuffered();
     }
@@ -220,6 +338,8 @@ export class StorageWrapper implements Storage {
         },
       });
     }
+
+    this.deferPendingValues.clear();
   }
 
   getItem(key: string): string | null {
@@ -238,6 +358,11 @@ export class StorageWrapper implements Storage {
     const previousValue = this.getEffectiveItem(key);
     const hadKey = previousValue !== null;
     if (!hadKey) return;
+
+    // If this key is deferred and has a pending flush, cancel it.
+    if (this.isDeferTarget(key)) {
+      this.cancelDefer(key);
+    }
 
     if (this.isBufferTarget(key)) {
       this.bufferValues.set(key, null);
@@ -266,6 +391,14 @@ export class StorageWrapper implements Storage {
   }
 
   setItem(key: string, value: string): void {
+    if (!this.isBufferTarget(key) && this.isDeferTarget(key)) {
+      const now = Date.now();
+      if (this.isDeferDelayed(key, now)) {
+        this.deferPendingValues.set(key, value);
+        return;
+      }
+    }
+
     const previousValue = this.getEffectiveItem(key);
     const delta = [this.getStorageEventDelta(key, value, previousValue)];
 
@@ -299,6 +432,11 @@ export class StorageWrapper implements Storage {
     dispatchEvent<StorageChangeEventBody>(STORAGE_CHANGE_EVENT(key), {
       detail,
     });
+
+    if (!this.isBufferTarget(key) && this.isDeferTarget(key)) {
+      const delayMs = this.deferTargets.get(key) ?? 150;
+      this.startDeferWindow(key, delayMs);
+    }
   }
 }
 

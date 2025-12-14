@@ -74,6 +74,7 @@ export type IToolProviderModel = Record<
 export const SESSION_STORAGE_KEY = (id: string) => `session-${id}`;
 export const SESSION_STORAGE_ID = (key: string) =>
   key.split("-").slice(1).join("-");
+export const SESSION_TYPING_KEY = (id: string) => `typing-${id}`;
 
 export const NEW_SESSION_EVENT = "new-session";
 export const SAVE_SESSION_EVENT = "save-session";
