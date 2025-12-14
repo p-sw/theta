@@ -119,6 +119,26 @@ function pruneEmptyResponsePairs(
   return { mutated, removedRootRequest };
 }
 
+function failInProgressSubsessions(turns: SessionTurns): boolean {
+  let mutated = false;
+
+  turns.forEach((turn) => {
+    if (turn.type === "subsession") {
+      if (!turn.isDone) {
+        turn.isDone = true;
+        turn.isError = true;
+        mutated = true;
+      }
+
+      if (failInProgressSubsessions(turn.turns)) {
+        mutated = true;
+      }
+    }
+  });
+
+  return mutated;
+}
+
 export default function Chat() {
   const {
     sessionId,
@@ -234,12 +254,15 @@ export default function Chat() {
             storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
           ) as TemporarySession;
 
-          const { mutated, removedRootRequest } = pruneEmptyResponsePairs(
+          const { mutated: pruned, removedRootRequest } = pruneEmptyResponsePairs(
             sessionRef.turns,
             true
           );
+          const subsessionUpdated = failInProgressSubsessions(
+            sessionRef.turns
+          );
 
-          if (!mutated) return;
+          if (!pruned && !subsessionUpdated) return;
 
           if (removedRootRequest) {
             form.setValue("message", data.message);
@@ -415,6 +438,7 @@ export default function Chat() {
                       key={`${sessionId}-${message.messageId}`}
                       sessionId={sessionId}
                       messageId={message.messageId}
+                      isStreaming={isStreaming}
                       messages={message.message}
                       stop={message.stop}
                     />
