@@ -62,7 +62,6 @@ export function PermanentSessionItem({
     turns: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    typing: "",
     contextWindowUsage: 0,
   });
 
@@ -164,7 +163,6 @@ export function TemporarySessionItem({
       turns: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      typing: "",
       contextWindowUsage: 0,
     },
     undefined,
