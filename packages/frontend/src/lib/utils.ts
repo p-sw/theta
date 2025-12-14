@@ -24,11 +24,37 @@ interface IStorageOptions {
   temp?: boolean;
 }
 
+const deferredEvents = new Map<
+  string,
+  { handle: number; data: CustomEventInit<unknown> }
+>();
+
 export function dispatchEvent<T = unknown>(
   key: string,
   data: CustomEventInit<T>
 ) {
-  window.dispatchEvent(new CustomEvent<T>(key, data));
+  const pending = deferredEvents.get(key);
+  if (pending) {
+    pending.data = data as CustomEventInit<unknown>;
+    return;
+  }
+
+  const schedule =
+    typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame
+      : (cb: FrameRequestCallback) =>
+          window.setTimeout(() => cb(performance.now()), 0);
+
+  const handle = schedule(() => {
+    const latest = deferredEvents.get(key);
+    if (!latest) return;
+    deferredEvents.delete(key);
+    window.dispatchEvent(
+      new CustomEvent(key, latest.data as CustomEventInit<unknown>)
+    );
+  });
+
+  deferredEvents.set(key, { handle, data: data as CustomEventInit<unknown> });
 }
 
 export function useEventListener<T extends Event = Event>(
