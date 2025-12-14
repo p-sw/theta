@@ -36,7 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SaveSessionForm } from "@/components/block/dialogs/save-session";
-import { ChatContext } from "./context/Chat";
+import { ChatContext, IsStreamingContext } from "./context/Chat";
 import { ConnectivityContext } from "./context/Connectivity";
 import { DesktopNav } from "@/components/block/chat/desktop-nav.tsx";
 import { localStorage, sessionStorage } from "@/lib/storage";
@@ -254,13 +254,9 @@ export default function Chat() {
             storage.getItem(SESSION_STORAGE_KEY(sessionId)) ?? "{}"
           ) as TemporarySession;
 
-          const { mutated: pruned, removedRootRequest } = pruneEmptyResponsePairs(
-            sessionRef.turns,
-            true
-          );
-          const subsessionUpdated = failInProgressSubsessions(
-            sessionRef.turns
-          );
+          const { mutated: pruned, removedRootRequest } =
+            pruneEmptyResponsePairs(sessionRef.turns, true);
+          const subsessionUpdated = failInProgressSubsessions(sessionRef.turns);
 
           if (!pruned && !subsessionUpdated) return;
 
@@ -407,151 +403,152 @@ export default function Chat() {
   );
 
   return (
-    <div className="w-full h-svhfull flex flex-row">
-      <DesktopNav />
-      <main className="h-svhfull grid grid-rows-[3fr_1fr] w-full max-w-4xl mx-auto">
-        <ScrollArea className="h-full overflow-y-auto">
-          <ScrollAreaViewport ref={scrollContainerRef}>
-            <div className="h-full p-8 flex flex-col">
-              {displaySession.map((message) => {
-                if (Array.isArray(message)) {
-                  return message.map((tool) => (
-                    <ToolUseCard
-                      key={`${sessionId}-${tool.useId}`}
-                      message={tool}
-                      onGrant={() => onToolGrant(tool.useId)}
-                      onReject={() => onToolReject(tool.useId)}
-                    />
-                  ));
-                } else if (message.type === "request") {
-                  return (
-                    <UserMessage
-                      key={`${sessionId}-${message.messageId}`}
-                      sessionId={sessionId}
-                      messageId={message.messageId}
-                      messages={message.message}
-                    />
-                  );
-                } else if (message.type === "response") {
-                  return (
-                    <AssistantMessage
-                      key={`${sessionId}-${message.messageId}`}
-                      sessionId={sessionId}
-                      messageId={message.messageId}
-                      isStreaming={isStreaming}
-                      messages={message.message}
-                      stop={message.stop}
-                    />
-                  );
-                } else if (message.type === "subsession") {
-                  return (
-                    <Subsession
-                      key={`${sessionId}-${message.useId}`}
-                      sessionId={sessionId}
-                      subsession={message}
-                      onToolGrant={onToolGrant}
-                      onToolReject={onToolReject}
-                    />
-                  );
-                }
-              })}
-            </div>
-          </ScrollAreaViewport>
-        </ScrollArea>
-        <Form {...form}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              form.handleSubmit(handleSubmit)(e);
-            }}
-            className="relative p-4 h-full"
-          >
-            <TextareaContainer className="flex flex-col gap-1 h-full">
-              <FormItem className="w-full h-full">
-                <FormControl>
-                  <Textarea
-                    {...form.register("message")}
-                    className="resize-none text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && e.ctrlKey) {
-                        e.preventDefault();
-                        form.handleSubmit(handleSubmit)(e);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-              <div className="flex flex-row-reverse justify-between items-center">
-                {isStreaming ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button type="button" size="icon" onClick={handlePause}>
-                        <LucidePause className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Pause</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Tooltip open={!isOnline ? true : undefined}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="submit"
-                        size="icon"
-                        disabled={(() => {
-                          const effectiveProvider =
-                            session.provider ?? provider;
-                          const effectiveModelId = session.modelId ?? modelId;
-                          return (
-                            !effectiveModelId ||
-                            !effectiveProvider ||
-                            !form.watch("message").trim() ||
-                            !isOnline
-                          );
-                        })()}
-                      >
-                        <LucideSend className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isOnline ? "Send" : "You are in offline mode"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {advanced.showTokenCount && (
-                  <p className="text-xs text-muted-foreground">
-                    {(() => {
-                      const effectiveProvider = session.provider ?? provider;
-                      const effectiveModelId = session.modelId ?? modelId;
-                      const contextWindow =
-                        effectiveProvider && effectiveModelId
-                          ? AiSdk.getModelContextWindow(
-                              effectiveProvider,
-                              effectiveModelId
-                            )
-                          : undefined;
-                      return `Context Window: ${session.contextWindowUsage.toLocaleString()}${
-                        contextWindow
-                          ? ` / ${contextWindow.toLocaleString()}`
-                          : ""
-                      }`;
-                    })()}
-                  </p>
-                )}
-                {!(session.provider && session.modelId) && (
-                  <ModelSelector
-                    provider={provider}
-                    modelId={modelId}
-                    setModelId={setModelId}
-                  />
-                )}
+    <IsStreamingContext value={isStreaming}>
+      <div className="w-full h-svhfull flex flex-row">
+        <DesktopNav />
+        <main className="h-svhfull grid grid-rows-[3fr_1fr] w-full max-w-4xl mx-auto">
+          <ScrollArea className="h-full overflow-y-auto">
+            <ScrollAreaViewport ref={scrollContainerRef}>
+              <div className="h-full p-8 flex flex-col">
+                {displaySession.map((message) => {
+                  if (Array.isArray(message)) {
+                    return message.map((tool) => (
+                      <ToolUseCard
+                        key={`${sessionId}-${tool.useId}`}
+                        message={tool}
+                        onGrant={() => onToolGrant(tool.useId)}
+                        onReject={() => onToolReject(tool.useId)}
+                      />
+                    ));
+                  } else if (message.type === "request") {
+                    return (
+                      <UserMessage
+                        key={`${sessionId}-${message.messageId}`}
+                        sessionId={sessionId}
+                        messageId={message.messageId}
+                        messages={message.message}
+                      />
+                    );
+                  } else if (message.type === "response") {
+                    return (
+                      <AssistantMessage
+                        key={`${sessionId}-${message.messageId}`}
+                        sessionId={sessionId}
+                        messageId={message.messageId}
+                        messages={message.message}
+                        stop={message.stop}
+                      />
+                    );
+                  } else if (message.type === "subsession") {
+                    return (
+                      <Subsession
+                        key={`${sessionId}-${message.useId}`}
+                        sessionId={sessionId}
+                        subsession={message}
+                        onToolGrant={onToolGrant}
+                        onToolReject={onToolReject}
+                      />
+                    );
+                  }
+                })}
               </div>
-            </TextareaContainer>
-          </form>
-        </Form>
-      </main>
-    </div>
+            </ScrollAreaViewport>
+          </ScrollArea>
+          <Form {...form}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit(handleSubmit)(e);
+              }}
+              className="relative p-4 h-full"
+            >
+              <TextareaContainer className="flex flex-col gap-1 h-full">
+                <FormItem className="w-full h-full">
+                  <FormControl>
+                    <Textarea
+                      {...form.register("message")}
+                      className="resize-none text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.ctrlKey) {
+                          e.preventDefault();
+                          form.handleSubmit(handleSubmit)(e);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+                <div className="flex flex-row-reverse justify-between items-center">
+                  {isStreaming ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" size="icon" onClick={handlePause}>
+                          <LucidePause className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Pause</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip open={!isOnline ? true : undefined}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="submit"
+                          size="icon"
+                          disabled={(() => {
+                            const effectiveProvider =
+                              session.provider ?? provider;
+                            const effectiveModelId = session.modelId ?? modelId;
+                            return (
+                              !effectiveModelId ||
+                              !effectiveProvider ||
+                              !form.watch("message").trim() ||
+                              !isOnline
+                            );
+                          })()}
+                        >
+                          <LucideSend className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isOnline ? "Send" : "You are in offline mode"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {advanced.showTokenCount && (
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const effectiveProvider = session.provider ?? provider;
+                        const effectiveModelId = session.modelId ?? modelId;
+                        const contextWindow =
+                          effectiveProvider && effectiveModelId
+                            ? AiSdk.getModelContextWindow(
+                                effectiveProvider,
+                                effectiveModelId
+                              )
+                            : undefined;
+                        return `Context Window: ${session.contextWindowUsage.toLocaleString()}${
+                          contextWindow
+                            ? ` / ${contextWindow.toLocaleString()}`
+                            : ""
+                        }`;
+                      })()}
+                    </p>
+                  )}
+                  {!(session.provider && session.modelId) && (
+                    <ModelSelector
+                      provider={provider}
+                      modelId={modelId}
+                      setModelId={setModelId}
+                    />
+                  )}
+                </div>
+              </TextareaContainer>
+            </form>
+          </Form>
+        </main>
+      </div>
+    </IsStreamingContext>
   );
 }

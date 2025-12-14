@@ -13,3 +13,5 @@ export const ChatContext = createContext<{
   isPermanentSession: false,
   setIsPermanentSession: () => {},
 });
+
+export const IsStreamingContext = createContext<boolean | null>(null);

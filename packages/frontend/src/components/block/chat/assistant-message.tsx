@@ -12,20 +12,22 @@ import {
 import rehypeHighlight from "@/markdown-plugin/rehype-highlight";
 import { Separator } from "@/components/ui/separator";
 import LucideLoaderCircle from "~icons/lucide/loader-circle";
+import { IsStreamingContext } from "@/page/context/Chat";
+import { use } from "react";
 
 export function AssistantMessage({
   sessionId,
   messageId,
-  isStreaming,
   messages,
   stop,
 }: {
   sessionId: string;
   messageId: string;
-  isStreaming: boolean;
   messages: IMessageResult[];
   stop?: SessionTurnsResponseStop;
 }) {
+  const isStreaming = use(IsStreamingContext);
+
   if (messages.length === 0 && !isStreaming) return null;
 
   return (

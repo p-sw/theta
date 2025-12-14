@@ -36,6 +36,12 @@ type ParsedSubsession = Omit<SessionTurnsSubSession, "turns"> & {
   turns: ParsedTurn[];
 };
 
+type ParsedTurnWithType = Exclude<ParsedTurn, SessionTurnsTool[]>;
+
+function hasType(turn: ParsedTurn): turn is ParsedTurnWithType {
+  return !Array.isArray(turn);
+}
+
 export function Subsession({
   sessionId,
   subsession,
@@ -99,7 +105,7 @@ function SubsessionTurn({
   onToolGrant: (useId: string) => Promise<void>;
   onToolReject: (useId: string) => void;
 }) {
-  if (Array.isArray(turn)) {
+  if (!hasType(turn)) {
     return (
       <>
         {turn.map((tool) => (
